@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  hashedPassword String
+  emailVerified  DateTime?
+  image          String?
+  comments       Comment[]
+  posts          Post[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Reserva {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  correo    String
+  fecha     String
+  hora      String
+  tourId    String
+  guiaId    Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Tour Tour  @relation("TourReservas", fields: [tourId], references: [id])
+  Guia Guia? @relation("GuiaReservas", fields: [guiaId], references: [id])
+}
+
+model Guia {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  foto        String?
+  edad        Int?
+  descripcion String?
+  celular     String?
+  cedula      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  Reservas Reserva[] @relation("GuiaReservas")
+}
+
+model Tour {
+  id          String   @id @default(cuid())
+  nombre      String
+  descripcion String
+  salida      DateTime
+  regreso     DateTime
+  maxReservas Int
+  guias       Int
+  precio      Float    @default(0.0)
+  ubicacion   String   @default("Por definir")
+  imagenUrl   String?   @default("https://via.placeholder.com/600x400?text=Imagen+del+Tour")
+  gallery     String?  // Almacenará JSON con URLs de imágenes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  Reservas Reserva[] @relation("TourReservas")
+}
+
+model Post {
+  id         String   @id @default(cuid())
+  title      String
+  slug       String   @unique
+  content    String
+  coverImage String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+
+  comments Comment[]
+  faqs     FAQ[] // 👈 Relación inversa (1:N)
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  post   Post   @relation(fields: [postId], references: [id])
+  postId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  location  String
+  content   String
+  videoUrl  String?
+  createdAt DateTime @default(now())
+}
+
+model FAQ {
+  id       String @id @default(cuid())
+  question String
+  answer   String
+  postId   String
+  post     Post   @relation(fields: [postId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

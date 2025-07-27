@@ -1,0 +1,32 @@
+/* Animaciones para el diseño futurista galáctico */
+@keyframes float {
+  0% { transform: translateY(0) translateX(0); opacity: 0.2; }
+  50% { transform: translateY(-20px) translateX(10px); opacity: 0.5; }
+  100% { transform: translateY(0) translateX(0); opacity: 0.2; }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.4; }
+}
+ 
+@keyframes pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 0.4; }
+}
+
+.animate-float {
+  animation: float linear infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 6s infinite;
+}
+
+.animate-pulse {
+  animation: pulse 3s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
