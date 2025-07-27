@@ -35,6 +35,10 @@ export default function SidebarRight() {
     fetchGuides();
   }, []);
 
+  // Función para obtener la URL válida de la foto
+  const getFotoUrl = (foto?: string) =>
+    foto && foto.startsWith("http") ? foto : "/images/default-avatar.png";
+
   return (
     <>
       {/* Fondo galáctico para toda la pantalla */}
@@ -119,7 +123,7 @@ export default function SidebarRight() {
                 <div className="relative mb-3 group-hover:-translate-y-1 transition-transform duration-300">
                   <div className="absolute inset-0 rounded-full bg-cyan-400 blur-md opacity-0 group-hover:opacity-40 transition-opacity duration-500"></div>
                   <Image
-                    src={guide.foto || "/images/default-avatar.png"}
+                    src={getFotoUrl(guide.foto)}
                     alt={guide.nombre}
                     width={80}
                     height={80}
@@ -168,12 +172,12 @@ export default function SidebarRight() {
                 <div className="absolute inset-0 rounded-full bg-cyan-500 blur-xl animate-pulse-slow opacity-30"></div>
                 <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-cyan-500 to-purple-600 animate-pulse-slow opacity-20"></div>
                 <Image
-                  src={selectedGuide.foto || "/images/default-avatar.png"}
+                  src={getFotoUrl(selectedGuide.foto)}
                   alt={selectedGuide.nombre}
                   width={100}
                   height={100}
                   className="rounded-full object-cover border-2 border-cyan-500/50 relative z-10"
-                />
+                />                
               </div>
               
               <h3 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 text-transparent bg-clip-text mb-3">

@@ -2,7 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import TourCard from '@/components/TourCard'
+import TourCard from '../../../app/dashboard/components/sections/tours/TourCard'
 
 export default function ToursPage() {
   const [tours, setTours] = useState([])

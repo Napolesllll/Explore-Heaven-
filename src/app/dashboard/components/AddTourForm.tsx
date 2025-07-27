@@ -19,7 +19,7 @@ export default function AddTourForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState('info');
   const [featuredImageIndex, setFeaturedImageIndex] = useState(0);
- 
+
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     switch (name) {
@@ -36,12 +36,10 @@ export default function AddTourForm() {
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    
     if (files.length + previewUrls.length > 10) {
       toast.error("Máximo 10 imágenes");
       return;
     }
-    
     const validFiles = files.filter(file => {
       if (!file.type.startsWith("image/")) {
         toast.error("Solo imágenes");
@@ -53,12 +51,8 @@ export default function AddTourForm() {
       }
       return true;
     });
-    
     if (validFiles.length === 0) return;
-    
     setImageFiles(prev => [...prev, ...validFiles]);
-    
-    // Create preview URLs
     validFiles.forEach(file => {
       const reader = new FileReader();
       reader.onload = () => {
@@ -71,14 +65,10 @@ export default function AddTourForm() {
   const handleRemoveImage = (index: number) => {
     const newFiles = [...imageFiles];
     const newUrls = [...previewUrls];
-    
     newFiles.splice(index, 1);
     newUrls.splice(index, 1);
-    
     setImageFiles(newFiles);
     setPreviewUrls(newUrls);
-    
-    // Reset featured image index if needed
     if (featuredImageIndex === index) {
       setFeaturedImageIndex(0);
     } else if (featuredImageIndex > index) {
@@ -92,8 +82,6 @@ export default function AddTourForm() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
-    // Validaciones básicas
     if (
       !nombre ||
       !descripcion ||
@@ -110,31 +98,24 @@ export default function AddTourForm() {
       toast.error("Fecha de regreso posterior a la de salida");
       return;
     }
-
     setIsLoading(true);
-
     try {
       // Subir todas las imágenes
       const imageUrls: string[] = [];
-      
       for (const file of imageFiles) {
         const imgForm = new FormData();
         imgForm.append("file", file);
-
         const uploadRes = await fetch("/api/uploads/image", {
           method: "POST",
           body: imgForm,
         });
-
         if (!uploadRes.ok) {
           const text = await uploadRes.text();
           throw new Error(`Error al subir imagen: ${text}`);
         }
-
         const uploadData = await uploadRes.json();
         imageUrls.push(uploadData.url);
       }
-
       // Crear el tour con todas las URLs de imágenes
       const createRes = await fetch("/api/tours", {
         method: "POST",
@@ -149,19 +130,15 @@ export default function AddTourForm() {
           precio: parseFloat(precio),
           ubicacion,
           imagenUrl: imageUrls[featuredImageIndex], // Imagen destacada
-          gallery: imageUrls // Todas las imágenes
+          gallery: JSON.stringify(imageUrls) // Guardar como JSON string
         }),
       });
-
       if (!createRes.ok) {
         const text = await createRes.text();
         throw new Error(`Error creando tour: ${text}`);
       }
-
       const createData = await createRes.json();
-
       toast.success(`Tour "${nombre}" creado correctamente`);
-      // Limpiar formulario
       setNombre("");
       setDescripcion("");
       setSalida("");
@@ -181,24 +158,21 @@ export default function AddTourForm() {
     }
   };
 
-  // Efecto para decoraciones flotantes
+  // Efecto decorativo flotante
   useEffect(() => {
     const interval = setInterval(() => {
       const elements = document.querySelectorAll('.floating-element');
       elements.forEach(el => {
-        const currentTop = parseFloat(el.getAttribute('data-top') || 0);
-        const currentLeft = parseFloat(el.getAttribute('data-left') || 0);
-        
+        const currentTop = parseFloat(el.getAttribute('data-top') || "0");
+        const currentLeft = parseFloat(el.getAttribute('data-left') || "0");
         const newTop = (currentTop + (Math.random() - 0.5) * 0.2) % 100;
         const newLeft = (currentLeft + (Math.random() - 0.5) * 0.2) % 100;
-        
         el.setAttribute('data-top', newTop.toString());
         el.setAttribute('data-left', newLeft.toString());
         (el as HTMLElement).style.top = `${newTop}%`;
         (el as HTMLElement).style.left = `${newLeft}%`;
       });
     }, 100);
-    
     return () => clearInterval(interval);
   }, []);
 
@@ -224,7 +198,6 @@ export default function AddTourForm() {
       <div className="w-full max-w-5xl relative z-10">
         {/* Glow effect */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-500/5 via-transparent to-transparent rounded-3xl"></div>
-        
         <div className="relative bg-[#0f172a]/80 backdrop-blur-xl border border-cyan-500/30 rounded-3xl shadow-2xl shadow-cyan-500/10 p-6 md:p-8">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-4">
@@ -234,7 +207,6 @@ export default function AddTourForm() {
               Diseña experiencias inolvidables con nuestro formulario futurista
             </p>
           </div>
-
           {/* Tabs de navegación */}
           <div className="flex border-b border-cyan-700/50 mb-8">
             <button
@@ -258,7 +230,6 @@ export default function AddTourForm() {
               Imágenes ({previewUrls.length})
             </button>
           </div>
-
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Sección de imágenes */}
             {activeTab === 'images' && (
@@ -270,8 +241,6 @@ export default function AddTourForm() {
                     </svg>
                     Galería de Imágenes
                   </label>
-                  
-                  {/* Previsualización de imágenes */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                     {previewUrls.map((url, index) => (
                       <div 
@@ -289,7 +258,6 @@ export default function AddTourForm() {
                           className="object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        
                         <div className="absolute bottom-3 left-3 right-3 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             type="button"
@@ -305,7 +273,6 @@ export default function AddTourForm() {
                           >
                             {featuredImageIndex === index ? 'Destacada' : 'Destacar'}
                           </button>
-                          
                           <button 
                             type="button"
                             onClick={(e) => {
@@ -317,14 +284,11 @@ export default function AddTourForm() {
                             Eliminar
                           </button>
                         </div>
-                        
                         <div className="absolute top-2 left-2 bg-black/60 px-2 py-1 rounded-full text-xs text-white">
                           {index + 1}/{previewUrls.length}
                         </div>
                       </div>
                     ))}
-                    
-                    {/* Espacio para agregar nuevas imágenes */}
                     <div 
                       className="relative h-48 border-2 border-dashed border-cyan-500/30 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all hover:border-cyan-500/60 hover:bg-cyan-900/10"
                       onClick={() => fileInputRef.current?.click()}
@@ -338,7 +302,6 @@ export default function AddTourForm() {
                       <p className="text-gray-500 text-xs mt-1">Máx. 10 imágenes</p>
                     </div>
                   </div>
-                  
                   <input 
                     ref={fileInputRef} 
                     type="file" 
@@ -348,7 +311,6 @@ export default function AddTourForm() {
                     multiple
                   />
                 </div>
-                
                 <div className="bg-cyan-900/20 border border-cyan-700/30 rounded-xl p-5">
                   <div className="flex items-start">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-400 mt-0.5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -367,193 +329,115 @@ export default function AddTourForm() {
                 </div>
               </div>
             )}
-
             {/* Campos del formulario */}
             {activeTab === 'info' && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Campo nombre */}
                   <div className="space-y-2">
                     <label htmlFor="nombre" className="block text-sm font-medium text-cyan-300 flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M9.707 7.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L13 8.586V5a1 1 0 10-2 0v3.586l-1.293-1.293zM11 3a1 1 0 10-2 0v2.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 5.586V3z" />
-                        <path d="M3 5a2 2 0 012-2h1a1 1 0 010 2H5v7h2l1 2h4l1-2h2V5h-1a1 1 0 110-2h1a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5z" />
-                      </svg>
                       Nombre del Tour
                     </label>
-                    <div className="relative">
-                      <input
-                        id="nombre"
-                        name="nombre"
-                        value={nombre}
-                        onChange={handleChange}
-                        className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-12 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
-                        placeholder="Nombre del tour"
-                      />
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M9.707 7.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L13 8.586V5a1 1 0 10-2 0v3.586l-1.293-1.293zM11 3a1 1 0 10-2 0v2.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 5.586V3z" />
-                          <path d="M3 5a2 2 0 012-2h1a1 1 0 010 2H5v7h2l1 2h4l1-2h2V5h-1a1 1 0 110-2h1a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5z" />
-                        </svg>
-                      </div>
-                    </div>
+                    <input
+                      id="nombre"
+                      name="nombre"
+                      value={nombre}
+                      onChange={handleChange}
+                      className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-4 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                      placeholder="Nombre del tour"
+                    />
                   </div>
-
+                  {/* Campo ubicación */}
                   <div className="space-y-2">
                     <label htmlFor="ubicacion" className="block text-sm font-medium text-cyan-300 flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                      </svg>
                       Ubicación
                     </label>
-                    <div className="relative">
-                      <input
-                        id="ubicacion"
-                        name="ubicacion"
-                        value={ubicacion}
-                        onChange={handleChange}
-                        className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-12 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
-                        placeholder="Destino principal"
-                      />
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    </div>
+                    <input
+                      id="ubicacion"
+                      name="ubicacion"
+                      value={ubicacion}
+                      onChange={handleChange}
+                      className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-4 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                      placeholder="Destino principal"
+                    />
                   </div>
-
+                  {/* Campo maxReservas */}
                   <div className="space-y-2">
                     <label htmlFor="maxReservas" className="block text-sm font-medium text-cyan-300 flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                      </svg>
                       Máx. Reservas
                     </label>
-                    <div className="relative">
-                      <input
-                        id="maxReservas"
-                        name="maxReservas"
-                        type="number"
-                        value={maxReservas}
-                        onChange={handleChange}
-                        className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-12 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
-                        placeholder="Número máximo"
-                      />
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                        </svg>
-                      </div>
-                    </div>
+                    <input
+                      id="maxReservas"
+                      name="maxReservas"
+                      type="number"
+                      value={maxReservas}
+                      onChange={handleChange}
+                      className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-4 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                      placeholder="Número máximo"
+                    />
                   </div>
-
+                  {/* Campo precio */}
                   <div className="space-y-2">
                     <label htmlFor="precio" className="block text-sm font-medium text-cyan-300 flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
-                      </svg>
                       Precio por persona
                     </label>
-                    <div className="relative">
-                      <input
-                        id="precio"
-                        name="precio"
-                        type="number"
-                        value={precio}
-                        onChange={handleChange}
-                        className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-12 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
-                        placeholder="Precio en USD"
-                      />
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    </div>
+                    <input
+                      id="precio"
+                      name="precio"
+                      type="number"
+                      value={precio}
+                      onChange={handleChange}
+                      className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-4 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                      placeholder="Precio en USD"
+                    />
                   </div>
-
+                  {/* Campo salida */}
                   <div className="space-y-2">
                     <label htmlFor="salida" className="block text-sm font-medium text-cyan-300 flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                      </svg>
                       Fecha de Salida
                     </label>
-                    <div className="relative">
-                      <input
-                        id="salida"
-                        name="salida"
-                        type="datetime-local"
-                        value={salida}
-                        onChange={handleChange}
-                        className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-12 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
-                      />
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    </div>
+                    <input
+                      id="salida"
+                      name="salida"
+                      type="datetime-local"
+                      value={salida}
+                      onChange={handleChange}
+                      className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-4 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                    />
                   </div>
-
+                  {/* Campo regreso */}
                   <div className="space-y-2">
                     <label htmlFor="regreso" className="block text-sm font-medium text-cyan-300 flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
-                      </svg>
                       Fecha de Regreso
                     </label>
-                    <div className="relative">
-                      <input
-                        id="regreso"
-                        name="regreso"
-                        type="datetime-local"
-                        value={regreso}
-                        onChange={handleChange}
-                        className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-12 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
-                      />
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                    </div>
+                    <input
+                      id="regreso"
+                      name="regreso"
+                      type="datetime-local"
+                      value={regreso}
+                      onChange={handleChange}
+                      className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-4 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                    />
                   </div>
-
+                  {/* Campo guias */}
                   <div className="space-y-2">
                     <label htmlFor="guias" className="block text-sm font-medium text-cyan-300 flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                      </svg>
                       Número de Guías
                     </label>
-                    <div className="relative">
-                      <input
-                        id="guias"
-                        name="guias"
-                        type="number"
-                        value={guias}
-                        onChange={handleChange}
-                        className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-12 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
-                        placeholder="Número de guías"
-                      />
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                        </svg>
-                      </div>
-                    </div>
+                    <input
+                      id="guias"
+                      name="guias"
+                      type="number"
+                      value={guias}
+                      onChange={handleChange}
+                      className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-4 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                      placeholder="Número de guías"
+                    />
                   </div>
                 </div>
-
+                {/* Campo descripción */}
                 <div className="space-y-2">
                   <label htmlFor="descripcion" className="block text-sm font-medium text-cyan-300 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
-                      <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
-                    </svg>
                     Descripción
                   </label>
                   <textarea
@@ -567,7 +451,6 @@ export default function AddTourForm() {
                 </div>
               </div>
             )}
-
             <div className="pt-4 flex flex-col sm:flex-row gap-4">
               <button
                 type="submit"
@@ -596,7 +479,6 @@ export default function AddTourForm() {
                   </>
                 )}
               </button>
-              
               <button
                 type="button"
                 onClick={() => setActiveTab(activeTab === 'info' ? 'images' : 'info')}
