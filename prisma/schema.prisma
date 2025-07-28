@@ -53,8 +53,8 @@ model Tour {
   id          String   @id @default(cuid())
   nombre      String
   descripcion String
-  salida      DateTime
-  regreso     DateTime
+salida      String?   @default("Por definir")
+regreso     String?   @default("Por definir")
   maxReservas Int
   guias       Int
   precio      Float    @default(0.0)

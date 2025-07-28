@@ -18,7 +18,7 @@ export default function ToursFeed() {
 
   if (selectedTour && tourActual) {
     return (
-      <div className="mb-6">
+      <div className="mt-20 mb-6">
         <motion.button
           onClick={() => setSelectedTour(null)}
           className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold rounded-xl shadow-lg border border-cyan-400/50 hover:from-cyan-500 hover:to-purple-500 transition-all group relative overflow-hidden"
@@ -29,7 +29,7 @@ export default function ToursFeed() {
           whileTap={{ scale: 0.95 }}
         >
           <FaArrowLeft className="text-cyan-300 group-hover:text-white transition-colors" />
-          <span className="uppercase tracking-widest">Volver a la galería</span>
+          <span className="uppercase  tracking-widest">Volver a la galería</span>
           <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 group-hover:opacity-100 opacity-0 transition-opacity duration-300 blur-xl"></div>
         </motion.button>
         <TourDetail tour={tourActual} onBack={() => setSelectedTour(null)} />
@@ -165,7 +165,7 @@ export default function ToursFeed() {
             </div>
           </motion.div>
         ))}
-      </div> 
+      </div>
 
       {/* Elemento decorativo flotante */}
       <motion.div

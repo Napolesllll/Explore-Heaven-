@@ -27,29 +27,3 @@ export default function Feed({ activeSection }: { activeSection: string }) {
   );
 }
 
-// Componentes simulados por ahora
-const Inicio = () => (
-  <div className="text-center text-xl font-bold text-yellow-500 bg-gradient-to-r from-black to-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-    Bienvenido a Inicio 🏠
-  </div>
-);
-const Tours = () => (
-  <div className="text-center text-xl font-bold text-yellow-500 bg-gradient-to-r from-gray-800 to-black p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-    Explora nuestros Tours 🌍
-  </div>
-);
-const Reservas = () => (
-  <div className="text-center text-xl font-bold text-yellow-500 bg-gradient-to-r from-black to-gray-900 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-    Tus Reservas 📆
-  </div>
-);
-const Guias = () => (
-  <div className="text-center text-xl font-bold text-yellow-500 bg-gradient-to-r from-gray-900 to-black p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-    Conoce nuestros Guías 👥 Actualmente nuestra aplicacion se encuentra en desarrollo,
-  </div>
-);
-const Perfil = () => (
-  <div className="text-center text-xl font-bold text-yellow-500 bg-gradient-to-r from-black to-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-    Tu Perfil 👤
-  </div>
-);

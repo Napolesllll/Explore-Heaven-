@@ -51,3 +51,38 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+// Editar un tour
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json();
+    const { id, ...data } = body;
+    if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 });
+
+    const tour = await prisma.tour.update({
+      where: { id },
+      data,
+    });
+
+    return NextResponse.json(tour);
+  } catch (error) {
+    return NextResponse.json({ error: "Error al editar el tour" }, { status: 500 });
+  }
+}
+
+// Eliminar un tour
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const id = url.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 });
+
+    await prisma.tour.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: "Error al eliminar el tour" }, { status: 500 });
+  }
+}

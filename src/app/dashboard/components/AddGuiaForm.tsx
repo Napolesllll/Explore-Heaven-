@@ -1,17 +1,21 @@
 "use client";
 
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useRef } from "react";
 import Image from "next/image";
 
 export default function AddGuiaForm() {
   const [nombre, setNombre] = useState("");
-  const [foto, setFoto] = useState("");
   const [edad, setEdad] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [celular, setCelular] = useState("");
   const [cedula, setCedula] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [modal, setModal] = useState({ isOpen: false, message: "", type: "success" });
+  
+  // Estados para la imagen
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +23,6 @@ export default function AddGuiaForm() {
     // Validar que todos los campos estén llenos
     if (
       !nombre.trim() ||
-      !foto.trim() ||
       !edad.trim() ||
       !descripcion.trim() ||
       !celular.trim() ||
@@ -29,32 +32,59 @@ export default function AddGuiaForm() {
       return;
     }
 
+    // Validar que se haya subido una imagen
+    if (!imageFile) {
+      setModal({ isOpen: true, message: "Debes subir una foto del guía", type: "error" });
+      return;
+    }
+
     setIsLoading(true);
  
     try {
+      // Subir imagen a Cloudinary
+      const imgForm = new FormData();
+      imgForm.append("file", imageFile);
+      
+      const uploadRes = await fetch("/api/uploads/image", {
+        method: "POST",
+        body: imgForm,
+      });
+
+      if (!uploadRes.ok) {
+        const text = await uploadRes.text();
+        throw new Error(`Error al subir imagen: ${text}`);
+      }
+
+      const uploadData = await uploadRes.json();
+      const fotoUrl = uploadData.url;
+
+      // Crear el guía con la URL de la imagen
       const res = await fetch("/api/guias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre, foto, edad, descripcion, celular, cedula }),
+        body: JSON.stringify({ nombre, foto: fotoUrl, edad, descripcion, celular, cedula }),
       });
 
       if (!res.ok) {
         const errorData = await res.json();
-        setModal({ isOpen: true, message: errorData.error || "Error al agregar el guía", type: "error" });
-        return;
+        throw new Error(errorData.error || "Error al agregar el guía");
       }
 
       const data = await res.json();
       setModal({ isOpen: true, message: `Guía "${data.guia.nombre}" agregado exitosamente`, type: "success" });
+      
+      // Resetear el formulario
       setNombre("");
-      setFoto("");
       setEdad("");
       setDescripcion("");
       setCelular("");
       setCedula("");
-    } catch (error) {
+      setImageFile(null);
+      setPreviewUrl(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (error: any) {
       console.error("Error al agregar guía:", error);
-      setModal({ isOpen: true, message: "Hubo un problema al agregar el guía. Intenta nuevamente.", type: "error" });
+      setModal({ isOpen: true, message: error.message || "Hubo un problema al agregar el guía. Intenta nuevamente.", type: "error" });
     } finally {
       setIsLoading(false);
     }
@@ -65,9 +95,6 @@ export default function AddGuiaForm() {
     switch (name) {
       case "nombre":
         setNombre(value);
-        break;
-      case "foto":
-        setFoto(value);
         break;
       case "edad":
         setEdad(value);
@@ -84,6 +111,36 @@ export default function AddGuiaForm() {
       default:
         break;
     }
+  };
+
+  // Manejar cambio de imagen
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo y tamaño de imagen
+    if (!file.type.startsWith("image/")) {
+      setModal({ isOpen: true, message: "Solo se permiten imágenes", type: "error" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setModal({ isOpen: true, message: "La imagen excede 5MB", type: "error" });
+      return;
+    }
+
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreviewUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Eliminar imagen seleccionada
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -148,26 +205,48 @@ export default function AddGuiaForm() {
                   </div>
                 </div>
                 
+                {/* Campo para subir imagen */}
                 <div className="space-y-2">
-                  <label htmlFor="foto" className="block text-sm font-medium text-cyan-300 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                    </svg>
-                    URL de la foto
+                  <label className="block text-sm font-medium text-cyan-300">
+                    Foto del Guía
                   </label>
-                  <div className="relative">
+                  <div className="flex flex-col items-center">
+                    <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-cyan-500/30 mb-4">
+                      <Image
+                        src={previewUrl || "/images/avatar-default.png"}
+                        alt="Preview"
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-4 py-2 rounded bg-cyan-600 text-white text-sm font-medium hover:bg-cyan-700 transition"
+                      >
+                        Subir Imagen
+                      </button>
+                      {previewUrl && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="px-4 py-2 rounded bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition"
+                        >
+                          Eliminar
+                        </button>
+                      )}
+                    </div>
                     <input
-                      type="text"
-                      id="foto"
-                      name="foto"
-                      value={foto}
-                      onChange={handleChange}
-                      className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-10 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
-                      placeholder="https://ejemplo.com/foto.jpg"
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
                     />
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-3 text-cyan-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                    </svg>
+                    <p className="text-gray-500 text-xs mt-2">
+                      Formatos: JPG, PNG, WEBP (Máx. 5MB)
+                    </p>
                   </div>
                 </div>
                 

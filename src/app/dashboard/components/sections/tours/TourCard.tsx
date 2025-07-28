@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { Tour } from "@prisma/client";
 import Image from "next/image";
@@ -11,10 +11,10 @@ const TourCard = ({ tour }: { tour: Tour }) => {
     <motion.div
       initial={{ opacity: 0, y: 30, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      whileHover={{ 
+      whileHover={{
         y: -10,
         boxShadow: "0 20px 50px -15px rgba(139, 92, 246, 0.3)",
-        transition: { 
+        transition: {
           duration: 0.3,
           ease: "easeOut"
         }
@@ -73,7 +73,7 @@ const TourCard = ({ tour }: { tour: Tour }) => {
         {/* Badge de fecha */}
         <div className="absolute top-4 left-4 bg-gradient-to-r from-cyan-600 to-purple-600 text-white text-xs px-3 py-1 rounded-full shadow-lg z-20 flex items-center gap-2">
           <FaCalendarAlt className="text-cyan-300" />
-          <span>{new Date(tour.salida).toLocaleDateString()}</span>
+          <span>{tour.salida || "Por definir"}</span>
         </div>
       </div>
 
@@ -96,13 +96,13 @@ const TourCard = ({ tour }: { tour: Tour }) => {
           <div className="flex items-center gap-2 text-sm bg-gray-800/50 px-3 py-1.5 rounded-lg">
             <FaCalendarAlt className="text-cyan-400 flex-shrink-0" />
             <span className="text-gray-300">
-              <span className="font-medium text-cyan-300">Salida:</span> {new Date(tour.salida).toLocaleDateString()}
+              <span className="font-medium text-cyan-300">Salida:</span> {tour.salida || "Por definir"}
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm bg-gray-800/50 px-3 py-1.5 rounded-lg">
             <FaCalendarAlt className="text-purple-400 flex-shrink-0" />
             <span className="text-gray-300">
-              <span className="font-medium text-purple-300">Regreso:</span> {new Date(tour.regreso).toLocaleDateString()}
+              <span className="font-medium text-purple-300">Regreso:</span> {tour.regreso || "Por definir"}
             </span>
           </div>
         </div>
@@ -149,6 +149,5 @@ const TourCard = ({ tour }: { tour: Tour }) => {
     </motion.div>
   );
 } 
-
 
 export default TourCard;

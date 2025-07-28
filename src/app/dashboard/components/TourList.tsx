@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   FaTrash,
   FaCalendarAlt,
@@ -9,81 +9,87 @@ import {
   FaRoute,
   FaExclamationTriangle,
   FaInfoCircle,
-} from "react-icons/fa"; 
+  FaEdit,
+  FaTimes,
+  FaMapMarkerAlt,
+  FaMoneyBillWave,
+  FaImage,
+} from "react-icons/fa";
+import Link from "next/link";
 
 export default function TourList() {
-  const [tours, setTours] = useState([]);
+  const [tours, setTours] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [modal, setModal] = useState({
-    isOpen: false,
-    message: "",
-    type: "success",
-    tourIdToDelete: "",
-  });
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedTourId, setSelectedTourId] = useState<string | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editTour, setEditTour] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const fetchTours = async () => {
     setIsLoading(true);
     try {
       const res = await fetch("/api/tours");
-      if (!res.ok) throw new Error("Error al obtener tours");
-
       const data = await res.json();
       setTours(data.tours || data);
     } catch (error) {
       console.error("Error al obtener tours:", error);
-      setModal({
-        isOpen: true,
-        message: "Error al obtener la lista de tours",
-        type: "error",
-        tourIdToDelete: "",
-      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = (tourId: string) => {
-    setModal({
-      isOpen: true,
-      message: "¿Estás seguro de que deseas eliminar este tour?",
-      type: "confirm",
-      tourIdToDelete: tourId,
-    });
+  const handleDelete = (id: string) => {
+    setSelectedTourId(id);
+    setModalVisible(true);
   };
 
   const confirmDelete = async () => {
-    if (!modal.tourIdToDelete) return;
-
+    if (!selectedTourId) return;
     try {
-      const res = await fetch(`/api/tours?id=${modal.tourIdToDelete}`, {
+      const res = await fetch(`/api/tours?id=${selectedTourId}`, {
         method: "DELETE",
       });
-
-      if (!res.ok) {
-        setModal({
-          isOpen: true,
-          message: "Error al eliminar el tour",
-          type: "error",
-          tourIdToDelete: "",
-        });
-        return;
-      }
-
-      fetchTours();
-      setModal({
-        isOpen: true,
-        message: "Tour eliminado correctamente",
-        type: "success",
-        tourIdToDelete: "",
-      });
+      if (!res.ok) throw new Error("Error al eliminar");
+      setTours((prev) => prev.filter((t: any) => t.id !== selectedTourId));
     } catch (error) {
-      console.error("Error al eliminar tour:", error);
-      setModal({
-        isOpen: true,
-        message: "Error al eliminar el tour",
-        type: "error",
-        tourIdToDelete: "",
+      alert("No se pudo eliminar el tour.");
+    } finally {
+      setModalVisible(false);
+      setSelectedTourId(null);
+    }
+  };
+
+  const handleEdit = (tour: any) => {
+    setEditTour({ ...tour });
+    setEditModalVisible(true);
+  };
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditTour((prev: any) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/tours`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editTour),
       });
+      if (!res.ok) throw new Error("Error al editar");
+      await fetchTours();
+      setEditModalVisible(false);
+      setEditTour(null);
+    } catch (error) {
+      alert("No se pudo editar el tour.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -123,7 +129,7 @@ export default function TourList() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-8">
           {tours.map((tour: any) => (
             <motion.div
               key={tour.id}
@@ -131,22 +137,30 @@ export default function TourList() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
               whileHover={{ y: -10 }}
-              className="bg-gradient-to-br from-[#0f172a] to-[#1e293b] rounded-2xl border border-cyan-500/30 shadow-lg shadow-cyan-500/10 overflow-hidden"
+              className="w-full bg-gradient-to-br from-[#0f172a] to-[#1e293b] rounded-2xl border border-cyan-500/30 shadow-lg shadow-cyan-500/10 overflow-hidden"
             >
               <div className="p-6">
                 <div className="flex items-start justify-between">
                   <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-cyan-100">
                     {tour.nombre}
                   </h3>
-                  <button
-                    onClick={() => handleDelete(tour.id)}
-                    className="p-2 bg-gradient-to-r from-red-700/30 to-red-900/30 border border-red-500/30 rounded-lg hover:from-red-600/40 hover:to-red-800/40 transition-all group"
-                  >
-                    <FaTrash className="text-red-400 group-hover:text-red-300" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(tour)}
+                      className="p-2 bg-gradient-to-r from-yellow-700/30 to-yellow-900/30 border border-yellow-500/30 rounded-lg hover:from-yellow-600/40 hover:to-yellow-800/40 transition-all group"
+                    >
+                      <FaEdit className="text-yellow-400 group-hover:text-yellow-300" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(tour.id)}
+                      className="p-2 bg-gradient-to-r from-red-700/30 to-red-900/30 border border-red-500/30 rounded-lg hover:from-red-600/40 hover:to-red-800/40 transition-all group"
+                    >
+                      <FaTrash className="text-red-400 group-hover:text-red-300" />
+                    </button>
+                  </div>
                 </div>
 
-                <p className="text-gray-400 mt-3 mb-2 line-clamp-3">{tour.descripcion}</p>
+                <p className="text-gray-400 mt-3 mb-2">{tour.descripcion}</p>
 
                 {tour.info && (
                   <div className="flex items-start gap-2 mb-5">
@@ -163,7 +177,7 @@ export default function TourList() {
                     <div>
                       <p className="text-xs text-cyan-300">SALIDA</p>
                       <p className="text-gray-300">
-                        {new Date(tour.salida).toLocaleString()}
+                        {tour.salida || "Por definir"}
                       </p>
                     </div>
                   </div>
@@ -175,7 +189,7 @@ export default function TourList() {
                     <div>
                       <p className="text-xs text-purple-300">REGRESO</p>
                       <p className="text-gray-300">
-                        {new Date(tour.regreso).toLocaleString()}
+                        {tour.regreso || "Por definir"}
                       </p>
                     </div>
                   </div>
@@ -206,8 +220,173 @@ export default function TourList() {
         </div>
       )}
 
-      {/* Modal futurista */}
-      {/* ... ya incluido, sin cambios */}
+      {/* MODAL DE CONFIRMACIÓN */}
+      {modalVisible && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4">
+          <div className="bg-[#0f172a] border border-cyan-500/30 rounded-xl p-6 w-full max-w-md shadow-lg">
+            <h3 className="text-lg font-semibold text-cyan-300 mb-4">
+              ¿Estás seguro de eliminar este tour?
+            </h3>
+            <p className="text-sm text-gray-400 mb-6">
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setModalVisible(false)}
+                className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE EDICIÓN */}
+      {editModalVisible && editTour && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4">
+          <form
+            onSubmit={handleEditSubmit}
+            className="bg-[#181a2a] border border-cyan-500/30 rounded-2xl shadow-2xl max-w-lg w-full p-8 relative"
+          >
+            <button
+              type="button"
+              onClick={() => setEditModalVisible(false)}
+              className="absolute top-4 right-4 text-cyan-400 text-2xl font-bold hover:text-cyan-200 transition-all duration-300 w-8 h-8 flex items-center justify-center rounded-full bg-[#0a0a2a]/70 border border-cyan-500/30 hover:border-cyan-400/50 z-20"
+              aria-label="Cerrar"
+            >
+              <FaTimes />
+            </button>
+            <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-6 text-center">
+              Editar Tour
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-cyan-300 mb-1">Nombre</label>
+                <input
+                  type="text"
+                  name="nombre"
+                  value={editTour.nombre || ""}
+                  onChange={handleEditChange}
+                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-cyan-300 mb-1">Descripción</label>
+                <textarea
+                  name="descripcion"
+                  value={editTour.descripcion || ""}
+                  onChange={handleEditChange}
+                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                  rows={3}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-cyan-300 mb-1">Salida</label>
+                <input
+                  type="text"
+                  name="salida"
+                  value={editTour.salida || ""}
+                  onChange={handleEditChange}
+                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                  placeholder="Ej: 8:00 am, Por definir, etc."
+                />
+              </div>
+              <div>
+                <label className="block text-cyan-300 mb-1">Regreso</label>
+                <input
+                  type="text"
+                  name="regreso"
+                  value={editTour.regreso || ""}
+                  onChange={handleEditChange}
+                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                  placeholder="Ej: 6:00 pm, Por definir, etc."
+                />
+              </div>
+              <div>
+                <label className="block text-cyan-300 mb-1">Capacidad</label>
+                <input
+                  type="number"
+                  name="maxReservas"
+                  value={editTour.maxReservas || ""}
+                  onChange={handleEditChange}
+                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                  min={1}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-cyan-300 mb-1">Guías</label>
+                <input
+                  type="number"
+                  name="guias"
+                  value={editTour.guias || ""}
+                  onChange={handleEditChange}
+                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                  min={1}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-cyan-300 mb-1 flex items-center gap-2">
+                  <FaMapMarkerAlt /> Ubicación
+                </label>
+                <input
+                  type="text"
+                  name="ubicacion"
+                  value={editTour.ubicacion || ""}
+                  onChange={handleEditChange}
+                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-cyan-300 mb-1 flex items-center gap-2">
+                  <FaMoneyBillWave /> Precio
+                </label>
+                <input
+                  type="number"
+                  name="precio"
+                  value={editTour.precio || ""}
+                  onChange={handleEditChange}
+                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                  min={0}
+                  step={0.01}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-cyan-300 mb-1 flex items-center gap-2">
+                  <FaImage /> Imagen principal (URL)
+                </label>
+                <input
+                  type="text"
+                  name="imagenUrl"
+                  value={editTour.imagenUrl || ""}
+                  onChange={handleEditChange}
+                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                  required
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="mt-8 w-full py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold hover:from-cyan-700 hover:to-purple-700 transition-all shadow-lg"
+            >
+              {isSaving ? "Guardando..." : "Guardar Cambios"}
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
