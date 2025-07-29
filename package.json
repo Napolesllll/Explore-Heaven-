@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "tsx prisma/seed.ts"
-  }, 
+  },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@headlessui/react": "^2.2.1",
@@ -19,6 +19,7 @@
     "@stripe/stripe-js": "^7.0.0",
     "@types/leaflet": "^1.9.20",
     "bcryptjs": "^3.0.2",
+    "date-fns": "^4.1.0",
     "framer-motion": "^12.23.0",
     "i18next": "^25.3.2",
     "keen-slider": "^6.8.6",
@@ -27,7 +28,7 @@
     "next": "15.2.4",
     "next-auth": "^4.24.11",
     "pg": "^8.16.3",
-    "prisma": "^6.5.0",
+    "prisma": "^6.12.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.1",

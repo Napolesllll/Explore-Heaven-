@@ -64,7 +64,22 @@ regreso     String?   @default("Por definir")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+   availableDates AvailableDate[] 
   Reservas Reserva[] @relation("TourReservas")
+}
+
+// Nuevo modelo para fechas disponibles
+
+model AvailableDate {
+  id        String   @id @default(cuid())
+  date      DateTime // Fecha disponible
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Índice único para prevenir duplicados
+  @@unique([tourId, date])
 }
 
 model Post {

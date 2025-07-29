@@ -15,9 +15,11 @@ import {
   FaMoneyBillWave,
   FaImage,
 } from "react-icons/fa";
-import Link from "next/link";
+
+import AvailableDatesManager from "../../dashboard/admin/AvailableDatesManager";
 
 export default function TourList() {
+
   const [tours, setTours] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -26,6 +28,7 @@ export default function TourList() {
   const [editTour, setEditTour] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  
   const fetchTours = async () => {
     setIsLoading(true);
     try {
@@ -97,11 +100,19 @@ export default function TourList() {
     fetchTours();
   }, []);
 
+    const tour = {
+    id: "123", // Reemplazar por el tour seleccionado
+    nombre: "Tour Machu Picchu",
+  };
+
   return (
     <div className="bg-gradient-to-br from-[#0f172a] to-[#1e293b] p-6 rounded-2xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/10">
+      
+            
       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-8 text-center">
         LISTA DE EXPERIENCIAS
       </h2>
+      <AvailableDatesManager tour={tour} />
 
       {isLoading ? (
         <div className="py-12 flex flex-col items-center justify-center">

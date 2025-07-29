@@ -1,60 +1,68 @@
-"use client";
+'use client';
 
-import { useSearchParams } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { tours } from "../../data/toursData";
-import { CheckCircle, Calendar, MapPin, Clock, User, Mail, Phone, Info, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
-import Image from "next/image";
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { tours } from '../../data/toursData';
+import {
+  CheckCircle,
+  Calendar,
+  Clock,
+  User,
+  Mail,
+  Phone,
+  Info,
+  X as XIcon,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useKeenSlider } from 'keen-slider/react';
+import 'keen-slider/keen-slider.min.css';
+import emailjs from '@emailjs/browser';
+import toast from 'react-hot-toast';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-import { useKeenSlider } from "keen-slider/react";
-import "keen-slider/keen-slider.min.css";
-
-import emailjs from "@emailjs/browser";
-import toast from "react-hot-toast";
-
-// Plugin mejorado para auto-slide
+// Plugin de autoplay para Keen Slider
 function AutoSlidePlugin(slider: any) {
   let timeout: any;
   let mouseOver = false;
-  const autoplaySpeed = 4000; // Cambia cada 4 segundos
- 
+  const autoplaySpeed = 4000;
+
   const clearNextTimeout = () => clearTimeout(timeout);
 
   function nextTimeout() {
-    clearTimeout(timeout);
+    clearNextTimeout();
     if (mouseOver) return;
     timeout = setTimeout(() => {
       slider.next();
     }, autoplaySpeed);
   }
 
-  slider.on("created", () => {
-    slider.container.addEventListener("mouseover", () => {
+  slider.on('created', () => {
+    slider.container.addEventListener('mouseover', () => {
       mouseOver = true;
       clearNextTimeout();
     });
-    slider.container.addEventListener("mouseout", () => {
+    slider.container.addEventListener('mouseout', () => {
       mouseOver = false;
       nextTimeout();
     });
     nextTimeout();
   });
 
-  slider.on("dragStarted", clearNextTimeout);
-  slider.on("animationEnded", nextTimeout);
-  slider.on("updated", nextTimeout);
-  slider.on("destroyed", clearNextTimeout);
+  slider.on('dragStarted', clearNextTimeout);
+  slider.on('animationEnded', nextTimeout);
+  slider.on('updated', nextTimeout);
+  slider.on('destroyed', clearNextTimeout);
 }
 
-// Componente de carrusel con autoplay mejorado
+// Carrusel de imágenes con autoplay
 function TourImages({ fotos }: { fotos: string[] }) {
-  const [sliderRef, sliderInstance] = useKeenSlider<HTMLDivElement>(
+  const [sliderRef] = useKeenSlider<HTMLDivElement>(
     {
       loop: true,
-      mode: "free-snap",
+      mode: 'free-snap',
       slides: { perView: 1, spacing: 0 },
     },
     [AutoSlidePlugin]
@@ -74,8 +82,6 @@ function TourImages({ fotos }: { fotos: string[] }) {
             className="object-cover"
             priority={index === 0}
           />
-          
-          {/* Indicador de posición */}
           <div className="absolute bottom-4 right-4 bg-black/60 px-3 py-1 rounded-full text-xs text-white">
             {index + 1} / {fotos.length}
           </div>
@@ -85,18 +91,16 @@ function TourImages({ fotos }: { fotos: string[] }) {
   );
 }
 
-// Componente para mostrar detalles del tour
+// Detalles básicos del tour
 function TourDetails({ tour }: { tour: any }) {
   return (
     <div className="space-y-8">
       <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 px-6 py-3 rounded-xl inline-block mb-4">
         <h2 className="text-2xl font-bold text-gray-900">{tour.nombre}</h2>
       </div>
-      
       <p className="text-gray-300 leading-relaxed italic text-center md:text-left">
         {tour.descripcion}
       </p>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
         <div className="flex items-center gap-3 bg-gray-800/50 p-4 rounded-xl">
           <span className="text-yellow-400 font-semibold">💰</span>
@@ -105,7 +109,6 @@ function TourDetails({ tour }: { tour: any }) {
             <p className="text-white font-medium">{tour.precio}</p>
           </div>
         </div>
-        
         <div className="flex items-center gap-3 bg-gray-800/50 p-4 rounded-xl">
           <span className="text-yellow-400 font-semibold">🕐</span>
           <div>
@@ -113,7 +116,6 @@ function TourDetails({ tour }: { tour: any }) {
             <p className="text-white font-medium">{tour.salida}</p>
           </div>
         </div>
-        
         <div className="flex items-center gap-3 bg-gray-800/50 p-4 rounded-xl">
           <span className="text-yellow-400 font-semibold">🔁</span>
           <div>
@@ -121,7 +123,6 @@ function TourDetails({ tour }: { tour: any }) {
             <p className="text-white font-medium">{tour.regreso}</p>
           </div>
         </div>
-        
         <div className="flex items-center gap-3 bg-gray-800/50 p-4 rounded-xl">
           <span className="text-yellow-400 font-semibold">⏳</span>
           <div>
@@ -134,49 +135,44 @@ function TourDetails({ tour }: { tour: any }) {
   );
 }
 
-// Componente para detalles de inclusión (ocupa todo el ancho)
+// Detalles de inclusión, no incluye y recomendaciones
 function InclusionDetails({ tour }: { tour: any }) {
   return (
     <div className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
       <div className="bg-gray-800/50 p-5 rounded-2xl">
         <h3 className="font-bold text-yellow-400 mb-3 flex items-center gap-2">
-          <CheckCircle className="w-5 h-5" />
-          Incluye
+          <CheckCircle className="w-5 h-5" /> Incluye
         </h3>
         <ul className="space-y-2">
-          {tour.incluido.map((item: string, index: number) => (
-            <li key={index} className="flex items-start">
-              <div className="w-2 h-2 rounded-full bg-yellow-500 mt-2 mr-2 flex-shrink-0"></div>
+          {tour.incluido.map((item: string, i: number) => (
+            <li key={i} className="flex items-start">
+              <div className="w-2 h-2 rounded-full bg-yellow-500 mt-2 mr-2 flex-shrink-0" />
               <span className="text-gray-300">{item}</span>
             </li>
           ))}
         </ul>
       </div>
-      
       <div className="bg-gray-800/50 p-5 rounded-2xl">
         <h3 className="font-bold text-yellow-400 mb-3 flex items-center gap-2">
-          <X className="w-5 h-5" />
-          No incluye
+          <XIcon className="w-5 h-5" /> No incluye
         </h3>
         <ul className="space-y-2">
-          {tour.noIncluido.map((item: string, index: number) => (
-            <li key={index} className="flex items-start">
-              <div className="w-2 h-2 rounded-full bg-red-500 mt-2 mr-2 flex-shrink-0"></div>
+          {tour.noIncluido.map((item: string, i: number) => (
+            <li key={i} className="flex items-start">
+              <div className="w-2 h-2 rounded-full bg-red-500 mt-2 mr-2 flex-shrink-0" />
               <span className="text-gray-300">{item}</span>
             </li>
           ))}
         </ul>
       </div>
-      
       <div className="bg-gray-800/50 p-5 rounded-2xl">
         <h3 className="font-bold text-yellow-400 mb-3 flex items-center gap-2">
-          <Info className="w-5 h-5" />
-          Recomendaciones
+          <Info className="w-5 h-5" /> Recomendaciones
         </h3>
         <ul className="space-y-2">
-          {tour.outfit.map((item: string, index: number) => (
-            <li key={index} className="flex items-start">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 mt-2 mr-2 flex-shrink-0"></div>
+          {tour.outfit.map((item: string, i: number) => (
+            <li key={i} className="flex items-start">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 mt-2 mr-2 flex-shrink-0" />
               <span className="text-gray-300">{item}</span>
             </li>
           ))}
@@ -186,7 +182,7 @@ function InclusionDetails({ tour }: { tour: any }) {
   );
 }
 
-// Componente para el formulario de reserva
+// Formulario de reserva con fechas disponibles
 function ReservationForm({
   tour,
   formRef,
@@ -196,7 +192,18 @@ function ReservationForm({
   isSubmitting,
   hasSubmitted,
   setShowModal,
-}: any) {
+  availableDates,
+}: {
+  tour: any;
+  formRef: React.RefObject<HTMLFormElement>;
+  errors: { nombre?: string; telefono?: string; correo?: string };
+  validateForm: () => boolean;
+  sendEmail: (e: React.FormEvent<HTMLFormElement>) => void;
+  isSubmitting: boolean;
+  hasSubmitted: boolean;
+  setShowModal: (show: boolean) => void;
+  availableDates: Date[];
+}) {
   return (
     <motion.div
       initial={{ scale: 0.8, opacity: 0 }}
@@ -204,21 +211,17 @@ function ReservationForm({
       exit={{ scale: 0.8, opacity: 0 }}
       className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-3xl shadow-2xl p-8 text-center space-y-6 max-w-md w-full relative overflow-hidden"
     >
-      {/* Elementos decorativos */}
+      {/* Diseño decorativo */}
       <div className="absolute inset-0">
-        <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-500 rounded-full filter blur-[80px] opacity-20"></div>
-        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-500 rounded-full filter blur-[100px] opacity-15"></div>
+        <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-500 rounded-full filter blur-[80px] opacity-20" />
+        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-500 rounded-full filter blur-[100px] opacity-15" />
       </div>
-      
-      <div className="relative z-10">
-        <h2 className="text-2xl font-bold text-yellow-400 mb-2">Completa tu reserva</h2>
-        <p className="text-gray-400 text-sm mb-6">
-          Déjanos tus datos y nos comunicaremos contigo para confirmar los detalles del tour.
-        </p>
-
+      <div className="relative z-10 space-y-4">
+        <h2 className="text-2xl font-bold text-yellow-400">Completa tu reserva</h2>
+        <p className="text-gray-400 text-sm">Déjanos tus datos y confirmaremos pronto</p>
         <form ref={formRef} onSubmit={sendEmail} className="space-y-5 text-left">
           <input type="hidden" name="tour" value={tour.nombre} />
-
+          {/* Nombre */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <User className="w-5 h-5 text-yellow-500" />
@@ -228,11 +231,11 @@ function ReservationForm({
               name="nombre"
               required
               placeholder="Nombre completo"
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 pl-10 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 pl-10 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
             {errors.nombre && <p className="text-red-400 text-sm mt-1">{errors.nombre}</p>}
           </div>
-
+          {/* Correo */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <Mail className="w-5 h-5 text-yellow-500" />
@@ -242,11 +245,11 @@ function ReservationForm({
               name="correo"
               required
               placeholder="Correo electrónico"
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 pl-10 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 pl-10 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
             {errors.correo && <p className="text-red-400 text-sm mt-1">{errors.correo}</p>}
           </div>
-
+          {/* Teléfono */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <Phone className="w-5 h-5 text-yellow-500" />
@@ -257,53 +260,62 @@ function ReservationForm({
               required
               pattern="[0-9]{7,15}"
               placeholder="Teléfono"
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 pl-10 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 pl-10 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
             />
             {errors.telefono && <p className="text-red-400 text-sm mt-1">{errors.telefono}</p>}
           </div>
-
+          {/* Selector de fechas */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <Calendar className="w-5 h-5 text-yellow-500" />
             </div>
-            <input
-              type="date"
-              name="fecha"
-              required
-              className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 pl-10 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-            />
+            {availableDates?.length > 0 ? (
+              <select
+                name="fecha"
+                required
+                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 pl-10 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              >
+                <option value="">Selecciona una fecha</option>
+                {availableDates.map((date, i) => (
+                  <option key={i} value={date.toISOString()}>{format(date, 'PPP', { locale: es })}</option>
+                ))}
+              </select>
+            ) : (
+              <div className="text-yellow-500 py-4 text-center">
+                <p>No hay fechas disponibles</p>
+                <button type="button" className="mt-2 text-cyan-400 hover:text-cyan-300" onClick={() => window.location.reload()}>
+                  Recargar
+                </button>
+              </div>
+            )}
           </div>
-
+          {/* Botones */}
           <div className="pt-4 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => setShowModal(false)}
-              className="px-4 py-3 border border-gray-600 rounded-xl text-gray-300 hover:bg-gray-800 transition-colors"
-            >
+            <button type="button" onClick={() => setShowModal(false)} className="px-4 py-3 border border-gray-600 rounded-xl text-gray-300 hover:bg-gray-800 transition">
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting || hasSubmitted}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all relative overflow-hidden ${
+              className={`px-6 py-3 rounded-xl font-semibold transition relative overflow-hidden ${
                 isSubmitting || hasSubmitted
-                  ? "bg-yellow-300 text-gray-900 cursor-not-allowed"
-                  : "bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 hover:from-yellow-400 hover:to-yellow-500"
+                  ? 'bg-yellow-300 text-gray-900 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 hover:from-yellow-400 hover:to-yellow-500'
               }`}
             >
               <span className="relative z-10 flex items-center gap-2">
                 {isSubmitting ? (
                   <div className="flex items-center">
-                    <div className="w-4 h-4 border-t-2 border-gray-900 rounded-full animate-spin mr-2"></div>
+                    <div className="w-4 h-4 border-t-2 border-gray-900 rounded-full animate-spin mr-2" />
                     Enviando...
                   </div>
                 ) : hasSubmitted ? (
-                  "Reserva enviada"
+                  'Reserva enviada'
                 ) : (
-                  "Enviar reserva"
+                  'Enviar reserva'
                 )}
               </span>
-              <span className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-yellow-500 opacity-0 hover:opacity-100 transition-opacity"></span>
+              <span className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-yellow-500 opacity-0 hover:opacity-100 transition-opacity" />
             </button>
           </div>
         </form>
@@ -312,6 +324,7 @@ function ReservationForm({
   );
 }
 
+// Página de checkout completa
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -322,74 +335,84 @@ export default function CheckoutPage() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<{ nombre?: string; telefono?: string; correo?: string }>({});
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
 
   useEffect(() => {
-    const tourId = searchParams?.get("tourId");
+    const tourId = searchParams.get('tourId');
     if (!tourId) return;
-
-    const selectedTour = tours.find((t) => t.id === tourId);
-    setTour(selectedTour);
+    const found = tours.find((t) => t.id === tourId) || null;
+    setTour(found);
   }, [searchParams]);
 
-  const validateForm = () => {
-    if (!formRef.current) return false;
-    const form = formRef.current;
-    const nombre = form.nombre.value.trim();
-    const correo = form.correo.value.trim();
-    const telefono = form.telefono.value.trim();
-    let valid = true;
-    const newErrors: typeof errors = {};
-
-    if (!/^[a-zA-ZÀ-ÿ\s]{2,}$/.test(nombre)) {
-      newErrors.nombre = "El nombre debe tener al menos 2 letras y solo contener caracteres válidos.";
-      valid = false;
+  useEffect(() => {
+    if (!tour) return;
+    async function loadDates() {
+      try {
+        const res = await fetch(`/api/available-dates?tourId=${tour.id}`);
+        const data: { id: string; date: string }[] = await res.json();
+        setAvailableDates(data.map((d) => new Date(d.date)));
+      } catch (err) {
+        console.error(err);
+      }
     }
+    loadDates();
+  }, [tour]);
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-      newErrors.correo = "Correo inválido";
-      valid = false;
+  function validateForm() {
+    const f = formRef.current;
+    if (!f) return false;
+    const n = f.nombre.value.trim();
+    const c = f.correo.value.trim();
+    const p = f.telefono.value.trim();
+    const errs: typeof errors = {};
+    let ok = true;
+    if (!/^[a-zA-ZÀ-ÿ\s]{2,}$/.test(n)) {
+      errs.nombre = 'Nombre inválido'; ok = false;
     }
-
-    if (!/^\d{7,15}$/.test(telefono)) {
-      newErrors.telefono = "Teléfono debe tener entre 7 y 15 dígitos y sin letras.";
-      valid = false;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) {
+      errs.correo = 'Correo inválido'; ok = false;
     }
+    if (!/^\d{7,15}$/.test(p)) {
+      errs.telefono = 'Teléfono inválido'; ok = false;
+    }
+    setErrors(errs);
+    return ok;
+  }
 
-    setErrors(newErrors);
-    return valid;
-  };
-
-  const sendEmail = async (e: React.FormEvent<HTMLFormElement>) => {
+  async function sendEmail(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!formRef.current || !validateForm() || isSubmitting || hasSubmitted) return;
-
+    if (!validateForm() || isSubmitting || hasSubmitted) return;
     setIsSubmitting(true);
     setHasSubmitted(true);
     setShowModal(false);
 
-    emailjs
-      .sendForm("service_48b978l", "template_uk4drlm", formRef.current, "Bl8NYZsWuRuNA-Jbi")
-      .catch((error) => {
-        console.error(error);
-        toast.error("Hubo un error al enviar tu reserva.");
-      });
+    try {
+      await emailjs.sendForm(
+        'service_48b978l',
+        'template_uk4drlm',
+        formRef.current!,
+        'Bl8NYZsWuRuNA-Jbi'
+      );
+      toast.success('Reserva enviada con éxito');
+      router.push('/thank-you');
+    } catch (error) {
+      console.error(error);
+      toast.error('Error enviando reserva');
+    }
+  }
 
-    toast.success("Reserva enviada con éxito");
-    router.push("/thank-you");
-  };
-
-  if (!tour) return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
-      <div className="text-center">
-        <div className="animate-pulse">
+  if (!tour) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
+        <div className="text-center animate-pulse">
           <div className="w-20 h-20 mx-auto bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
             <Calendar className="text-gray-900 w-10 h-10" />
           </div>
+          <p className="mt-6 text-gray-400">Cargando detalles de tu tour...</p>
         </div>
-        <p className="mt-6 text-gray-400">Cargando detalles de tu tour...</p>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black py-12 px-4 relative overflow-hidden">
@@ -484,6 +507,7 @@ export default function CheckoutPage() {
               isSubmitting={isSubmitting}
               hasSubmitted={hasSubmitted}
               setShowModal={setShowModal}
+              availableDates={availableDates}
             />
           </motion.div>
         )}
