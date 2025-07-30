@@ -19,6 +19,7 @@ export default function AddTourForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState('info');
   const [featuredImageIndex, setFeaturedImageIndex] = useState(0);
+  const [dateError, setDateError] = useState<string | null>(null);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -32,6 +33,37 @@ export default function AddTourForm() {
       case "precio": setPrecio(value); break;
       case "ubicacion": setUbicacion(value); break;
     }
+    
+    // Validar fechas al cambiar
+    if ((name === "salida" || name === "regreso") && salida && regreso) {
+      validateDates();
+    }
+  };
+
+  // Validación de fechas
+  const validateDates = (): boolean => {
+    if (!salida || !regreso) return true;
+    
+    const salidaDate = new Date(salida);
+    const regresoDate = new Date(regreso);
+    
+    if (isNaN(salidaDate.getTime() )) {
+      setDateError("Fecha de salida inválida");
+      return false;
+    } 
+    
+    if (isNaN(regresoDate.getTime())) {
+      setDateError("Fecha de regreso inválida");
+      return false;
+    }
+    
+    if (salidaDate >= regresoDate) {
+      setDateError("Fecha de regreso debe ser posterior a la de salida");
+      return false;
+    }
+    
+    setDateError(null);
+    return true;
   };
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -82,6 +114,8 @@ export default function AddTourForm() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    // Validar campos obligatorios
     if (
       !nombre ||
       !descripcion ||
@@ -94,10 +128,12 @@ export default function AddTourForm() {
       toast.error("Todos los campos obligatorios");
       return;
     }
-    if (new Date(salida) >= new Date(regreso)) {
-      toast.error("Fecha de regreso posterior a la de salida");
+    
+    // Validar fechas antes de enviar
+    if (!validateDates()) {
       return;
     }
+    
     setIsLoading(true);
     try {
       // Subir todas las imágenes
@@ -116,6 +152,7 @@ export default function AddTourForm() {
         const uploadData = await uploadRes.json();
         imageUrls.push(uploadData.url);
       }
+      
       // Crear el tour con todas las URLs de imágenes
       const createRes = await fetch("/api/tours", {
         method: "POST",
@@ -123,8 +160,8 @@ export default function AddTourForm() {
         body: JSON.stringify({
           nombre,
           descripcion,
-          salida,
-          regreso,
+          salida: new Date(salida).toISOString(), // Convertir a ISO string
+          regreso: new Date(regreso).toISOString(), // Convertir a ISO string
           maxReservas: parseInt(maxReservas, 10),
           guias: parseInt(guias, 10),
           precio: parseFloat(precio),
@@ -133,12 +170,16 @@ export default function AddTourForm() {
           gallery: JSON.stringify(imageUrls) // Guardar como JSON string
         }),
       });
+      
       if (!createRes.ok) {
         const text = await createRes.text();
         throw new Error(`Error creando tour: ${text}`);
       }
+      
       const createData = await createRes.json();
       toast.success(`Tour "${nombre}" creado correctamente`);
+      
+      // Resetear formulario
       setNombre("");
       setDescripcion("");
       setSalida("");
@@ -150,6 +191,7 @@ export default function AddTourForm() {
       setImageFiles([]);
       setPreviewUrls([]);
       setFeaturedImageIndex(0);
+      setDateError(null);
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Hubo un problema");
@@ -370,6 +412,7 @@ export default function AddTourForm() {
                       id="maxReservas"
                       name="maxReservas"
                       type="number"
+                      min="1"
                       value={maxReservas}
                       onChange={handleChange}
                       className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-4 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
@@ -385,6 +428,8 @@ export default function AddTourForm() {
                       id="precio"
                       name="precio"
                       type="number"
+                      min="0"
+                      step="0.01"
                       value={precio}
                       onChange={handleChange}
                       className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-4 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
@@ -428,6 +473,7 @@ export default function AddTourForm() {
                       id="guias"
                       name="guias"
                       type="number"
+                      min="1"
                       value={guias}
                       onChange={handleChange}
                       className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 pl-4 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
@@ -435,6 +481,19 @@ export default function AddTourForm() {
                     />
                   </div>
                 </div>
+                
+                {/* Mensaje de error de fechas */}
+                {dateError && (
+                  <div className="bg-red-900/30 border border-red-500/50 rounded-xl p-4 text-red-300">
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {dateError}
+                    </div>
+                  </div>
+                )}
+                
                 {/* Campo descripción */}
                 <div className="space-y-2">
                   <label htmlFor="descripcion" className="block text-sm font-medium text-cyan-300 flex items-center">

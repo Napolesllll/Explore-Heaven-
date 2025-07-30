@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -16,10 +16,7 @@ import {
   FaImage,
 } from "react-icons/fa";
 
-import AvailableDatesManager from "../../dashboard/admin/AvailableDatesManager";
-
 export default function TourList() {
-
   const [tours, setTours] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -27,8 +24,8 @@ export default function TourList() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editTour, setEditTour] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  
   const fetchTours = async () => {
     setIsLoading(true);
     try {
@@ -37,6 +34,7 @@ export default function TourList() {
       setTours(data.tours || data);
     } catch (error) {
       console.error("Error al obtener tours:", error);
+      setError("Error al cargar los tours");
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +54,7 @@ export default function TourList() {
       if (!res.ok) throw new Error("Error al eliminar");
       setTours((prev) => prev.filter((t: any) => t.id !== selectedTourId));
     } catch (error) {
-      alert("No se pudo eliminar el tour.");
+      setError("No se pudo eliminar el tour.");
     } finally {
       setModalVisible(false);
       setSelectedTourId(null);
@@ -64,7 +62,13 @@ export default function TourList() {
   };
 
   const handleEdit = (tour: any) => {
-    setEditTour({ ...tour });
+    const formattedTour = {
+      ...tour,
+      maxReservas: Number(tour.maxReservas),
+      guias: Number(tour.guias),
+      precio: Number(tour.precio)
+    };
+    setEditTour(formattedTour);
     setEditModalVisible(true);
   };
 
@@ -72,25 +76,41 @@ export default function TourList() {
     const { name, value } = e.target;
     setEditTour((prev: any) => ({
       ...prev,
-      [name]: value,
+      [name]: name === 'maxReservas' || name === 'guias' || name === 'precio' 
+        ? Number(value) 
+        : value,
     }));
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+    setError(null);
+    
     try {
       const res = await fetch(`/api/tours`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editTour),
+        headers: { 
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...editTour,
+          id: editTour.id
+        }),
       });
-      if (!res.ok) throw new Error("Error al editar");
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Error al editar el tour");
+      }
+
       await fetchTours();
       setEditModalVisible(false);
       setEditTour(null);
-    } catch (error) {
-      alert("No se pudo editar el tour.");
+    } catch (error: any) {
+      console.error("Error al editar:", error);
+      setError(error.message || "No se pudo editar el tour");
     } finally {
       setIsSaving(false);
     }
@@ -100,19 +120,17 @@ export default function TourList() {
     fetchTours();
   }, []);
 
-    const tour = {
-    id: "123", // Reemplazar por el tour seleccionado
-    nombre: "Tour Machu Picchu",
-  };
-
   return (
     <div className="bg-gradient-to-br from-[#0f172a] to-[#1e293b] p-6 rounded-2xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/10">
-      
-            
       <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-8 text-center">
         LISTA DE EXPERIENCIAS
       </h2>
-      <AvailableDatesManager tour={tour} />
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-900/50 border border-red-500/30 rounded-lg text-red-300">
+          {error}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="py-12 flex flex-col items-center justify-center">
@@ -150,7 +168,7 @@ export default function TourList() {
               whileHover={{ y: -10 }}
               className="w-full bg-gradient-to-br from-[#0f172a] to-[#1e293b] rounded-2xl border border-cyan-500/30 shadow-lg shadow-cyan-500/10 overflow-hidden"
             >
-              <div className="p-6">
+              <div className="p-6 space-y-6">
                 <div className="flex items-start justify-between">
                   <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-cyan-100">
                     {tour.nombre}
@@ -187,9 +205,7 @@ export default function TourList() {
                     </div>
                     <div>
                       <p className="text-xs text-cyan-300">SALIDA</p>
-                      <p className="text-gray-300">
-                        {tour.salida || "Por definir"}
-                      </p>
+                      <p className="text-gray-300">{tour.salida || "Por definir"}</p>
                     </div>
                   </div>
 
@@ -199,9 +215,7 @@ export default function TourList() {
                     </div>
                     <div>
                       <p className="text-xs text-purple-300">REGRESO</p>
-                      <p className="text-gray-300">
-                        {tour.regreso || "Por definir"}
-                      </p>
+                      <p className="text-gray-300">{tour.regreso || "Por definir"}</p>
                     </div>
                   </div>
 
@@ -259,143 +273,152 @@ export default function TourList() {
         </div>
       )}
 
-      {/* MODAL DE EDICIÓN */}
+      {/* MODAL DE EDICIÓN - VERSIÓN MODIFICADA */}
       {editModalVisible && editTour && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4">
-          <form
-            onSubmit={handleEditSubmit}
-            className="bg-[#181a2a] border border-cyan-500/30 rounded-2xl shadow-2xl max-w-lg w-full p-8 relative"
-          >
-            <button
-              type="button"
-              onClick={() => setEditModalVisible(false)}
-              className="absolute top-4 right-4 text-cyan-400 text-2xl font-bold hover:text-cyan-200 transition-all duration-300 w-8 h-8 flex items-center justify-center rounded-full bg-[#0a0a2a]/70 border border-cyan-500/30 hover:border-cyan-400/50 z-20"
-              aria-label="Cerrar"
+        <div className="fixed inset-0 z-50 bg-black/70 overflow-y-auto py-8">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <form
+              onSubmit={handleEditSubmit}
+              className="bg-[#181a2a] border border-cyan-500/30 rounded-2xl shadow-2xl w-full max-w-lg p-8 relative my-8"
             >
-              <FaTimes />
-            </button>
-            <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-6 text-center">
-              Editar Tour
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-cyan-300 mb-1">Nombre</label>
-                <input
-                  type="text"
-                  name="nombre"
-                  value={editTour.nombre || ""}
-                  onChange={handleEditChange}
-                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
-                  required
-                />
+              <button
+                type="button"
+                onClick={() => setEditModalVisible(false)}
+                className="absolute top-4 right-4 text-cyan-400 text-2xl font-bold hover:text-cyan-200 transition-all duration-300 w-8 h-8 flex items-center justify-center rounded-full bg-[#0a0a2a]/70 border border-cyan-500/30 hover:border-cyan-400/50 z-20"
+                aria-label="Cerrar"
+              >
+                <FaTimes />
+              </button>
+              <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-6 text-center">
+                Editar Tour
+              </h2>
+              
+              {error && (
+                <div className="mb-6 p-4 bg-red-900/50 border border-red-500/30 rounded-lg text-red-300">
+                  {error}
+                </div>
+              )}
+              
+              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                <div>
+                  <label className="block text-cyan-300 mb-1">Nombre</label>
+                  <input
+                    type="text"
+                    name="nombre"
+                    value={editTour.nombre || ""}
+                    onChange={handleEditChange}
+                    className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-cyan-300 mb-1">Descripción</label>
+                  <textarea
+                    name="descripcion"
+                    value={editTour.descripcion || ""}
+                    onChange={handleEditChange}
+                    className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                    rows={3}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-cyan-300 mb-1">Salida</label>
+                  <input
+                    type="text"
+                    name="salida"
+                    value={editTour.salida || ""}
+                    onChange={handleEditChange}
+                    className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                    placeholder="Ej: 8:00 am, Por definir, etc."
+                  />
+                </div>
+                <div>
+                  <label className="block text-cyan-300 mb-1">Regreso</label>
+                  <input
+                    type="text"
+                    name="regreso"
+                    value={editTour.regreso || ""}
+                    onChange={handleEditChange}
+                    className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                    placeholder="Ej: 6:00 pm, Por definir, etc."
+                  />
+                </div>
+                <div>
+                  <label className="block text-cyan-300 mb-1">Capacidad</label>
+                  <input
+                    type="number"
+                    name="maxReservas"
+                    value={editTour.maxReservas || ""}
+                    onChange={handleEditChange}
+                    className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                    min={1}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-cyan-300 mb-1">Guías</label>
+                  <input
+                    type="number"
+                    name="guias"
+                    value={editTour.guias || ""}
+                    onChange={handleEditChange}
+                    className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                    min={1}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-cyan-300 mb-1 flex items-center gap-2">
+                    <FaMapMarkerAlt /> Ubicación
+                  </label>
+                  <input
+                    type="text"
+                    name="ubicacion"
+                    value={editTour.ubicacion || ""}
+                    onChange={handleEditChange}
+                    className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-cyan-300 mb-1 flex items-center gap-2">
+                    <FaMoneyBillWave /> Precio
+                  </label>
+                  <input
+                    type="number"
+                    name="precio"
+                    value={editTour.precio || ""}
+                    onChange={handleEditChange}
+                    className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                    min={0}
+                    step={0.01}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-cyan-300 mb-1 flex items-center gap-2">
+                    <FaImage /> Imagen principal (URL)
+                  </label>
+                  <input
+                    type="text"
+                    name="imagenUrl"
+                    value={editTour.imagenUrl || ""}
+                    onChange={handleEditChange}
+                    className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
+                    required
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-cyan-300 mb-1">Descripción</label>
-                <textarea
-                  name="descripcion"
-                  value={editTour.descripcion || ""}
-                  onChange={handleEditChange}
-                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
-                  rows={3}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-cyan-300 mb-1">Salida</label>
-                <input
-                  type="text"
-                  name="salida"
-                  value={editTour.salida || ""}
-                  onChange={handleEditChange}
-                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
-                  placeholder="Ej: 8:00 am, Por definir, etc."
-                />
-              </div>
-              <div>
-                <label className="block text-cyan-300 mb-1">Regreso</label>
-                <input
-                  type="text"
-                  name="regreso"
-                  value={editTour.regreso || ""}
-                  onChange={handleEditChange}
-                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
-                  placeholder="Ej: 6:00 pm, Por definir, etc."
-                />
-              </div>
-              <div>
-                <label className="block text-cyan-300 mb-1">Capacidad</label>
-                <input
-                  type="number"
-                  name="maxReservas"
-                  value={editTour.maxReservas || ""}
-                  onChange={handleEditChange}
-                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
-                  min={1}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-cyan-300 mb-1">Guías</label>
-                <input
-                  type="number"
-                  name="guias"
-                  value={editTour.guias || ""}
-                  onChange={handleEditChange}
-                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
-                  min={1}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-cyan-300 mb-1 flex items-center gap-2">
-                  <FaMapMarkerAlt /> Ubicación
-                </label>
-                <input
-                  type="text"
-                  name="ubicacion"
-                  value={editTour.ubicacion || ""}
-                  onChange={handleEditChange}
-                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-cyan-300 mb-1 flex items-center gap-2">
-                  <FaMoneyBillWave /> Precio
-                </label>
-                <input
-                  type="number"
-                  name="precio"
-                  value={editTour.precio || ""}
-                  onChange={handleEditChange}
-                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
-                  min={0}
-                  step={0.01}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-cyan-300 mb-1 flex items-center gap-2">
-                  <FaImage /> Imagen principal (URL)
-                </label>
-                <input
-                  type="text"
-                  name="imagenUrl"
-                  value={editTour.imagenUrl || ""}
-                  onChange={handleEditChange}
-                  className="w-full p-2 rounded bg-gray-800 text-cyan-200 border border-cyan-500/20 focus:ring-2 focus:ring-cyan-400 outline-none"
-                  required
-                />
-              </div>
-            </div>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="mt-8 w-full py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold hover:from-cyan-700 hover:to-purple-700 transition-all shadow-lg"
-            >
-              {isSaving ? "Guardando..." : "Guardar Cambios"}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="mt-8 w-full py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold hover:from-cyan-700 hover:to-purple-700 transition-all shadow-lg"
+              >
+                {isSaving ? "Guardando..." : "Guardar Cambios"}
+              </button>
+            </form>
+          </div>
         </div>
       )}
     </div>

@@ -33,15 +33,14 @@ export async function POST(req: Request) {
       data: {
         nombre,
         descripcion,
-        salida: new Date(salida),
-        regreso: new Date(regreso),
+        salida: new Date(salida).toISOString(),
+        regreso: new Date(regreso).toISOString(),
         maxReservas,
         guias,
         precio,
         ubicacion,
         imagenUrl,
         gallery,
-        info,
       },
     });
 

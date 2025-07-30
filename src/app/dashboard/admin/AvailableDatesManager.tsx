@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { toast } from "react-hot-toast";
-import { ClientTour, ClientAvailableDate } from "@/types";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { ClientTour, ClientAvailableDate } from "../../../types";
+import { Button } from "../components/ui/button";
+import { Calendar } from "../components/ui/calendar";
 
 export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
   const [availableDates, setAvailableDates] = useState<ClientAvailableDate[]>([]);

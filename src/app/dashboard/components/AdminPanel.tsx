@@ -1,21 +1,49 @@
 "use client";
+
 import AddGuiaForm from "./AddGuiaForm";
 import GuiaList from "./GuiaList";
 import AddTourForm from "./AddTourForm";
 import TourList from "./TourList";
+import AvailableDatesManager from "../admin/AvailableDatesManager";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Dialog } from "@headlessui/react";
+import { X } from "lucide-react";
+import { ClientTour } from "../../../types";
 
 export default function AdminPanel() {
-  const [activeTab, setActiveTab] = useState("guias");
+  const [activeTab, setActiveTab] = useState<"guias" | "tours">("guias");
   const [isLoading, setIsLoading] = useState(true);
+  const [tours, setTours] = useState<ClientTour[]>([]);
+  const [selectedTour, setSelectedTour] = useState<ClientTour | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Simular carga inicial
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1200);
+    
+    fetch("/api/tours")
+      .then((res) => res.json())
+      .then((data) => setTours(data.tours || data))
+      .catch(console.error);
+      
     return () => clearTimeout(timer);
   }, []);
- 
+
+  const openModal = (tour: ClientTour) => {
+    setSelectedTour(tour);
+    setIsModalOpen(true);
+    // Bloquear scroll del body cuando el modal está abierto
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedTour(null);
+    // Restaurar scroll del body
+    document.body.style.overflow = 'auto';
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0c0f1d] to-[#151b35] flex items-center justify-center">
@@ -160,7 +188,7 @@ export default function AdminPanel() {
                 <AddTourForm />
               </div>
               
-              {/* Sección de tours - Lista */}
+              {/* Sección de tours - Lista con botón de gestión de fechas */}
               <div className="bg-[#0f172a]/80 backdrop-blur-xl rounded-3xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/10 p-6 transition-all duration-500 hover:shadow-cyan-500/20">
                 <div className="flex items-center mb-6">
                   <div className="bg-purple-500/10 p-2 rounded-lg mr-3">
@@ -172,11 +200,108 @@ export default function AdminPanel() {
                     Lista de Tours
                   </h2>
                 </div>
-                <TourList />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {tours.map((tour) => (
+                    <motion.div
+                      key={tour.id}
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                      whileHover={{ y: -10 }}
+                      className="bg-[#0f172a]/80 backdrop-blur-xl rounded-3xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/10 overflow-hidden p-6"
+                    >
+                      <div className="flex items-center mb-4">
+                        {tour.imagenDestacada && (
+                          <Image
+                            src={tour.imagenDestacada}
+                            alt={tour.nombre}
+                            width={60}
+                            height={60}
+                            className="rounded-lg mr-4"
+                          />
+                        )}
+                        <div>
+                          <h3 className="text-lg font-bold text-white">{tour.nombre}</h3>
+                          <p className="text-sm text-gray-400">{tour.ubicacion}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => openModal(tour)}
+                        className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-all"
+                      >
+                        Gestionar Fechas
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
+              <TourList />
             </>
           )}
         </div>
+
+        {/* Modal animado para fechas - AHORA A PANTALLA COMPLETA */}
+        <AnimatePresence>
+          {isModalOpen && selectedTour && (
+            <Dialog
+              static
+              open={isModalOpen}
+              onClose={closeModal}
+              className="fixed inset-0 z-[100] overflow-y-auto"
+            >
+              {/* Fondo oscuro con desenfoque */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/80 backdrop-blur-lg"
+              />
+              
+              {/* Contenedor principal del modal */}
+              <div className="flex items-center justify-center min-h-screen p-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.3 }}
+                  className="relative bg-gradient-to-br from-[#0f172a] to-[#1e293b] rounded-2xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/20 w-full max-w-6xl mx-auto overflow-hidden"
+                >
+                  {/* Botón de cerrar */}
+                  <button
+                    onClick={closeModal}
+                    className="absolute top-4 right-4 z-20 p-2 rounded-full bg-gray-800/80 backdrop-blur-sm border border-cyan-500/30 text-cyan-400 hover:text-white hover:bg-cyan-600/20 transition-all"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                  
+                  {/* Encabezado del modal */}
+                  <div className="relative p-6 bg-gradient-to-r from-cyan-900/20 to-purple-900/20 border-b border-cyan-500/30">
+                    <Dialog.Title className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-purple-300">
+                      Gestión de Fechas para: {selectedTour.nombre}
+                    </Dialog.Title>
+                    <p className="text-cyan-200 mt-1">{selectedTour.ubicacion}</p>
+                  </div>
+                  
+                  {/* Contenido principal - 100% altura visible */}
+                  <div className="max-h-[80vh] overflow-y-auto p-6">
+                    <AvailableDatesManager tour={selectedTour} />
+                  </div>
+                  
+                  {/* Pie de modal */}
+                  <div className="p-4 bg-gray-900/50 border-t border-cyan-500/20 text-right">
+                    <button
+                      onClick={closeModal}
+                      className="px-6 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-white font-medium transition-colors"
+                    >
+                      Cerrar
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            </Dialog>
+          )}
+        </AnimatePresence>
 
         {/* Pie de página futurista */}
         <div className="mt-8 text-center text-gray-500 text-sm">
