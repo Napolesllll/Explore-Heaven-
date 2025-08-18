@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
         method: "POST",
         body: uploadData as unknown as BodyInit,
       }
-    ); 
+    );
 
     // 4) Si falla, leemos el texto (puede ser JSON de error o HTML) y devolvemos
     if (!cloudRes.ok) {

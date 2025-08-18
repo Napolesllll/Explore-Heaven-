@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prismadb";
 
-// Obtener disponibilidad de guías por fecha y tour
+// Obtener disponibilidad de guías por fecha y  tour
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const fecha = searchParams.get("fecha");
   const tourId = searchParams.get("tourId");
 
-  try { 
+  try {
     // Caso 1: Si se proporcionan `fecha` y `tourId`, devolver disponibilidad
     if (fecha && tourId) {
       // Validar formato de la fecha
@@ -213,6 +213,41 @@ export async function POST_RESERVA(req: Request) {
     return NextResponse.json({ reserva: nuevaReserva });
   } catch (error) {
     console.error("Error al confirmar la reserva:", error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+  }
+}
+
+// Editar un guía existente
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json();
+    const { id, nombre, foto, edad, descripcion, celular, cedula } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "ID del guía es obligatorio" }, { status: 400 });
+    }
+
+    // Validar y convertir edad si se proporciona
+    const edadInt = edad ? parseInt(edad, 10) : undefined;
+    if (edad && isNaN(edadInt)) {
+      return NextResponse.json({ error: "La edad debe ser un número válido" }, { status: 400 });
+    }
+
+    const guiaActualizado = await prisma.guia.update({
+      where: { id: parseInt(id, 10) },
+      data: {
+        nombre,
+        foto: foto === "" ? null : foto, // ← si envías "" desde el cliente
+        edad: edadInt,
+        descripcion,
+        celular,
+        cedula,
+      },
+    });
+
+    return NextResponse.json({ guia: guiaActualizado });
+  } catch (error) {
+    console.error("Error al editar el guía:", error);
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

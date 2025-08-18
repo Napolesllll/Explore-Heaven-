@@ -12,21 +12,21 @@ export default function GuiasFeed() {
           <motion.div
             key={i}
             className="absolute rounded-full bg-gradient-to-r from-cyan-400/10 to-purple-500/10"
-            initial={{ 
-              top: `${Math.random() * 100}%`, 
+            initial={{
+              top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
               width: `${Math.random() * 6 + 2}px`,
               height: `${Math.random() * 6 + 2}px`,
-              opacity: 0
+              opacity: 0,
             }}
-            animate={{ 
+            animate={{
               opacity: [0, 0.4, 0],
-              scale: [0, 1, 0]
+              scale: [0, 1, 0],
             }}
-            transition={{ 
+            transition={{
               duration: Math.random() * 5 + 3,
               repeat: Infinity,
-              delay: Math.random() * 2
+              delay: Math.random() * 2,
             }}
           />
         ))}
@@ -50,21 +50,21 @@ export default function GuiasFeed() {
                   top: `${Math.random() * 100}%`,
                   fontSize: `${Math.random() * 24 + 16}px`,
                 }}
-                animate={{ 
+                animate={{
                   rotate: [0, 360],
                   scale: [1, 1.2, 1],
                 }}
-                transition={{ 
+                transition={{
                   duration: Math.random() * 3 + 2,
                   repeat: Infinity,
-                  repeatType: "reverse"
+                  repeatType: "reverse",
                 }}
               >
                 <FaTools />
               </motion.div>
             ))}
           </div>
-          
+
           {/* Contenido principal */}
           <div className="relative z-10">
             <motion.div
@@ -77,14 +77,14 @@ export default function GuiasFeed() {
                 <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full blur-xl opacity-30 animate-pulse"></div>
                 <div className="relative bg-gradient-to-br from-[#0f172a] to-[#1e293b] border-2 border-cyan-500/30 rounded-full p-8">
                   <motion.div
-                    animate={{ 
+                    animate={{
                       y: [0, -10, 0],
-                      rotate: [0, 5, 0, -5, 0]
+                      rotate: [0, 5, 0, -5, 0],
                     }}
-                    transition={{ 
+                    transition={{
                       duration: 2,
                       repeat: Infinity,
-                      repeatType: "reverse"
+                      repeatType: "reverse",
                     }}
                   >
                     <FaHammer className="text-5xl text-yellow-400 mx-auto" />
@@ -92,7 +92,7 @@ export default function GuiasFeed() {
                 </div>
               </div>
             </motion.div>
-            
+
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -101,16 +101,18 @@ export default function GuiasFeed() {
             >
               ZONA EN CONSTRUCCIÓN
             </motion.h1>
-            
+
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}
               className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto"
             >
-              Estamos trabajando intensamente para crear una experiencia excepcional de gestión de guías. ¡Vuelve pronto para descubrir algo extraordinario!
+              Estamos trabajando intensamente para crear una experiencia
+              excepcional de gestión de guías. ¡Vuelve pronto para descubrir
+              algo extraordinario!
             </motion.p>
-            
+
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -123,14 +125,14 @@ export default function GuiasFeed() {
                 </div>
                 <span className="text-gray-300">Perfiles detallados</span>
               </div>
-              
+
               <div className="flex items-center gap-3 bg-gray-800/50 p-4 rounded-xl border border-purple-500/30">
                 <div className="bg-purple-500/10 p-3 rounded-full">
                   <FaTools className="text-purple-400 text-2xl" />
                 </div>
                 <span className="text-gray-300">Herramientas avanzadas</span>
               </div>
-              
+
               <div className="flex items-center gap-3 bg-gray-800/50 p-4 rounded-xl border border-yellow-500/30">
                 <div className="bg-yellow-500/10 p-3 rounded-full">
                   <FaRocket className="text-yellow-400 text-2xl" />
@@ -138,7 +140,7 @@ export default function GuiasFeed() {
                 <span className="text-gray-300">Experiencia futurista</span>
               </div>
             </motion.div>
-            
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -146,9 +148,11 @@ export default function GuiasFeed() {
             >
               <div className="inline-flex items-center gap-3 bg-gradient-to-r from-cyan-600/20 to-purple-600/20 px-6 py-3 rounded-full border border-cyan-500/30 mb-8">
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-cyan-300 font-medium">Desarrollo en progreso</span>
+                <span className="text-cyan-300 font-medium">
+                  Desarrollo en progreso
+                </span>
               </div>
-              
+
               <motion.div
                 className="text-gray-400 mb-2"
                 animate={{ opacity: [0.5, 1, 0.5] }}
@@ -156,9 +160,9 @@ export default function GuiasFeed() {
               >
                 Próximo lanzamiento: 01/12/2025
               </motion.div>
-              
+
               <div className="w-full bg-gray-800 rounded-full h-2.5 mb-10">
-                <motion.div 
+                <motion.div
                   className="bg-gradient-to-r from-cyan-500 to-purple-500 h-2.5 rounded-full"
                   initial={{ width: "0%" }}
                   animate={{ width: "65%" }}
@@ -166,7 +170,7 @@ export default function GuiasFeed() {
                 />
               </div>
             </motion.div>
-            
+
             <motion.button
               className="px-8 py-4 bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-3 mx-auto group"
               whileHover={{ scale: 1.05 }}
@@ -195,4 +199,4 @@ export default function GuiasFeed() {
       </motion.div>
     </div>
   );
-} 
+}

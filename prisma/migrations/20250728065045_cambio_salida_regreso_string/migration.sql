@@ -1,7 +1,0 @@
--- AlterTable
-ALTER TABLE "Tour" ALTER COLUMN "salida" DROP NOT NULL,
-ALTER COLUMN "salida" SET DEFAULT 'Por definir',
-ALTER COLUMN "salida" SET DATA TYPE TEXT,
-ALTER COLUMN "regreso" DROP NOT NULL,
-ALTER COLUMN "regreso" SET DEFAULT 'Por definir',
-ALTER COLUMN "regreso" SET DATA TYPE TEXT;

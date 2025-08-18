@@ -1,6 +1,6 @@
 // src/app/api/available-dates/[id]/route.ts
 
-import  prisma  from "../../../../lib/prismadb";
+import prisma from "../../../../lib/prismadb";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(

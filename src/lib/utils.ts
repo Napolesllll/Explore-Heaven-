@@ -5,7 +5,7 @@ export function slugify(text: string) {
     .replace(/[^\w\s-]/g, '')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '');
-} 
+}
 
 // src/lib/utils.ts
 

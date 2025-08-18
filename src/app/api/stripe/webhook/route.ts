@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   const body = Buffer.from(buf);
 
   let event: Stripe.Event;
- 
+
   try {
     event = stripe.webhooks.constructEvent(
       body,

@@ -1,28 +1,63 @@
+// middleware.ts
 import { withAuth } from "next-auth/middleware";
-
 import { NextResponse } from "next/server";
 
-export function middleware(req: Request) {
-  const url = req.nextUrl.clone();
-  const isAdminRoute = url.pathname.startsWith("/dashboard/admin");
+export default withAuth(
+  function middleware(req) {
+    // Lógica adicional de autorización
+    const token = req.nextauth.token;
+    const isAdmin = token?.role === "ADMIN";
+    const pathname = req.nextUrl.pathname;
 
-  // Simulación: Verificar si el usuario tiene permisos de administrador
-  const user = { isAdmin: true }; // Cambia esto por la lógica real de autenticación
+    if (pathname.startsWith("/admin") && !isAdmin) {
+      return NextResponse.redirect(new URL("/unauthorized", req.url));
+    }
 
-  if (isAdminRoute && !user.isAdmin) {
-    return NextResponse.redirect(new URL("/unauthorized", req.url));
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        // Verificaciones básicas
+        if (req.nextUrl.pathname.startsWith("/protected")) {
+          return !!token;
+        }
+        return true;
+      },
+    },
   }
- 
+);
+
+export const config = {
+  matcher: ["/protected/:path*", "/admin/:path*", "/api/protected/:path*"]
+};
+
+/*import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+export function middleware(req: NextRequest) {
+  const url = req.url;
+
+  // Solo aplicar el middleware de NextAuth a rutas que NO sean admin
+  if (url.includes('/dashboard/admin')) {
+    // Las rutas admin se manejan con su propio sistema de auth
+    return NextResponse.next();
+  }
+
+  // Para otras rutas protegidas, usar NextAuth
   return NextResponse.next();
 }
 
 export default withAuth({
   pages: {
-    signIn: "/auth", // A dónde redirigir si no está autenticado
+    signIn: "/auth",
   },
 });
 
-
 export const config = {
-  matcher: ["/dashboard/admin/:path*"], // Aplica el middleware solo a rutas de administrador
-};
+  matcher: [
+    "/dashboard/:path*",
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+  ],
+};*/

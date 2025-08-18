@@ -29,15 +29,15 @@ export default function HomeFeed() {
     return (
       <div className="mt-20 min-h-[70vh] flex flex-col justify-center">
         <div className="text-center mb-12">
-          <motion.h2 
+          <motion.h2
             className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            DESCUBRIENDO EXPERIENCIAS
+            Descubriendo Experiencias
           </motion.h2>
-          <motion.p 
+          <motion.p
             className="text-gray-400 max-w-md mx-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -46,7 +46,7 @@ export default function HomeFeed() {
             Cargando las mejores aventuras para ti
           </motion.p>
         </div>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {[...Array(2)].map((_, i) => (
             <SkeletonCard key={i} index={i} />
@@ -54,7 +54,7 @@ export default function HomeFeed() {
         </div>
       </div>
     );
-  } 
+  }
 
   if (tours.length === 0) {
     return (
@@ -66,15 +66,27 @@ export default function HomeFeed() {
             transition={{ duration: 0.5 }}
           >
             <div className="inline-flex items-center justify-center p-4 bg-gray-900/50 rounded-full mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-12 w-12 text-cyan-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </div>
             <h3 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-4">
               EXPLORACIONES EN PREPARACIÓN
             </h3>
             <p className="text-gray-400 max-w-md mx-auto">
-              Estamos curando nuevas experiencias increíbles para ti. ¡Vuelve pronto!
+              Estamos curando nuevas experiencias increíbles para ti. ¡Vuelve
+              pronto!
             </p>
           </motion.div>
         </div>
@@ -84,20 +96,21 @@ export default function HomeFeed() {
 
   return (
     <div className="py-12 md:py-20">
-      <motion.div 
+      <motion.div
         className="text-center mb-16"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
         <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-4">
-          EXPERIENCIAS DESTACADAS
+          Experiencias Destacadas
         </h2>
         <p className="text-gray-400 max-w-xl mx-auto">
-          Descubre nuestras aventuras más exclusivas, diseñadas para crear recuerdos inolvidables
+          Descubre nuestras aventuras más exclusivas, diseñadas para crear
+          recuerdos inolvidables
         </p>
       </motion.div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 max-w-6xl mx-auto px-4">
         {tours.map((tour, index) => (
           <motion.div
@@ -126,8 +139,19 @@ const SkeletonCard = ({ index }: { index: number }) => (
       <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 animate-pulse"></div>
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="bg-gray-700 rounded-full p-4 animate-pulse">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-10 w-10 text-gray-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
           </svg>
         </div>
       </div>

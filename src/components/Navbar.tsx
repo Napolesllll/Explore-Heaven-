@@ -1,25 +1,53 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
-import Image from 'next/image'
-import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { useSession } from 'next-auth/react'
+import { useState } from "react";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import Image from "next/image";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
+import { getI18n } from "../i18n/getI18";
 
-export default function Navbar() {
-  const { data: session } = useSession()
-  const [isOpen, setIsOpen] = useState(false)
-  const [hoveredItem, setHoveredItem] = useState(null)
+// Definimos el tipo para las traducciones del Navbar
+type NavbarTranslations = {
+  services: string;
+  tours: string;
+  safetyTips: string;
+  contact: string;
+  blog: string;
+  signIn: string;
+  logout: string;
+};
+
+interface NavbarProps {
+  lang?: "es" | "en";
+}
+
+export default function Navbar({ lang = "es" }: NavbarProps) {
+  const { data: session } = useSession();
+  const [isOpen, setIsOpen] = useState(false);
+  const [hoveredItem, setHoveredItem] = useState(null);
+
+  // Obtenemos las traducciones
+  const t = getI18n(lang);
+  const navbarT: NavbarTranslations = {
+    services: t.services,
+    tours: t.tours,
+    safetyTips: t.safetyTips,
+    contact: t.contact,
+    blog: t.blog,
+    signIn: t.signIn,
+    logout: t.logout,
+  };
 
   const navItems = [
-    { id: 'services', label: 'Services' },
-    { id: 'toursSection', label: 'Tours' },
-    { id: 'safety', label: 'Safety Tips' },
-    { id: 'contact', label: 'Contact' },
-    { id: 'blog', label: 'Blog', href: '/blog' }, // ✅ Navega a /blog
-  ]
- 
+    { id: "services", label: navbarT.services },
+    { id: "toursSection", label: navbarT.tours },
+    { id: "safety", label: navbarT.safetyTips },
+    { id: "contact", label: navbarT.contact },
+    { id: "blog", label: navbarT.blog, href: "/blog" },
+  ];
+
   return (
     <nav className="sticky top-0 bg-gray-900/90 backdrop-blur-md shadow-xl z-50 border-b border-yellow-500/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -27,10 +55,10 @@ export default function Navbar() {
           <motion.div
             className="flex-shrink-0 flex items-center space-x-3"
             whileHover={{ scale: 1.03 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
           >
             <Image
-              src="/images/logoExplore.png"
+              src="/images/SVG-01.svg"
               alt="Explore Heaven Logo"
               width={60}
               height={60}
@@ -64,7 +92,11 @@ export default function Navbar() {
                       layoutId="navUnderline"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
+                      transition={{
+                        type: "spring",
+                        bounce: 0.25,
+                        duration: 0.5,
+                      }}
                     />
                   )}
                 </Link>
@@ -74,7 +106,7 @@ export default function Navbar() {
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link href="/auth">
                 <button className="ml-4 bg-gradient-to-br from-yellow-400 to-yellow-500 text-gray-900 px-6 py-2.5 rounded-full font-semibold shadow-lg hover:shadow-yellow-400/40 transition-all duration-300">
-                  Sign In
+                  {navbarT.signIn}
                 </button>
               </Link>
             </motion.div>
@@ -85,7 +117,11 @@ export default function Navbar() {
             onClick={() => setIsOpen(!isOpen)}
             whileTap={{ scale: 0.9 }}
           >
-            {isOpen ? <XMarkIcon className="h-8 w-8" /> : <Bars3Icon className="h-8 w-8" />}
+            {isOpen ? (
+              <XMarkIcon className="h-8 w-8" />
+            ) : (
+              <Bars3Icon className="h-8 w-8" />
+            )}
           </motion.button>
         </div>
 
@@ -93,7 +129,7 @@ export default function Navbar() {
           <motion.div
             className="md:hidden bg-gray-800/95 backdrop-blur-sm mt-2 rounded-lg mx-4 overflow-hidden"
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
           >
@@ -108,21 +144,31 @@ export default function Navbar() {
                 {item.label}
               </motion.a>
             ))}
-            <motion.div className="px-4 py-4" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <motion.div
+              className="px-4 py-4"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               {session?.user ? (
                 <div>
                   <Link href="/auth">
                     <button className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 px-6 py-3.5 rounded-full font-bold shadow-lg hover:shadow-yellow-400/30 transition-all duration-300">
-                      Cerrar Sesión
+                      {navbarT.logout}
                     </button>
                   </Link>
-                  <p>{session.user.name} - {session.user.email}</p>
-                  <img src={session.user.image} alt="user-img" className="w-10 h-10 rounded-full cursor-pointer" />
+                  <p>
+                    {session.user.name} - {session.user.email}
+                  </p>
+                  <img
+                    src={session.user.image}
+                    alt="user-img"
+                    className="w-10 h-10 rounded-full cursor-pointer"
+                  />
                 </div>
               ) : (
                 <Link href="/auth">
                   <button className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 px-6 py-3.5 rounded-full font-bold shadow-lg hover:shadow-yellow-400/30 transition-all duration-300">
-                    Sign In
+                    {navbarT.signIn}
                   </button>
                 </Link>
               )}
@@ -131,5 +177,5 @@ export default function Navbar() {
         )}
       </div>
     </nav>
-  )
+  );
 }

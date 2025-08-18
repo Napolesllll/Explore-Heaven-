@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 
     // Obtener metadatos de la reserva
     const metadata = session.metadata || {};
-    
+
     // Formatear fecha si existe en metadata
     let formattedDate = 'Fecha no especificada';
     if (metadata.fecha) {
@@ -35,14 +35,14 @@ export async function GET(request: Request) {
       }
     }
 
-return NextResponse.json({
-  success: true,
-  tourName: metadata.tourName || session.line_items?.data[0]?.price?.product?.name || 'Tour Premium',
-  date: formattedDate,
-  amount: `$${session.amount_total ? (session.amount_total / 100).toFixed(2) : '0.00'}`,
-  reference: session.id,
-  email: session.customer_details?.email || session.customer?.email || 'No proporcionado'
-});
+    return NextResponse.json({
+      success: true,
+      tourName: metadata.tourName || session.line_items?.data[0]?.price?.product?.name || 'Tour Premium',
+      date: formattedDate,
+      amount: `$${session.amount_total ? (session.amount_total / 100).toFixed(2) : '0.00'}`,
+      reference: session.id,
+      email: session.customer_details?.email || session.customer?.email || 'No proporcionado'
+    });
 
 
   } catch (error) {

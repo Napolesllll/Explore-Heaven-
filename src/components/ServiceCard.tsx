@@ -1,7 +1,5 @@
-'use client';
-
-import { ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { ReactNode } from "react";
+import { motion } from "framer-motion";
 
 interface ServiceCardProps {
   icon: ReactNode;
@@ -10,18 +8,18 @@ interface ServiceCardProps {
   badge?: string;
   badgeColor?: string;
 }
- 
+
 export default function ServiceCard({
   icon,
   title,
   description,
   badge,
-  badgeColor = 'bg-yellow-500',
+  badgeColor = "bg-yellow-500",
 }: ServiceCardProps) {
   return (
     <motion.div
       whileHover={{ scale: 1.05 }}
-      transition={{ type: 'spring', stiffness: 250, damping: 20 }}
+      transition={{ type: "spring", stiffness: 250, damping: 20 }}
       className="relative overflow-hidden rounded-3xl border border-white/10 backdrop-blur-md bg-white/80 shadow-xl hover:shadow-2xl transition-all duration-300 group"
     >
       {/* Glow decorativo (más tenue para no ocultar texto) */}
@@ -42,7 +40,7 @@ export default function ServiceCard({
           <div className="w-14 h-14 flex items-center justify-center rounded-full bg-gradient-to-tr from-emerald-100 via-white to-yellow-100 shadow-inner shadow-yellow-100 group-hover:shadow-emerald-300 transition-shadow duration-500">
             <motion.div
               whileHover={{ rotate: 8 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 10 }}
+              transition={{ type: "spring", stiffness: 300, damping: 10 }}
               className="text-emerald-600 text-2xl"
             >
               {icon}

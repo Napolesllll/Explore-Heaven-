@@ -7,7 +7,7 @@ export async function PUT(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  } 
+  }
 
   const { name, email } = await req.json();
 

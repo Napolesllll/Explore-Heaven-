@@ -1,0 +1,73 @@
+import SafetyTipsCard from "components/SafetyTipsCard"
+
+export const es = {
+  whyMedellin: "¿Por qué Medellín?",
+  safeTourismParadise: "Paraíso del Turismo Seguro",
+  recognizedByUnesco: "Reconocida por la UNESCO como Ciudad de la Innovación",
+  whyChoose: "¿Por qué elegir Explore Heaven?",
+  safetyFirst: "Seguridad ante todo",
+  safetySubtitle: "Tu seguridad es nuestra prioridad. Explora Medellín con confianza gracias a nuestras recomendaciones y herramientas de seguridad.",
+  emergencyCta: "¿Necesitas ayuda inmediata? Presiona nuestro botón de emergencia",
+  toursTitle: "Tours",
+  loadingMap: "Cargando mapa...",
+  safetyTipsTitle: "Consejos de seguridad esenciales", // es.ts
+  heroTitle: "Tu viaje seguro en Medellín",
+  heroSubtitle: "¡Comienza con Explore Heaven!",
+  heroCta: "Comienza tu aventura",
+  servicesTitle: "Servicios Premium de Seguridad y Guía",
+  servicesSubtitle: "Diseñado para viajeros internacionales que buscan experiencias seguras y auténticas en Medellín",
+  whyDifferent: "¿Por qué somos diferentes?",
+  verifiedSafeLocations: "Lugares seguros verificados",
+  securityMonitoring: "Monitoreo de seguridad",
+  satisfiedClients: "Clientes internacionales satisfechos",
+  ctaTitle: "¿Listo para una experiencia sin preocupaciones?",
+  ctaSubtitle: "Nuestros expertos en seguridad te contactarán para diseñar tu itinerario seguro perfecto",
+  customizePlan: "Personaliza tu plan",
+  speakWithExpert: "Habla con un experto en seguridad",
+
+  services: "Servicios",
+  tours: "Tours",
+  safetyTips: "Consejos de Seguridad",
+  contact: "Contacto",
+  blog: "Blog",
+  signIn: "Iniciar Sesión",
+  logout: "Cerrar Sesión",
+
+  safetyTipsList: [
+    "Evita mostrar objetos de valor en público",
+    "Usa rutas principales y bien iluminadas de noche",
+    "Guarda una copia de tu documento de identidad",
+    "Utiliza servicios de transporte registrados (proporcionamos opciones verificadas)",
+    "Quédate en áreas bien iluminadas por la noche y evita lugares aislados."
+  ],
+
+  servicesTitle: "Servicios Premium de Seguridad y Guía",
+  servicesSubtitle: "Diseñado para viajeros internacionales que buscan experiencias seguras y auténticas",
+  certifiedGuides: "Guías Locales Certificados",
+  certifiedGuidesDesc: "Profesionales bilingües con entrenamiento en seguridad y conocimiento local",
+  secureTransport: "Transporte Seguro",
+  secureTransportDesc: "Vehículos blindados con GPS y conductores verificados",
+  customItineraries: "Itinerarios Personalizados",
+  customItinerariesDesc: "Rutas personalizadas evitando zonas de alto riesgo con actualizaciones en tiempo real",
+  support247: "Soporte 24/7",
+  support247Desc: "Asistencia inmediata en inglés, francés y alemán",
+  culturalMediation: "Mediación Cultural",
+  culturalMediationDesc: "Navega costumbres locales y barreras de comunicación de manera segura",
+  emergencyProtocols: "Protocolos de Emergencia",
+  emergencyProtocolsDesc: "Acceso instantáneo a redes médicas y de seguridad",
+  whyDifferent: "¿Por qué somos diferentes?",
+  verifiedSafeLocations: "Lugares Seguros Verificados",
+  securityMonitoring: "Monitoreo de Seguridad",
+  satisfiedClients: "Clientes Internacionales Satisfechos",
+  ctaTitle: "¿Listo para una experiencia sin preocupaciones?",
+  ctaSubtitle: "Nuestros expertos en seguridad te contactarán para diseñar tu itinerario seguro perfecto",
+  customizePlan: "Personaliza tu Plan",
+  speakWithExpert: "Habla con un Experto en Seguridad",
+  mostPopularBadge: "Más Popular",
+  includedBadge: "Incluido",
+  tailoredBadge: "Personalizado",
+  criticalBadge: "Crítico",
+
+  // ...otros textos
+};
+

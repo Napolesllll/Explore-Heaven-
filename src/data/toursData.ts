@@ -11,7 +11,7 @@ export interface Tour {
   noIncluido: string[];
   outfit: string[];
   itinerario: string[];
-  ubicacion: string; 
+  ubicacion: string;
   preguntasFrecuentes?: string[];
   fotos?: string[];
   precio: string; // ← Aquí la ruta de tu imagen
@@ -27,61 +27,61 @@ export const tours: Tour[] = [
     regreso: "5:00 pm",
     duracion: "4 Horas",
     incluido: [
-        "Recogida y regreso a tu hotel o apartamento",
-        "Coche privado con aire acondicionado con conductor bilingüe",
-        "Excursión para grupos pequeños",
-        "Impuestos municipales",
-        "Seguro de viaje",
-        "Fotos y videos",
-        "Billete para el Metro Cable (1 por persona)",
-        "Ingreso: Metro de Medellín",
-        "Ingreso: Escaleras Eléctricas de la Comuna 13"
+      "Recogida y regreso a tu hotel o apartamento",
+      "Coche privado con aire acondicionado con conductor bilingüe",
+      "Excursión para grupos pequeños",
+      "Impuestos municipales",
+      "Seguro de viaje",
+      "Fotos y videos",
+      "Billete para el Metro Cable (1 por persona)",
+      "Ingreso: Metro de Medellín",
+      "Ingreso: Escaleras Eléctricas de la Comuna 13"
     ],
     noIncluido: [
-        "Comida y bebida",
-        "Gastos Personales y Souvenirs",
-        "Actividades Opcionales Adicionales",
-        "Propinas",
-        "Lo que no se haya indicado"
+      "Comida y bebida",
+      "Gastos Personales y Souvenirs",
+      "Actividades Opcionales Adicionales",
+      "Propinas",
+      "Lo que no se haya indicado"
     ],
     outfit: [
-        "Ropa fresca y deportiva para caminatas cortas o medias",
-        "Llevar buso o chaqueta por posible mal clima",
-        "Traje o vestido de baño para actividades acuáticas"
+      "Ropa fresca y deportiva para caminatas cortas o medias",
+      "Llevar buso o chaqueta por posible mal clima",
+      "Traje o vestido de baño para actividades acuáticas"
     ],
     itinerario: [
-        "Metro de Medellín (40 min)",
-        "Escaleras Eléctricas de la Comuna 13 (60 min)",
-        "Recorrido por la zona de grafitis y shows de arte urbano (3 horas)"
+      "Metro de Medellín (40 min)",
+      "Escaleras Eléctricas de la Comuna 13 (60 min)",
+      "Recorrido por la zona de grafitis y shows de arte urbano (3 horas)"
     ],
     ubicacion: "https://www.google.com.co/maps/place/San+Javier,+Medellín",
     fotos: [
-        "/images/tours/escalators.jpg",
-        "/images/tours/beautiful-view-o.jpg",
-        "/images/tours/pintada-en-comuna-medellin.webp"
-      ],
+      "/images/tours/escalators.jpg",
+      "/images/tours/beautiful-view-o.jpg",
+      "/images/tours/pintada-en-comuna-medellin.webp"
+    ],
     precio: "Desde 0 USD por persona"
-},
-{
+  },
+  {
     id: "museo-antioquia",
     nombre: "Museo de Antioquia",
     descripcion:
-    "El Museo de Antioquia, ubicado en Medellín, Colombia, es un tesoro cultural que cautiva a los visitantes con su rica historia y variada colección de arte. [...]",
+      "El Museo de Antioquia, ubicado en Medellín, Colombia, es un tesoro cultural que cautiva a los visitantes con su rica historia y variada colección de arte. [...]",
     salida: "10:00 am",
     regreso: "4:00 pm",
     duracion: "6 Horas",
     incluido: [
-        "Recogida y regreso a tu hotel o apartamento",
-        "Coche privado con aire acondicionado con conductor bilingüe",
-        "Seguro de viaje",
-        "Fotos y videos",
-        "Tarifas del Museo",
-        "Ingreso: Museo de Antioquia"
+      "Recogida y regreso a tu hotel o apartamento",
+      "Coche privado con aire acondicionado con conductor bilingüe",
+      "Seguro de viaje",
+      "Fotos y videos",
+      "Tarifas del Museo",
+      "Ingreso: Museo de Antioquia"
     ],
     noIncluido: [
-        "Gastos Personales y Souvenirs",
-        "Comidas y bebidas no explícitas en el itinerario",
-        "Actividades Opcionales Adicionales",
+      "Gastos Personales y Souvenirs",
+      "Comidas y bebidas no explícitas en el itinerario",
+      "Actividades Opcionales Adicionales",
       "Propinas",
       "Lo que no se haya indicado"
     ],
@@ -97,10 +97,10 @@ export const tours: Tour[] = [
     ],
     ubicacion: "https://www.google.com/maps/place/Museo+de+Antioquia",
     fotos: [
-        "/images/tours/museo-ant.jpg",
-        "/images/tours/mus.jpg",
-        "/images/tours/museo.jpg"
-      ],
+      "/images/tours/museo-ant.jpg",
+      "/images/tours/mus.jpg",
+      "/images/tours/museo.jpg"
+    ],
     precio: "0 USD por persona"
   },
   {
@@ -151,10 +151,10 @@ export const tours: Tour[] = [
     ],
     ubicacion: "https://www.google.com/maps/place/Valle+de+Cocora/@4.637712,-75.4916449,17z/data=!3m1!4b1!4m6!3m5!1s0x8e38924a03c5355b:0x8d19427653a3da27!8m2!3d4.637712!4d-75.48907!16s%2Fm%2F027cc1f?hl=es&entry=ttu&g_ep=EgoyMDI0MDkwNC4wIKXMDSoASAFQAw%3D%3D",
     fotos: [
-        "/images/tours/mani.jpg",
-        "/images/tours/salento.jpg",
-        "/images/tours/cocora.jpg"
-      ],
+      "/images/tours/mani.jpg",
+      "/images/tours/salento.jpg",
+      "/images/tours/cocora.jpg"
+    ],
     precio: "Desde 800 USD por persona"
   },
   {
@@ -195,10 +195,10 @@ export const tours: Tour[] = [
     ],
     ubicacion: "https://www.google.com.co/maps/place/Provenza/@6.2586103,-75.5935036,13z/data=!4m13!1m2!2m1!1sprovenza+medellin!3m9!1s0x8e4429a96fcffe55:0x61f5f6024f48d1d8!5m2!4m1!1i2!8m2!3d6.2070249!4d-75.5655785!15sChFwcm92ZW56YSBtZWRlbGxpbloTIhFwcm92ZW56YSBtZWRlbGxpbpIBCnBsYXlncm91bmTgAQA!16s%2Fg%2F1tgm3xqd?entry=ttu&g_ep=EgoyMDI0MDgyOC4wIKXMDSoASAFQAw%3D%3D",
     fotos: [
-        "/images/tours/nocturna.jpg",
-        "/images/tours/provenza.jpg",
-        "/images/tours/alumbrado.jpg"
-      ],
+      "/images/tours/nocturna.jpg",
+      "/images/tours/provenza.jpg",
+      "/images/tours/alumbrado.jpg"
+    ],
     precio: "Desde 150 USD por persona"
   },
   {
@@ -236,59 +236,59 @@ export const tours: Tour[] = [
     ],
     ubicacion: "https://www.google.com/maps/search/barrio+de+pablo+escobar/@6.2317303,-75.5577448,17z/data=!3m1!4b1?entry=ttu&g_ep=EgoyMDI0MDkwNC4wIKXMDSoASAFQAw%3D%3D",
     fotos: [
-        "/images/tours/pabl.webp",
-        "/images/tours/nap.jpg",
-        "/images/tours/tumba.webp"
-      ],
+      "/images/tours/pabl.webp",
+      "/images/tours/nap.jpg",
+      "/images/tours/tumba.webp"
+    ],
     precio: "200 USD por persona"
   },
 
   {
-  id: "tour-guatape",
-  nombre: "Tour a Guatapé y El Peñol",
-  descripcion:
-    "¡Visitar Medellín sin hacer un Guatapé Tour es como no haber visitado Medellín en absoluto! Este hermoso pueblo colorido, ubicado a solo dos horas de la ciudad, ofrece paisajes naturales impresionantes, actividades acuáticas, historia, arte y mucho más. Disfruta de una experiencia única y completa en este destino imprescindible.",
-  salida: "7:00 A.M.",
-  regreso: "10:00 P.M.",
-  duracion: "1 día",
-  incluido: [
-    "Recogida y regreso a tu hotel o apartamento",
-    "Coche privado con aire acondicionado con conductor bilingüe",
-    "Fotos y videos",
-    "Seguro de viaje"
-  ],
-  noIncluido: [
-    "Gastos personales y souvenirs",
-    "Actividades opcionales adicionales",
-    "Comidas y bebidas si no están explícito en el itinerario",
-    "Propinas",
-    "Lo que no se haya indicado"
-  ],
-  outfit: [
-    "Ropa fresca y deportiva para caminatas cortas o medias",
-    "Traje o vestido de baño para actividades acuáticas",
-    "Buso o chaqueta por si el clima cambia"
-  ],
-  itinerario: [
-    "1. Inicio de la experiencia: Transporte (3 h) – Recogida y desayuno en la carretera, degustación de frutas locales.",
-    "2. Subida al Peñol: Caminata (2 h) – Sube los 740 escalones y disfruta de la vista panorámica.",
-    "3. Almuerzo: (2 h) – Elección libre de restaurante en el pueblo con opciones variadas.",
-    "4. Recorrido por el pueblo: Caminata (2 h) – Descubre los zócalos coloridos y la historia local.",
-    "5. Escoge una experiencia:",
-    "5.1. Recorrido en yate por la represa (3 h) – Incluye comida, bebidas, jacuzzi, solárium y recorrido.",
-    "5.2. Recorrido en bote por finca del 'Patrón del Mal' (3 h) – Recorrido histórico y regreso en bote.",
-    "6. Regreso: Transporte (3 h) – Cena opcional en la carretera y regreso a tu hospedaje."
-  ],
-  ubicacion: "https://www.google.com.co/maps/place/Guatape,+Guatap%C3%A9,+Antioquia/@6.2311374,-75.1632859,16z/data=!3m1!4b1!4m6!3m5!1s0x8e441d2972edf1bb:0xc8e9c49c096f7adc!8m2!3d6.2337643!4d-75.1592213!16zL20vMDdodnhq?entry=ttu&g_ep=EgoyMDI0MDgyOC4wIKXMDSoASAFQAw%3D%3D",
-  fotos: [
-    "/images/tours/penol.jpg",
-    "/images/tours/peee.jpg",
-    "/images/tours/ac.jpg"
-  ],
-  precio: "Desde 220 USD por persona"
-},
+    id: "tour-guatape",
+    nombre: "Tour a Guatapé y El Peñol",
+    descripcion:
+      "¡Visitar Medellín sin hacer un Guatapé Tour es como no haber visitado Medellín en absoluto! Este hermoso pueblo colorido, ubicado a solo dos horas de la ciudad, ofrece paisajes naturales impresionantes, actividades acuáticas, historia, arte y mucho más. Disfruta de una experiencia única y completa en este destino imprescindible.",
+    salida: "7:00 A.M.",
+    regreso: "10:00 P.M.",
+    duracion: "1 día",
+    incluido: [
+      "Recogida y regreso a tu hotel o apartamento",
+      "Coche privado con aire acondicionado con conductor bilingüe",
+      "Fotos y videos",
+      "Seguro de viaje"
+    ],
+    noIncluido: [
+      "Gastos personales y souvenirs",
+      "Actividades opcionales adicionales",
+      "Comidas y bebidas si no están explícito en el itinerario",
+      "Propinas",
+      "Lo que no se haya indicado"
+    ],
+    outfit: [
+      "Ropa fresca y deportiva para caminatas cortas o medias",
+      "Traje o vestido de baño para actividades acuáticas",
+      "Buso o chaqueta por si el clima cambia"
+    ],
+    itinerario: [
+      "1. Inicio de la experiencia: Transporte (3 h) – Recogida y desayuno en la carretera, degustación de frutas locales.",
+      "2. Subida al Peñol: Caminata (2 h) – Sube los 740 escalones y disfruta de la vista panorámica.",
+      "3. Almuerzo: (2 h) – Elección libre de restaurante en el pueblo con opciones variadas.",
+      "4. Recorrido por el pueblo: Caminata (2 h) – Descubre los zócalos coloridos y la historia local.",
+      "5. Escoge una experiencia:",
+      "5.1. Recorrido en yate por la represa (3 h) – Incluye comida, bebidas, jacuzzi, solárium y recorrido.",
+      "5.2. Recorrido en bote por finca del 'Patrón del Mal' (3 h) – Recorrido histórico y regreso en bote.",
+      "6. Regreso: Transporte (3 h) – Cena opcional en la carretera y regreso a tu hospedaje."
+    ],
+    ubicacion: "https://www.google.com.co/maps/place/Guatape,+Guatap%C3%A9,+Antioquia/@6.2311374,-75.1632859,16z/data=!3m1!4b1!4m6!3m5!1s0x8e441d2972edf1bb:0xc8e9c49c096f7adc!8m2!3d6.2337643!4d-75.1592213!16zL20vMDdodnhq?entry=ttu&g_ep=EgoyMDI0MDgyOC4wIKXMDSoASAFQAw%3D%3D",
+    fotos: [
+      "/images/tours/penol.jpg",
+      "/images/tours/peee.jpg",
+      "/images/tours/ac.jpg"
+    ],
+    precio: "Desde 220 USD por persona"
+  },
 
-{
+  {
     id: "tour-parapente",
     nombre: "Tour de Parapente en San Félix",
     descripcion:
@@ -322,10 +322,10 @@ export const tours: Tour[] = [
     ],
     ubicacion: "https://www.google.com.mx/maps/place/San+Felix,+Bello,+Antioquia/@6.3447133,-75.6112469,15z/data=!3m1!4b1!4m6!3m5!1s0x8e442e5c8cea6e43:0x59ae967126fae86c!8m2!3d6.33999!4d-75.59307!16s%2Fg%2F11bc8bkbfy?entry=ttu&g_ep=EgoyMDI0MDgyOC4wIKXMDSoASAFQAw%3D%3D",
     fotos: [
-        "/images/tours/felix.jpg",
-        "/images/tours/e4.jpg",
-        "/images/tours/pa.jpg"
-      ],
+      "/images/tours/felix.jpg",
+      "/images/tours/e4.jpg",
+      "/images/tours/pa.jpg"
+    ],
     precio: "Desde 120 USD por persona"
   },
 
@@ -367,14 +367,14 @@ export const tours: Tour[] = [
     ubicacion: "https://www.google.com.mx/maps/place/Reserva+Natural+Tahamies/@6.2644079,-75.4491241,17z/data=!3m1!4b1!4m6!3m5!1s0x8e4427598d72d925:0x6dd83a25033e36ad!8m2!3d6.2644079!4d-75.4465492!16s%2Fg%2F11lrl9m0wd?entry=ttu",
 
     fotos: [
-        "/images/tours/99.jpg",
-        "/images/tours/biker.jpg",
-        "/images/tours/can.webp"
-      ],
+      "/images/tours/99.jpg",
+      "/images/tours/biker.jpg",
+      "/images/tours/can.webp"
+    ],
     precio: "Desde 200 USD por persona",
     preguntasFrecuentes: [],
   },
-  
+
   {
     id: "tour-vuelo-guatape",
     nombre: "Vuelo Panorámico sobre Guatapé",
@@ -415,11 +415,11 @@ export const tours: Tour[] = [
     ],
     ubicacion: "https://www.google.com/maps/place/Hotel+Los+Recuerdos/@6.2272911,-75.1828488,17z/data=!3m1!4b1!4m9!3m8!1s0x8e46a7f756e3022d:0x7a1f526738441b7d!5m2!4m1!1i2!8m2!3d6.2272911!4d-75.1802739!16s%2Fg%2F11b8v9qd0b?entry=ttu",
     precio: "Desde 150 USD por persona",
-    preguntasFrecuentes: [],fotos: [
-        "/images/tours/hel.jpg",
-        "/images/tours/biker.jpg",
-        "/images/tours/can.webp"
-      ],
+    preguntasFrecuentes: [], fotos: [
+      "/images/tours/hel.jpg",
+      "/images/tours/biker.jpg",
+      "/images/tours/can.webp"
+    ],
   },
 
   {
@@ -458,10 +458,10 @@ export const tours: Tour[] = [
     ],
     ubicacion: "https://www.google.com/maps/place/Parque+Tem%C3%A1tico+Hacienda+Napoles/",
     fotos: [
-        "/images/tours/napoles.jpg",
-        "/images/tours/biker.jpg",
-        "/images/tours/can.webp"
-      ],
+      "/images/tours/napoles.jpg",
+      "/images/tours/biker.jpg",
+      "/images/tours/can.webp"
+    ],
     precio: "Desde 300 USD por persona",
     preguntasFrecuentes: [],
   },
@@ -499,10 +499,10 @@ export const tours: Tour[] = [
     ],
     ubicacion: "https://www.google.com/maps/place/Pueblito+Paisa/",
     fotos: [
-        "/images/tours/pueb.jpeg",
-        "/images/tours/biker.jpg",
-        "/images/tours/can.webp"
-      ],
+      "/images/tours/pueb.jpeg",
+      "/images/tours/biker.jpg",
+      "/images/tours/can.webp"
+    ],
     precio: "60 USD por persona",
     preguntasFrecuentes: [],
   },
@@ -542,22 +542,22 @@ export const tours: Tour[] = [
     ],
     ubicacion: "https://www.google.com/maps/place/Medell%C3%ADn,+Antioquia/",
     fotos: [
-        "/images/tours/Metro.webp",
-        "/images/tours/biker.jpg",
-        "/images/tours/metro.webp"
-      ],
+      "/images/tours/Metro.webp",
+      "/images/tours/biker.jpg",
+      "/images/tours/metro.webp"
+    ],
     precio: "80 USD por persona",
     preguntasFrecuentes: [],
   },
 
- 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
 ];

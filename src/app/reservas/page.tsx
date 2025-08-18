@@ -1,4 +1,4 @@
-"use client";
+/*"use client";
 
 import { useState, useEffect } from "react";
 
@@ -76,36 +76,43 @@ export default function ReservasPage() {
             </label>
             <select
               value={selectedTour || ""}
-              onChange={e => setSelectedTour(e.target.value)}
+              onChange={(e) => setSelectedTour(e.target.value)}
               className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
               required
             >
               <option value="" disabled>
                 -- Selecciona --
               </option>
-              {tours.map(tour => (
+              {tours.map((tour) => (
                 <option key={tour.id} value={tour.id}>
-                  {tour.nombre} ({new Date(tour.salida).toLocaleDateString()} - {new Date(tour.regreso).toLocaleDateString()})
+                  {tour.nombre} ({new Date(tour.salida).toLocaleDateString()} -{" "}
+                  {new Date(tour.regreso).toLocaleDateString()})
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label htmlFor="nombre" className="block text-sm font-medium text-cyan-300 mb-2">
+            <label
+              htmlFor="nombre"
+              className="block text-sm font-medium text-cyan-300 mb-2"
+            >
               Nombre completo
             </label>
             <input
               id="nombre"
               name="nombre"
               value={nombre}
-              onChange={e => setNombre(e.target.value)}
+              onChange={(e) => setNombre(e.target.value)}
               className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
               placeholder="Tu nombre"
               required
             />
           </div>
           <div>
-            <label htmlFor="correo" className="block text-sm font-medium text-cyan-300 mb-2">
+            <label
+              htmlFor="correo"
+              className="block text-sm font-medium text-cyan-300 mb-2"
+            >
               Correo electrónico
             </label>
             <input
@@ -113,7 +120,7 @@ export default function ReservasPage() {
               name="correo"
               type="email"
               value={correo}
-              onChange={e => setCorreo(e.target.value)}
+              onChange={(e) => setCorreo(e.target.value)}
               className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
               placeholder="tucorreo@email.com"
               required
@@ -121,7 +128,10 @@ export default function ReservasPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="fecha" className="block text-sm font-medium text-cyan-300 mb-2">
+              <label
+                htmlFor="fecha"
+                className="block text-sm font-medium text-cyan-300 mb-2"
+              >
                 Fecha de reserva
               </label>
               <input
@@ -129,13 +139,16 @@ export default function ReservasPage() {
                 name="fecha"
                 type="date"
                 value={fecha}
-                onChange={e => setFecha(e.target.value)}
+                onChange={(e) => setFecha(e.target.value)}
                 className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                 required
               />
             </div>
             <div>
-              <label htmlFor="hora" className="block text-sm font-medium text-cyan-300 mb-2">
+              <label
+                htmlFor="hora"
+                className="block text-sm font-medium text-cyan-300 mb-2"
+              >
                 Hora
               </label>
               <input
@@ -143,7 +156,7 @@ export default function ReservasPage() {
                 name="hora"
                 type="time"
                 value={hora}
-                onChange={e => setHora(e.target.value)}
+                onChange={(e) => setHora(e.target.value)}
                 className="w-full border border-cyan-500/30 bg-gray-900/50 text-white rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
                 required
               />
@@ -169,5 +182,6 @@ export default function ReservasPage() {
         </form>
       </div>
     </div>
-      );
+  );
 }
+*/

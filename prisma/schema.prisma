@@ -7,32 +7,131 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String? @db.Text
+  access_token       String? @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String? @db.Text
+  session_state      String?
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 model User {
-  id             String    @id @default(cuid())
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  image           String?
+  hashedPassword  String?
+  emailVerified   DateTime?
+  role            Role      @default(USER)
+  status          Status    @default(ACTIVE)
+  lastLogin       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  accounts        Account[]
+  sessions        Session[]
+  loginAttempts   LoginAttempt[]
+  reviews  Review[]   // ← relación inversa con Review
+  reservas Reserva[]
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  success   Boolean
+  ip        String
+  userAgent String
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [email], references: [email])
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum Status {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token]) // ✅ Clave primaria compuesta requerida por NextAuth
+}
+
+
+
+model PendingUser {
+  id             String   @id @default(cuid())
   name           String
-  email          String    @unique
+  email          String   @unique
   hashedPassword String
-  emailVerified  DateTime?
-  image          String?
-  comments       Comment[]
-  posts          Post[]
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  token          String   @unique
+  expires        DateTime
+  createdAt      DateTime @default(now())
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  tourId    String
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tourId])
+  @@index([userId])
 }
 
 model Reserva {
   id        Int      @id @default(autoincrement())
   nombre    String
   correo    String
-  fecha     String
-  hora      String
+  telefono  String   // Nuevo campo
+  fecha     DateTime // Cambiar de String a DateTime
+  hora      String?
   tourId    String
   guiaId    Int?
+  userId    String
+  adultos   Int      // Nuevo campo
+  niños     Int      // Nuevo campo
+  participantes Json?  // Nuevo campo (JSON para datos flexibles)
+  contactoEmergencia Json? // Nuevo campo
+  estado    String? @default("Pagada")
+  
+  // Relaciones
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  Guia      Guia?    @relation(fields: [guiaId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  Tour Tour  @relation("TourReservas", fields: [tourId], references: [id])
-  Guia Guia? @relation("GuiaReservas", fields: [guiaId], references: [id])
 }
 
 model Guia {
@@ -46,85 +145,35 @@ model Guia {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  Reservas Reserva[] @relation("GuiaReservas")
+  Reservas Reserva[] 
 }
 
 model Tour {
   id          String   @id @default(cuid())
   nombre      String
   descripcion String
-salida      String?   @default("Por definir")
-regreso     String?   @default("Por definir")
+  salida      String?  @default("Por definir")
+  regreso     String?  @default("Por definir")
   maxReservas Int
   guias       Int
   precio      Float    @default(0.0)
   ubicacion   String   @default("Por definir")
-  imagenUrl   String?   @default("https://via.placeholder.com/600x400?text=Imagen+del+Tour")
-  gallery     String?  // Almacenará JSON con URLs de imágenes
+  imagenUrl   String?  @default("https://via.placeholder.com/600x400?text=Imagen+del+Tour")
+  gallery     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-   availableDates AvailableDate[] 
-  Reservas Reserva[] @relation("TourReservas")
+  reviews     Review[]
+  availableDates AvailableDate[]
+  Reservas    Reserva[]
 }
-
-// Nuevo modelo para fechas disponibles
 
 model AvailableDate {
   id        String   @id @default(cuid())
-  date      DateTime // Fecha disponible
+  date      DateTime
   tourId    String
-  tour      Tour     @relation(fields: [tourId], references: [id])
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Índice único para prevenir duplicados
   @@unique([tourId, date])
-}
-
-model Post {
-  id         String   @id @default(cuid())
-  title      String
-  slug       String   @unique
-  content    String
-  coverImage String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  author   User   @relation(fields: [authorId], references: [id])
-  authorId String
-
-  comments Comment[]
-  faqs     FAQ[] // 👈 Relación inversa (1:N)
-}
-
-model Comment {
-  id        String   @id @default(cuid())
-  content   String
-  createdAt DateTime @default(now())
-
-  post   Post   @relation(fields: [postId], references: [id])
-  postId String
-
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-}
-
-model Testimonial {
-  id        String   @id @default(cuid())
-  name      String
-  location  String
-  content   String
-  videoUrl  String?
-  createdAt DateTime @default(now())
-}
-
-model FAQ {
-  id       String @id @default(cuid())
-  question String
-  answer   String
-  postId   String
-  post     Post   @relation(fields: [postId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }

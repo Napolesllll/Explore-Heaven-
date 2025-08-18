@@ -8,7 +8,7 @@ export async function GET(
   try {
     // Versión explícita usando Promise.resolve
     const id = (await Promise.resolve(params)).id;
-    
+
     const tour = await prisma.tour.findUnique({
       where: { id },
       include: {

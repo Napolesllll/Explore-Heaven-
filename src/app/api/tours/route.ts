@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prismadb";
 
-// GET: Listar tours
+// GET: Listar tours 
 export async function GET() {
   try {
     const tours = await prisma.tour.findMany({ orderBy: { createdAt: "desc" } });

@@ -8,7 +8,7 @@
 @keyframes pulse-slow {
   0%, 100% { opacity: 0.2; }
   50% { opacity: 0.4; }
-}
+} 
  
 @keyframes pulse {
   0%, 100% { opacity: 0.8; }

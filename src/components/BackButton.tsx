@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import Link from 'next/link';
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
 
-export default function BackButton({ href = '/' }) {
+export default function BackButton({ href = "/" }) {
   return (
     <Link
       href={"/"}
@@ -13,4 +13,4 @@ export default function BackButton({ href = '/' }) {
       <span className="font-medium">Regresar</span>
     </Link>
   );
-} 
+}

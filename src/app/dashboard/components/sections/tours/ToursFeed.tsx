@@ -9,7 +9,7 @@ import { FaArrowLeft, FaRocket, FaStar } from "react-icons/fa";
 export default function ToursFeed() {
   const [selectedTour, setSelectedTour] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-  
+
   useEffect(() => {
     setIsVisible(true);
   }, []);
@@ -29,12 +29,14 @@ export default function ToursFeed() {
           whileTap={{ scale: 0.95 }}
         >
           <FaArrowLeft className="text-cyan-300 group-hover:text-white transition-colors" />
-          <span className="uppercase  tracking-widest">Volver a la galería</span>
+          <span className="uppercase  tracking-widest">
+            Volver a la galería
+          </span>
           <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 group-hover:opacity-100 opacity-0 transition-opacity duration-300 blur-xl"></div>
         </motion.button>
         <TourDetail tour={tourActual} onBack={() => setSelectedTour(null)} />
       </div>
-    )
+    );
   }
 
   return (
@@ -45,33 +47,33 @@ export default function ToursFeed() {
           <motion.div
             key={i}
             className="absolute rounded-full bg-gradient-to-r from-cyan-400/10 to-purple-500/10"
-            initial={{ 
-              top: `${Math.random() * 100}%`, 
+            initial={{
+              top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
               width: `${Math.random() * 6 + 2}px`,
               height: `${Math.random() * 6 + 2}px`,
-              opacity: 0
+              opacity: 0,
             }}
-            animate={{ 
+            animate={{
               opacity: [0, 0.5, 0],
-              scale: [0, 1, 0]
+              scale: [0, 1, 0],
             }}
-            transition={{ 
+            transition={{
               duration: Math.random() * 6 + 4,
               repeat: Infinity,
-              delay: Math.random() * 3
+              delay: Math.random() * 3,
             }}
           />
         ))}
       </div>
 
-      <motion.h1 
+      <motion.h1
         className="text-3xl md:text-4xl font-bold text-center mb-10 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
-        EXPLORA NUESTRAS EXPERIENCIAS
+        Explora Nuestras Experiencias
       </motion.h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -79,31 +81,31 @@ export default function ToursFeed() {
           <motion.div
             key={tour.id}
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ 
-              opacity: isVisible ? 1 : 0, 
+            animate={{
+              opacity: isVisible ? 1 : 0,
               y: isVisible ? 0 : 50,
-              scale: isVisible ? 1 : 0.9
+              scale: isVisible ? 1 : 0.9,
             }}
-            transition={{ 
-              duration: 0.6, 
+            transition={{
+              duration: 0.6,
               delay: index * 0.15,
               type: "spring",
-              stiffness: 100
+              stiffness: 100,
             }}
-            whileHover={{ 
+            whileHover={{
               y: -15,
               boxShadow: "0 25px 50px -15px rgba(139, 92, 246, 0.3)",
-              transition: { duration: 0.3 }
+              transition: { duration: 0.3 },
             }}
             className="relative bg-gradient-to-br from-[#0f172a] to-[#1e293b] rounded-2xl overflow-hidden border border-cyan-500/30 shadow-lg shadow-cyan-500/10"
           >
             {/* Efecto de brillo al pasar el mouse */}
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 opacity-0 group-hover:opacity-30 transition-opacity duration-500"></div>
-            
+
             {/* Cabecera de la tarjeta */}
             <div className="relative h-52 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a]/90 to-transparent z-10"></div>
-              
+
               <div className="absolute top-4 right-4 z-20 flex gap-2">
                 <div className="bg-gradient-to-r from-cyan-600 to-purple-600 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
                   <FaRocket className="text-cyan-300" />
@@ -114,7 +116,7 @@ export default function ToursFeed() {
                   <span>{tour.calificacion || "5.0"}</span>
                 </div>
               </div>
-              
+
               <img
                 src={tour.fotos?.[0]}
                 alt={tour.nombre}
@@ -131,16 +133,18 @@ export default function ToursFeed() {
                 <p className="text-gray-400 text-sm mb-4 line-clamp-3">
                   {tour.descripcion}
                 </p>
-                
+
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {tour.caracteristicas?.slice(0, 3).map((caracteristica, i) => (
-                    <span 
-                      key={i}
-                      className="text-xs px-3 py-1 bg-cyan-900/30 text-cyan-300 rounded-full border border-cyan-500/30"
-                    >
-                      {caracteristica}
-                    </span>
-                  ))}
+                  {tour.caracteristicas
+                    ?.slice(0, 3)
+                    .map((caracteristica, i) => (
+                      <span
+                        key={i}
+                        className="text-xs px-3 py-1 bg-cyan-900/30 text-cyan-300 rounded-full border border-cyan-500/30"
+                      >
+                        {caracteristica}
+                      </span>
+                    ))}
                 </div>
               </div>
 
@@ -179,5 +183,5 @@ export default function ToursFeed() {
         <FaRocket className="text-white text-2xl animate-bounce" />
       </motion.div>
     </div>
-  )
+  );
 }

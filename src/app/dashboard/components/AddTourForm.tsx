@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, ChangeEvent, FormEvent, useRef, useEffect } from "react";
 import Image from "next/image";
@@ -17,23 +17,41 @@ export default function AddTourForm() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState("info");
   const [featuredImageIndex, setFeaturedImageIndex] = useState(0);
   const [dateError, setDateError] = useState<string | null>(null);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     switch (name) {
-      case "nombre": setNombre(value); break;
-      case "descripcion": setDescripcion(value); break;
-      case "salida": setSalida(value); break;
-      case "regreso": setRegreso(value); break;
-      case "maxReservas": setMaxReservas(value); break;
-      case "guias": setGuias(value); break;
-      case "precio": setPrecio(value); break;
-      case "ubicacion": setUbicacion(value); break;
+      case "nombre":
+        setNombre(value);
+        break;
+      case "descripcion":
+        setDescripcion(value);
+        break;
+      case "salida":
+        setSalida(value);
+        break;
+      case "regreso":
+        setRegreso(value);
+        break;
+      case "maxReservas":
+        setMaxReservas(value);
+        break;
+      case "guias":
+        setGuias(value);
+        break;
+      case "precio":
+        setPrecio(value);
+        break;
+      case "ubicacion":
+        setUbicacion(value);
+        break;
     }
-    
+
     // Validar fechas al cambiar
     if ((name === "salida" || name === "regreso") && salida && regreso) {
       validateDates();
@@ -43,25 +61,25 @@ export default function AddTourForm() {
   // Validación de fechas
   const validateDates = (): boolean => {
     if (!salida || !regreso) return true;
-    
+
     const salidaDate = new Date(salida);
     const regresoDate = new Date(regreso);
-    
-    if (isNaN(salidaDate.getTime() )) {
+
+    if (isNaN(salidaDate.getTime())) {
       setDateError("Fecha de salida inválida");
       return false;
-    } 
-    
+    }
+
     if (isNaN(regresoDate.getTime())) {
       setDateError("Fecha de regreso inválida");
       return false;
     }
-    
+
     if (salidaDate >= regresoDate) {
       setDateError("Fecha de regreso debe ser posterior a la de salida");
       return false;
     }
-    
+
     setDateError(null);
     return true;
   };
@@ -72,7 +90,7 @@ export default function AddTourForm() {
       toast.error("Máximo 10 imágenes");
       return;
     }
-    const validFiles = files.filter(file => {
+    const validFiles = files.filter((file) => {
       if (!file.type.startsWith("image/")) {
         toast.error("Solo imágenes");
         return false;
@@ -84,11 +102,11 @@ export default function AddTourForm() {
       return true;
     });
     if (validFiles.length === 0) return;
-    setImageFiles(prev => [...prev, ...validFiles]);
-    validFiles.forEach(file => {
+    setImageFiles((prev) => [...prev, ...validFiles]);
+    validFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onload = () => {
-        setPreviewUrls(prev => [...prev, reader.result as string]);
+        setPreviewUrls((prev) => [...prev, reader.result as string]);
       };
       reader.readAsDataURL(file);
     });
@@ -114,7 +132,7 @@ export default function AddTourForm() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     // Validar campos obligatorios
     if (
       !nombre ||
@@ -128,12 +146,12 @@ export default function AddTourForm() {
       toast.error("Todos los campos obligatorios");
       return;
     }
-    
+
     // Validar fechas antes de enviar
     if (!validateDates()) {
       return;
     }
-    
+
     setIsLoading(true);
     try {
       // Subir todas las imágenes
@@ -152,7 +170,7 @@ export default function AddTourForm() {
         const uploadData = await uploadRes.json();
         imageUrls.push(uploadData.url);
       }
-      
+
       // Crear el tour con todas las URLs de imágenes
       const createRes = await fetch("/api/tours", {
         method: "POST",
@@ -167,18 +185,18 @@ export default function AddTourForm() {
           precio: parseFloat(precio),
           ubicacion,
           imagenUrl: imageUrls[featuredImageIndex], // Imagen destacada
-          gallery: JSON.stringify(imageUrls) // Guardar como JSON string
+          gallery: JSON.stringify(imageUrls), // Guardar como JSON string
         }),
       });
-      
+
       if (!createRes.ok) {
         const text = await createRes.text();
         throw new Error(`Error creando tour: ${text}`);
       }
-      
+
       const createData = await createRes.json();
       toast.success(`Tour "${nombre}" creado correctamente`);
-      
+
       // Resetear formulario
       setNombre("");
       setDescripcion("");
@@ -203,14 +221,14 @@ export default function AddTourForm() {
   // Efecto decorativo flotante
   useEffect(() => {
     const interval = setInterval(() => {
-      const elements = document.querySelectorAll('.floating-element');
-      elements.forEach(el => {
-        const currentTop = parseFloat(el.getAttribute('data-top') || "0");
-        const currentLeft = parseFloat(el.getAttribute('data-left') || "0");
+      const elements = document.querySelectorAll(".floating-element");
+      elements.forEach((el) => {
+        const currentTop = parseFloat(el.getAttribute("data-top") || "0");
+        const currentLeft = parseFloat(el.getAttribute("data-left") || "0");
         const newTop = (currentTop + (Math.random() - 0.5) * 0.2) % 100;
         const newLeft = (currentLeft + (Math.random() - 0.5) * 0.2) % 100;
-        el.setAttribute('data-top', newTop.toString());
-        el.setAttribute('data-left', newLeft.toString());
+        el.setAttribute("data-top", newTop.toString());
+        el.setAttribute("data-left", newLeft.toString());
         (el as HTMLElement).style.top = `${newTop}%`;
         (el as HTMLElement).style.left = `${newLeft}%`;
       });
@@ -222,7 +240,7 @@ export default function AddTourForm() {
     <div className="min-h-screen w-full bg-gradient-to-br from-[#0c0f1d] via-[#151b35] to-[#0c0f1d] p-4 flex flex-col items-center justify-center overflow-hidden">
       {/* Elementos decorativos flotantes */}
       {[...Array(8)].map((_, i) => (
-        <div 
+        <div
           key={i}
           className="floating-element absolute rounded-full bg-cyan-500/10 animate-pulse"
           style={{
@@ -253,55 +271,64 @@ export default function AddTourForm() {
           <div className="flex border-b border-cyan-700/50 mb-8">
             <button
               className={`px-6 py-3 font-medium transition-all duration-300 ${
-                activeTab === 'info'
-                  ? 'text-cyan-400 border-b-2 border-cyan-400'
-                  : 'text-gray-500 hover:text-cyan-300'
+                activeTab === "info"
+                  ? "text-cyan-400 border-b-2 border-cyan-400"
+                  : "text-gray-500 hover:text-cyan-300"
               }`}
-              onClick={() => setActiveTab('info')}
+              onClick={() => setActiveTab("info")}
             >
               Información
             </button>
             <button
               className={`px-6 py-3 font-medium transition-all duration-300 ${
-                activeTab === 'images'
-                  ? 'text-cyan-400 border-b-2 border-cyan-400'
-                  : 'text-gray-500 hover:text-cyan-300'
+                activeTab === "images"
+                  ? "text-cyan-400 border-b-2 border-cyan-400"
+                  : "text-gray-500 hover:text-cyan-300"
               }`}
-              onClick={() => setActiveTab('images')}
+              onClick={() => setActiveTab("images")}
             >
               Imágenes ({previewUrls.length})
             </button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Sección de imágenes */}
-            {activeTab === 'images' && (
+            {activeTab === "images" && (
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-cyan-300 flex items-center mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     Galería de Imágenes
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                     {previewUrls.map((url, index) => (
-                      <div 
-                        key={index} 
+                      <div
+                        key={index}
                         className={`relative h-48 rounded-xl overflow-hidden border-2 transition-all duration-300 group ${
-                          featuredImageIndex === index 
-                            ? 'border-cyan-500 ring-2 ring-cyan-400 ring-opacity-50' 
-                            : 'border-cyan-500/20'
+                          featuredImageIndex === index
+                            ? "border-cyan-500 ring-2 ring-cyan-400 ring-opacity-50"
+                            : "border-cyan-500/20"
                         }`}
                       >
-                        <Image 
-                          src={url} 
-                          alt={`Preview ${index}`} 
+                        <Image
+                          src={url}
+                          alt={`Preview ${index}`}
                           fill
                           className="object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         <div className="absolute bottom-3 left-3 right-3 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
+                          <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -309,13 +336,15 @@ export default function AddTourForm() {
                             }}
                             className={`px-3 py-1 rounded-full text-xs ${
                               featuredImageIndex === index
-                                ? 'bg-cyan-600 text-white'
-                                : 'bg-gray-800/80 text-gray-300 hover:bg-cyan-600 hover:text-white'
+                                ? "bg-cyan-600 text-white"
+                                : "bg-gray-800/80 text-gray-300 hover:bg-cyan-600 hover:text-white"
                             }`}
                           >
-                            {featuredImageIndex === index ? 'Destacada' : 'Destacar'}
+                            {featuredImageIndex === index
+                              ? "Destacada"
+                              : "Destacar"}
                           </button>
-                          <button 
+                          <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -331,38 +360,70 @@ export default function AddTourForm() {
                         </div>
                       </div>
                     ))}
-                    <div 
+                    <div
                       className="relative h-48 border-2 border-dashed border-cyan-500/30 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all hover:border-cyan-500/60 hover:bg-cyan-900/10"
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <div className="bg-gray-900/50 p-3 rounded-full mb-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-8 w-8 text-cyan-500"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
                         </svg>
                       </div>
-                      <p className="text-cyan-400 font-medium">Agregar imágenes</p>
-                      <p className="text-gray-500 text-xs mt-1">Máx. 10 imágenes</p>
+                      <p className="text-cyan-400 font-medium">
+                        Agregar imágenes
+                      </p>
+                      <p className="text-gray-500 text-xs mt-1">
+                        Máx. 10 imágenes
+                      </p>
                     </div>
                   </div>
-                  <input 
-                    ref={fileInputRef} 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleImageChange} 
-                    className="hidden" 
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
                     multiple
                   />
                 </div>
                 <div className="bg-cyan-900/20 border border-cyan-700/30 rounded-xl p-5">
                   <div className="flex items-start">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-cyan-400 mt-0.5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-cyan-400 mt-0.5 mr-2"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     <div>
-                      <h3 className="text-cyan-300 font-medium mb-1">Consejos para las imágenes</h3>
+                      <h3 className="text-cyan-300 font-medium mb-1">
+                        Consejos para las imágenes
+                      </h3>
                       <ul className="text-gray-400 text-sm space-y-1">
-                        <li>• Selecciona imágenes de alta calidad (mínimo 1200x800px)</li>
-                        <li>• Usa la primera imagen como portada principal del tour</li>
+                        <li>
+                          • Selecciona imágenes de alta calidad (mínimo
+                          1200x800px)
+                        </li>
+                        <li>
+                          • Usa la primera imagen como portada principal del
+                          tour
+                        </li>
                         <li>• Muestra diferentes perspectivas y atracciones</li>
                         <li>• Máximo 10 imágenes por tour</li>
                       </ul>
@@ -372,12 +433,15 @@ export default function AddTourForm() {
               </div>
             )}
             {/* Campos del formulario */}
-            {activeTab === 'info' && (
+            {activeTab === "info" && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Campo nombre */}
                   <div className="space-y-2">
-                    <label htmlFor="nombre" className="block text-sm font-medium text-cyan-300 flex items-center">
+                    <label
+                      htmlFor="nombre"
+                      className="block text-sm font-medium text-cyan-300 flex items-center"
+                    >
                       Nombre del Tour
                     </label>
                     <input
@@ -391,7 +455,10 @@ export default function AddTourForm() {
                   </div>
                   {/* Campo ubicación */}
                   <div className="space-y-2">
-                    <label htmlFor="ubicacion" className="block text-sm font-medium text-cyan-300 flex items-center">
+                    <label
+                      htmlFor="ubicacion"
+                      className="block text-sm font-medium text-cyan-300 flex items-center"
+                    >
                       Ubicación
                     </label>
                     <input
@@ -405,7 +472,10 @@ export default function AddTourForm() {
                   </div>
                   {/* Campo maxReservas */}
                   <div className="space-y-2">
-                    <label htmlFor="maxReservas" className="block text-sm font-medium text-cyan-300 flex items-center">
+                    <label
+                      htmlFor="maxReservas"
+                      className="block text-sm font-medium text-cyan-300 flex items-center"
+                    >
                       Máx. Reservas
                     </label>
                     <input
@@ -421,7 +491,10 @@ export default function AddTourForm() {
                   </div>
                   {/* Campo precio */}
                   <div className="space-y-2">
-                    <label htmlFor="precio" className="block text-sm font-medium text-cyan-300 flex items-center">
+                    <label
+                      htmlFor="precio"
+                      className="block text-sm font-medium text-cyan-300 flex items-center"
+                    >
                       Precio por persona
                     </label>
                     <input
@@ -438,7 +511,10 @@ export default function AddTourForm() {
                   </div>
                   {/* Campo salida */}
                   <div className="space-y-2">
-                    <label htmlFor="salida" className="block text-sm font-medium text-cyan-300 flex items-center">
+                    <label
+                      htmlFor="salida"
+                      className="block text-sm font-medium text-cyan-300 flex items-center"
+                    >
                       Fecha de Salida
                     </label>
                     <input
@@ -452,7 +528,10 @@ export default function AddTourForm() {
                   </div>
                   {/* Campo regreso */}
                   <div className="space-y-2">
-                    <label htmlFor="regreso" className="block text-sm font-medium text-cyan-300 flex items-center">
+                    <label
+                      htmlFor="regreso"
+                      className="block text-sm font-medium text-cyan-300 flex items-center"
+                    >
                       Fecha de Regreso
                     </label>
                     <input
@@ -466,7 +545,10 @@ export default function AddTourForm() {
                   </div>
                   {/* Campo guias */}
                   <div className="space-y-2">
-                    <label htmlFor="guias" className="block text-sm font-medium text-cyan-300 flex items-center">
+                    <label
+                      htmlFor="guias"
+                      className="block text-sm font-medium text-cyan-300 flex items-center"
+                    >
                       Número de Guías
                     </label>
                     <input
@@ -481,22 +563,34 @@ export default function AddTourForm() {
                     />
                   </div>
                 </div>
-                
+
                 {/* Mensaje de error de fechas */}
                 {dateError && (
                   <div className="bg-red-900/30 border border-red-500/50 rounded-xl p-4 text-red-300">
                     <div className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 mr-2"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                       {dateError}
                     </div>
                   </div>
                 )}
-                
+
                 {/* Campo descripción */}
                 <div className="space-y-2">
-                  <label htmlFor="descripcion" className="block text-sm font-medium text-cyan-300 flex items-center">
+                  <label
+                    htmlFor="descripcion"
+                    className="block text-sm font-medium text-cyan-300 flex items-center"
+                  >
                     Descripción
                   </label>
                   <textarea
@@ -523,16 +617,41 @@ export default function AddTourForm() {
               >
                 {isLoading ? (
                   <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Creando Tour...
                   </>
                 ) : (
                   <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     Crear Nueva Experiencia
                   </>
@@ -540,20 +659,40 @@ export default function AddTourForm() {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab(activeTab === 'info' ? 'images' : 'info')}
+                onClick={() =>
+                  setActiveTab(activeTab === "info" ? "images" : "info")
+                }
                 className="py-4 px-6 rounded-xl font-medium bg-gray-800/50 border border-cyan-700/30 text-cyan-300 hover:bg-gray-800/80 transition-all flex items-center justify-center"
               >
-                {activeTab === 'info' ? (
+                {activeTab === "info" ? (
                   <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     Gestionar Imágenes
                   </>
                 ) : (
                   <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     Información del Tour
                   </>

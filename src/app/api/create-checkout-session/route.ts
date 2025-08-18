@@ -20,8 +20,8 @@ export async function POST(req: Request) {
     }
 
     // Asegurarnos de que el precio sea un número
-    const price = typeof tour.precio === 'string' 
-      ? parseInt(tour.precio.replace(/\D/g, "")) 
+    const price = typeof tour.precio === 'string'
+      ? parseInt(tour.precio.replace(/\D/g, ""))
       : Math.round(tour.precio);
 
     const stripeSession = await stripe.checkout.sessions.create({

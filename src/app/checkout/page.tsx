@@ -1,8 +1,10 @@
-'use client';
+"use client";
 
-import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
-import { tours } from '../../data/toursData';
+// 1. Librerías externas
+import Head from "next/head";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
+import { tours } from "../../data/toursData";
 import {
   CheckCircle,
   Calendar,
@@ -12,18 +14,18 @@ import {
   Phone,
   Info,
   X as XIcon,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useKeenSlider } from 'keen-slider/react';
-import 'keen-slider/keen-slider.min.css';
-import emailjs from '@emailjs/browser';
-import toast from 'react-hot-toast';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import Image from "next/image";
+import { useKeenSlider } from "keen-slider/react";
+import "keen-slider/keen-slider.min.css";
+import emailjs from "@emailjs/browser";
+import toast from "react-hot-toast";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
-// Plugin de autoplay para Keen Slider
+// 2. Plugins y utilidades
 function AutoSlidePlugin(slider: any) {
   let timeout: any;
   let mouseOver = false;
@@ -39,30 +41,30 @@ function AutoSlidePlugin(slider: any) {
     }, autoplaySpeed);
   }
 
-  slider.on('created', () => {
-    slider.container.addEventListener('mouseover', () => {
+  slider.on("created", () => {
+    slider.container.addEventListener("mouseover", () => {
       mouseOver = true;
       clearNextTimeout();
     });
-    slider.container.addEventListener('mouseout', () => {
+    slider.container.addEventListener("mouseout", () => {
       mouseOver = false;
       nextTimeout();
     });
     nextTimeout();
   });
 
-  slider.on('dragStarted', clearNextTimeout);
-  slider.on('animationEnded', nextTimeout);
-  slider.on('updated', nextTimeout);
-  slider.on('destroyed', clearNextTimeout);
+  slider.on("dragStarted", clearNextTimeout);
+  slider.on("animationEnded", nextTimeout);
+  slider.on("updated", nextTimeout);
+  slider.on("destroyed", clearNextTimeout);
 }
 
-// Carrusel de imágenes con autoplay
+// 3. Carrusel de imágenes
 function TourImages({ fotos }: { fotos: string[] }) {
   const [sliderRef] = useKeenSlider<HTMLDivElement>(
     {
       loop: true,
-      mode: 'free-snap',
+      mode: "free-snap",
       slides: { perView: 1, spacing: 0 },
     },
     [AutoSlidePlugin]
@@ -72,12 +74,13 @@ function TourImages({ fotos }: { fotos: string[] }) {
     <div
       ref={sliderRef}
       className="keen-slider rounded-3xl overflow-hidden h-[300px] sm:h-[450px] shadow-2xl border-4 border-yellow-500/20"
+      aria-label="Galería de imágenes del tour"
     >
       {fotos.map((foto, index) => (
         <div key={index} className="keen-slider__slide relative h-full">
           <Image
             src={foto}
-            alt={`Foto ${index + 1}`}
+            alt={`Foto del tour ${index + 1}`}
             fill
             className="object-cover"
             priority={index === 0}
@@ -91,54 +94,64 @@ function TourImages({ fotos }: { fotos: string[] }) {
   );
 }
 
-// Detalles básicos del tour
+// 4. Detalles básicos del tour
 function TourDetails({ tour }: { tour: any }) {
   return (
-    <div className="space-y-8">
+    <section className="space-y-8" aria-labelledby="tour-title">
       <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 px-6 py-3 rounded-xl inline-block mb-4">
-        <h2 className="text-2xl font-bold text-gray-900">{tour.nombre}</h2>
+        <h2 id="tour-title" className="text-2xl font-bold text-gray-900">
+          {tour.nombre}
+        </h2>
       </div>
       <p className="text-gray-300 leading-relaxed italic text-center md:text-left">
         {tour.descripcion}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
         <div className="flex items-center gap-3 bg-gray-800/50 p-4 rounded-xl">
-          <span className="text-yellow-400 font-semibold">💰</span>
+          <span className="text-yellow-400 font-semibold" aria-hidden>
+            💰
+          </span>
           <div>
             <p className="text-gray-400 text-sm">Precio</p>
             <p className="text-white font-medium">{tour.precio}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 bg-gray-800/50 p-4 rounded-xl">
-          <span className="text-yellow-400 font-semibold">🕐</span>
+          <span className="text-yellow-400 font-semibold" aria-hidden>
+            🕐
+          </span>
           <div>
             <p className="text-gray-400 text-sm">Salida</p>
             <p className="text-white font-medium">{tour.salida}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 bg-gray-800/50 p-4 rounded-xl">
-          <span className="text-yellow-400 font-semibold">🔁</span>
+          <span className="text-yellow-400 font-semibold" aria-hidden>
+            🔁
+          </span>
           <div>
             <p className="text-gray-400 text-sm">Regreso</p>
             <p className="text-white font-medium">{tour.regreso}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 bg-gray-800/50 p-4 rounded-xl">
-          <span className="text-yellow-400 font-semibold">⏳</span>
+          <span className="text-yellow-400 font-semibold" aria-hidden>
+            ⏳
+          </span>
           <div>
             <p className="text-gray-400 text-sm">Duración</p>
             <p className="text-white font-medium">{tour.duracion}</p>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
-// Detalles de inclusión, no incluye y recomendaciones
+// 5. Inclusiones, exclusiones y recomendaciones
 function InclusionDetails({ tour }: { tour: any }) {
   return (
-    <div className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+    <section className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
       <div className="bg-gray-800/50 p-5 rounded-2xl">
         <h3 className="font-bold text-yellow-400 mb-3 flex items-center gap-2">
           <CheckCircle className="w-5 h-5" /> Incluye
@@ -178,11 +191,11 @@ function InclusionDetails({ tour }: { tour: any }) {
           ))}
         </ul>
       </div>
-    </div>
+    </section>
   );
 }
 
-// Formulario de reserva con fechas disponibles
+// 6. Formulario de reserva
 function ReservationForm({
   tour,
   formRef,
@@ -210,6 +223,9 @@ function ReservationForm({
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0.8, opacity: 0 }}
       className="bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/30 rounded-3xl shadow-2xl p-8 text-center space-y-6 max-w-md w-full relative overflow-hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Formulario de reserva"
     >
       {/* Diseño decorativo */}
       <div className="absolute inset-0">
@@ -217,9 +233,18 @@ function ReservationForm({
         <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-emerald-500 rounded-full filter blur-[100px] opacity-15" />
       </div>
       <div className="relative z-10 space-y-4">
-        <h2 className="text-2xl font-bold text-yellow-400">Completa tu reserva</h2>
-        <p className="text-gray-400 text-sm">Déjanos tus datos y confirmaremos pronto</p>
-        <form ref={formRef} onSubmit={sendEmail} className="space-y-5 text-left">
+        <h2 className="text-2xl font-bold text-yellow-400">
+          Completa tu reserva
+        </h2>
+        <p className="text-gray-400 text-sm">
+          Déjanos tus datos y confirmaremos pronto
+        </p>
+        <form
+          ref={formRef}
+          onSubmit={sendEmail}
+          className="space-y-5 text-left"
+          noValidate
+        >
           <input type="hidden" name="tour" value={tour.nombre} />
           {/* Nombre */}
           <div className="relative">
@@ -232,8 +257,11 @@ function ReservationForm({
               required
               placeholder="Nombre completo"
               className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 pl-10 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              aria-label="Nombre completo"
             />
-            {errors.nombre && <p className="text-red-400 text-sm mt-1">{errors.nombre}</p>}
+            {errors.nombre && (
+              <p className="text-red-400 text-sm mt-1">{errors.nombre}</p>
+            )}
           </div>
           {/* Correo */}
           <div className="relative">
@@ -246,8 +274,11 @@ function ReservationForm({
               required
               placeholder="Correo electrónico"
               className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 pl-10 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              aria-label="Correo electrónico"
             />
-            {errors.correo && <p className="text-red-400 text-sm mt-1">{errors.correo}</p>}
+            {errors.correo && (
+              <p className="text-red-400 text-sm mt-1">{errors.correo}</p>
+            )}
           </div>
           {/* Teléfono */}
           <div className="relative">
@@ -261,8 +292,11 @@ function ReservationForm({
               pattern="[0-9]{7,15}"
               placeholder="Teléfono"
               className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 pl-10 text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              aria-label="Teléfono"
             />
-            {errors.telefono && <p className="text-red-400 text-sm mt-1">{errors.telefono}</p>}
+            {errors.telefono && (
+              <p className="text-red-400 text-sm mt-1">{errors.telefono}</p>
+            )}
           </div>
           {/* Selector de fechas */}
           <div className="relative">
@@ -274,16 +308,23 @@ function ReservationForm({
                 name="fecha"
                 required
                 className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 pl-10 text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                aria-label="Selecciona una fecha"
               >
                 <option value="">Selecciona una fecha</option>
                 {availableDates.map((date, i) => (
-                  <option key={i} value={date.toISOString()}>{format(date, 'PPP', { locale: es })}</option>
+                  <option key={i} value={date.toISOString()}>
+                    {format(date, "PPP", { locale: es })}
+                  </option>
                 ))}
               </select>
             ) : (
               <div className="text-yellow-500 py-4 text-center">
                 <p>No hay fechas disponibles</p>
-                <button type="button" className="mt-2 text-cyan-400 hover:text-cyan-300" onClick={() => window.location.reload()}>
+                <button
+                  type="button"
+                  className="mt-2 text-cyan-400 hover:text-cyan-300"
+                  onClick={() => window.location.reload()}
+                >
                   Recargar
                 </button>
               </div>
@@ -291,7 +332,11 @@ function ReservationForm({
           </div>
           {/* Botones */}
           <div className="pt-4 flex justify-end gap-3">
-            <button type="button" onClick={() => setShowModal(false)} className="px-4 py-3 border border-gray-600 rounded-xl text-gray-300 hover:bg-gray-800 transition">
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="px-4 py-3 border border-gray-600 rounded-xl text-gray-300 hover:bg-gray-800 transition"
+            >
               Cancelar
             </button>
             <button
@@ -299,8 +344,8 @@ function ReservationForm({
               disabled={isSubmitting || hasSubmitted}
               className={`px-6 py-3 rounded-xl font-semibold transition relative overflow-hidden ${
                 isSubmitting || hasSubmitted
-                  ? 'bg-yellow-300 text-gray-900 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 hover:from-yellow-400 hover:to-yellow-500'
+                  ? "bg-yellow-300 text-gray-900 cursor-not-allowed"
+                  : "bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 hover:from-yellow-400 hover:to-yellow-500"
               }`}
             >
               <span className="relative z-10 flex items-center gap-2">
@@ -310,9 +355,9 @@ function ReservationForm({
                     Enviando...
                   </div>
                 ) : hasSubmitted ? (
-                  'Reserva enviada'
+                  "Reserva enviada"
                 ) : (
-                  'Enviar reserva'
+                  "Enviar reserva"
                 )}
               </span>
               <span className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-yellow-500 opacity-0 hover:opacity-100 transition-opacity" />
@@ -324,7 +369,7 @@ function ReservationForm({
   );
 }
 
-// Página de checkout completa
+// 7. Página principal de checkout
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -334,30 +379,24 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const [errors, setErrors] = useState<{ nombre?: string; telefono?: string; correo?: string }>({});
+  const [errors, setErrors] = useState<{
+    nombre?: string;
+    telefono?: string;
+    correo?: string;
+  }>({});
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
 
+  // Cargar tour seleccionado
   useEffect(() => {
-    const tourId = searchParams.get('tourId');
+    const tourId = searchParams.get("tourId");
     if (!tourId) return;
     const found = tours.find((t) => t.id === tourId) || null;
     setTour(found);
   }, [searchParams]);
 
-  useEffect(() => {
-    if (!tour) return;
-    async function loadDates() {
-      try {
-        const res = await fetch(`/api/available-dates?tourId=${tour.id}`);
-        const data: { id: string; date: string }[] = await res.json();
-        setAvailableDates(data.map((d) => new Date(d.date)));
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    loadDates();
-  }, [tour]);
-
+  // Cargar fechas disponibles
+  useEffect;
+  // Validación de formulario
   function validateForm() {
     const f = formRef.current;
     if (!f) return false;
@@ -367,18 +406,22 @@ export default function CheckoutPage() {
     const errs: typeof errors = {};
     let ok = true;
     if (!/^[a-zA-ZÀ-ÿ\s]{2,}$/.test(n)) {
-      errs.nombre = 'Nombre inválido'; ok = false;
+      errs.nombre = "Nombre inválido";
+      ok = false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) {
-      errs.correo = 'Correo inválido'; ok = false;
+      errs.correo = "Correo inválido";
+      ok = false;
     }
     if (!/^\d{7,15}$/.test(p)) {
-      errs.telefono = 'Teléfono inválido'; ok = false;
+      errs.telefono = "Teléfono inválido";
+      ok = false;
     }
     setErrors(errs);
     return ok;
   }
 
+  // Envío de formulario
   async function sendEmail(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!validateForm() || isSubmitting || hasSubmitted) return;
@@ -388,19 +431,34 @@ export default function CheckoutPage() {
 
     try {
       await emailjs.sendForm(
-        'service_48b978l',
-        'template_uk4drlm',
+        "service_48b978l",
+        "template_uk4drlm",
         formRef.current!,
-        'Bl8NYZsWuRuNA-Jbi'
+        "Bl8NYZsWuRuNA-Jbi"
       );
-      toast.success('Reserva enviada con éxito');
-      router.push('/thank-you');
+      // Guardar datos de reserva en localStorage ANTES de redirigir
+      if (formRef.current) {
+        const f = formRef.current;
+        const reserva = {
+          tourName: tour.nombre,
+          date: f.fecha?.value || "",
+          amount: tour.precio,
+          reference: Date.now().toString(),
+          email: f.correo.value,
+        };
+        localStorage.setItem("last_reservation", JSON.stringify(reserva));
+      }
+      toast.success("Reserva enviada con éxito");
+      // Espera un pequeño tiempo para asegurar que localStorage se guarde antes de redirigir
+      setTimeout(() => {
+        router.push("/thank-you");
+      }, 200);
     } catch (error) {
       console.error(error);
-      toast.error('Error enviando reserva');
+      toast.error("Error enviando reserva");
     }
   }
-
+  // Estado de carga
   if (!tour) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
@@ -415,103 +473,115 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black py-12 px-4 relative overflow-hidden">
-      {/* Elementos decorativos de fondo */}
-      <div className="absolute inset-0">
-        <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-gray-900 to-transparent z-0"></div>
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-gray-900 to-transparent z-0"></div>
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-yellow-500 rounded-full filter blur-[100px] opacity-10"></div>
-        <div className="absolute top-20 right-1/4 w-60 h-60 bg-emerald-500 rounded-full filter blur-[80px] opacity-10"></div>
-        <div className="pattern-dots pattern-gray-800 pattern-bg-transparent pattern-opacity-10 pattern-size-2 absolute inset-0"></div>
-      </div>
+    <>
+      <Head>
+        <title>Checkout | Reserva tu tour en Medellín</title>
+        <meta
+          name="description"
+          content={`Reserva tu experiencia: ${tour.nombre}. Vive Medellín con seguridad y confianza.`}
+        />
+        <meta name="robots" content="noindex,follow" />
+      </Head>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black py-12 px-4 relative overflow-hidden">
+        {/* Elementos decorativos de fondo */}
+        <div className="absolute inset-0" aria-hidden>
+          <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-gray-900 to-transparent z-0"></div>
+          <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-gray-900 to-transparent z-0"></div>
+          <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-yellow-500 rounded-full filter blur-[100px] opacity-10"></div>
+          <div className="absolute top-20 right-1/4 w-60 h-60 bg-emerald-500 rounded-full filter blur-[80px] opacity-10"></div>
+          <div className="pattern-dots pattern-gray-800 pattern-bg-transparent pattern-opacity-10 pattern-size-2 absolute inset-0"></div>
+        </div>
 
-      {/* Contenido principal */}
-      <div className="relative z-10 max-w-6xl mx-auto">
-        <motion.div 
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 mb-4">
-            ¡Listo para tu aventura!
-          </h1>
-          <p className="text-gray-400 max-w-xl mx-auto">
-            Estás a un paso de vivir una experiencia inolvidable en Medellín
-          </p>
-        </motion.div>
+        {/* Contenido principal */}
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 mb-4">
+              ¡Listo para tu aventura!
+            </h1>
+            <p className="text-gray-400 max-w-xl mx-auto">
+              Estás a un paso de vivir una experiencia inolvidable en Medellín
+            </p>
+          </motion.div>
 
-        <motion.div
-          className="bg-gradient-to-br from-gray-800/60 to-gray-900/80 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-10 space-y-8 relative border border-yellow-500/20"
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
-        >
-          {/* Sección superior: Carrusel y detalles básicos */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
-            {/* IMÁGENES - Carrusel automático */}
-            {tour.fotos?.length > 0 && <TourImages fotos={tour.fotos} />}
+          <motion.div
+            className="bg-gradient-to-br from-gray-800/60 to-gray-900/80 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-10 space-y-8 relative border border-yellow-500/20"
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
+          >
+            {/* Sección superior: Carrusel y detalles básicos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
+              {/* IMÁGENES - Carrusel automático */}
+              {tour.fotos?.length > 0 && <TourImages fotos={tour.fotos} />}
 
-            {/* INFORMACIÓN BÁSICA */}
-            <TourDetails tour={tour} />
-          </div>
+              {/* INFORMACIÓN BÁSICA */}
+              <TourDetails tour={tour} />
+            </div>
 
-          {/* Sección de detalles (ocupa todo el ancho) */}
-          <div className="w-full">
-            <InclusionDetails tour={tour} />
-          </div>
+            {/* Sección de detalles (ocupa todo el ancho) */}
+            <div className="w-full">
+              <InclusionDetails tour={tour} />
+            </div>
 
-          {/* Botones de acción */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 justify-center pt-10">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowModal(true)}
-              className="relative inline-flex items-center justify-center bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 px-8 py-4 rounded-xl font-bold overflow-hidden group"
-            >
-              <span className="relative z-10 flex items-center gap-2">
-                <CheckCircle className="w-6 h-6" />
-                Confirmar Reserva
-              </span>
-              <span className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-yellow-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-            </motion.button>
-            
-            <Link href="/">
-              <motion.button 
+            {/* Botones de acción */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 justify-center pt-10">
+              <motion.button
+                type="button"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="border border-yellow-500/50 text-yellow-400 px-8 py-4 rounded-xl hover:bg-gray-800/50 transition-all font-medium flex items-center gap-2"
+                onClick={() => setShowModal(true)}
+                className="relative inline-flex items-center justify-center bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 px-8 py-4 rounded-xl font-bold overflow-hidden group"
               >
-                Volver al inicio
+                <span className="relative z-10 flex items-center gap-2">
+                  <CheckCircle className="w-6 h-6" />
+                  Confirmar Reserva
+                </span>
+                <span className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-yellow-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
               </motion.button>
-            </Link>
-          </div>
-        </motion.div>
-      </div>
 
-      {/* MODAL */}
-      <AnimatePresence>
-        {showModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
-          >
-            <ReservationForm
-              tour={tour}
-              formRef={formRef}
-              errors={errors}
-              validateForm={validateForm}
-              sendEmail={sendEmail}
-              isSubmitting={isSubmitting}
-              hasSubmitted={hasSubmitted}
-              setShowModal={setShowModal}
-              availableDates={availableDates}
-            />
+              <Link href="/" passHref>
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="border border-yellow-500/50 text-yellow-400 px-8 py-4 rounded-xl hover:bg-gray-800/50 transition-all font-medium flex items-center gap-2"
+                >
+                  Volver al inicio
+                </motion.button>
+              </Link>
+            </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+        </div>
+
+        {/* MODAL */}
+        <AnimatePresence>
+          {showModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
+            >
+              <ReservationForm
+                tour={tour}
+                formRef={formRef}
+                errors={errors}
+                validateForm={validateForm}
+                sendEmail={sendEmail}
+                isSubmitting={isSubmitting}
+                hasSubmitted={hasSubmitted}
+                setShowModal={setShowModal}
+                availableDates={availableDates}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </>
   );
 }
