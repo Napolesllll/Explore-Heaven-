@@ -8,6 +8,7 @@ import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import EmailProvider from "next-auth/providers/email";
 import bcrypt from "bcryptjs";
+import { validateAdminCredentials } from "../../../../lib/auth/admin-credentials";
 
 // Validación de variables de entorno
 const requiredEnvVars = {
@@ -33,16 +34,15 @@ export const authOptions: NextAuthOptions = {
     updateAge: 24 * 60 * 60, // 24 horas
   },
   pages: {
-    // Comentamos las páginas personalizadas para usar las por defecto
-    // signIn: "/auth/signin",
-    // signOut: "/auth/signout",
     error: "/auth/error",
     verifyRequest: "/auth/verify-request",
-    // newUser: "/auth/new-user"
+    signIn: "/auth/signin", // Página personalizada para manejar admin y usuarios
   },
   providers: [
+    // Provider para usuarios regulares
     CredentialsProvider({
-      name: "credentials",
+      id: "credentials",
+      name: "Credenciales de Usuario",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
@@ -62,7 +62,8 @@ export const authOptions: NextAuthOptions = {
           const user = await prisma.user.findUnique({
             where: { email: credentials.email.toLowerCase() },
             include: {
-              accounts: true
+              accounts: true,
+              guiaProfile: true
             }
           });
 
@@ -91,8 +92,8 @@ export const authOptions: NextAuthOptions = {
               data: {
                 email: credentials.email,
                 success: false,
-                ip: "unknown", // En producción, obtener IP real
-                userAgent: "unknown" // En producción, obtener User-Agent real
+                ip: "unknown",
+                userAgent: "unknown"
               }
             });
             return null;
@@ -128,6 +129,74 @@ export const authOptions: NextAuthOptions = {
         }
       },
     }),
+    // Provider específico para administradores
+    CredentialsProvider({
+      id: "admin-credentials",
+      name: "Administrador",
+      credentials: {
+        password: { label: "Contraseña de Administrador", type: "password" },
+      },
+      async authorize(credentials) {
+        try {
+          if (!credentials?.password) {
+            return null;
+          }
+
+          // Validar contraseña de administrador
+          const isValidAdmin = await validateAdminCredentials(credentials.password);
+
+          if (!isValidAdmin) {
+            return null;
+          }
+
+          // Buscar o crear usuario administrador
+          let adminUser = await prisma.user.findFirst({
+            where: { role: "ADMIN" }
+          });
+
+          if (!adminUser) {
+            // Crear usuario administrador por defecto
+            adminUser = await prisma.user.create({
+              data: {
+                email: "admin@sistema.com",
+                name: "Administrador del Sistema",
+                role: "ADMIN",
+                emailVerified: new Date(),
+                status: "ACTIVE"
+              }
+            });
+          }
+
+          // Log login exitoso de admin
+          await prisma.loginAttempt.create({
+            data: {
+              email: adminUser.email,
+              success: true,
+              ip: "unknown",
+              userAgent: "admin-panel"
+            }
+          });
+
+          // Actualizar último login
+          await prisma.user.update({
+            where: { id: adminUser.id },
+            data: { lastLogin: new Date() }
+          });
+
+          return {
+            id: adminUser.id,
+            email: adminUser.email,
+            name: adminUser.name,
+            image: adminUser.image,
+            role: adminUser.role,
+            emailVerified: adminUser.emailVerified,
+          };
+        } catch (error) {
+          console.error("Admin authorization error:", error);
+          return null;
+        }
+      },
+    }),
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -153,8 +222,7 @@ export const authOptions: NextAuthOptions = {
         },
       },
       from: process.env.EMAIL_FROM,
-      maxAge: 24 * 60 * 60, // Link válido por 24 horas
-      // Función personalizada para enviar emails
+      maxAge: 24 * 60 * 60,
       sendVerificationRequest: async ({ identifier, url, provider }) => {
         const { sendVerificationRequest } = await import("../../../../lib/email/sendVerificationRequest");
         await sendVerificationRequest({ identifier, url, provider });
@@ -166,7 +234,6 @@ export const authOptions: NextAuthOptions = {
       try {
         // Si es verificación por email, verificar el token
         if (account?.provider === "email") {
-          // El token ya fue validado por NextAuth, solo necesitamos marcar como verificado
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email! }
           });
@@ -182,12 +249,10 @@ export const authOptions: NextAuthOptions = {
 
         // Verificaciones adicionales de seguridad para otros proveedores
         if (account?.provider === "google" || account?.provider === "facebook") {
-          // Verificar si el email del proveedor externo está verificado
           if (!profile?.email_verified && account?.provider === "google") {
             return false;
           }
 
-          // Verificar dominio permitido (opcional)
           const allowedDomains = process.env.ALLOWED_DOMAINS?.split(",") || [];
           if (allowedDomains.length > 0 && user.email) {
             const domain = user.email.split("@")[1];
@@ -203,7 +268,6 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
     },
-    // Callback de JWT - ACTUALIZADO para manejar actualizaciones de sesión
     async jwt({ token, user, account, trigger, session }) {
       // En el primer login, añadir datos del usuario al token
       if (user) {
@@ -221,7 +285,6 @@ export const authOptions: NextAuthOptions = {
 
       // Si se dispara una actualización manual de sesión
       if (trigger === "update" && session) {
-        // Actualizar los campos que vienen en la sesión
         if (session.user.image !== undefined) {
           token.image = session.user.image;
         }
@@ -238,7 +301,6 @@ export const authOptions: NextAuthOptions = {
 
       return token;
     },
-    // Callback de sesión - ACTUALIZADO para incluir imagen
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
@@ -251,6 +313,9 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
+      // IMPORTANTE: No hacer redirecciones automáticas aquí
+      // Dejar que el middleware maneje las redirecciones por rol
+
       // Permitir redirecciones solo a URLs del mismo dominio
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       if (new URL(url).origin === baseUrl) return url;
@@ -259,7 +324,7 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async signIn(message) {
-      console.log(`User signed in: ${message.user.email}`);
+      console.log(`User signed in: ${message.user.email} - Role: ${message.user.role}`);
     },
     async signOut(message) {
       console.log(`User signed out: ${message.token?.email || "unknown"}`);
@@ -267,10 +332,9 @@ export const authOptions: NextAuthOptions = {
     async createUser(message) {
       console.log(`New user created: ${message.user.email}`);
     },
-    // NUEVO: Evento cuando se actualiza la sesión
     async session({ session, token }) {
       if (process.env.NODE_ENV === "development") {
-        console.log(`Session updated for: ${session.user.email}`);
+        console.log(`Session updated for: ${session.user.email} - Role: ${session.user.role}`);
       }
     },
   },

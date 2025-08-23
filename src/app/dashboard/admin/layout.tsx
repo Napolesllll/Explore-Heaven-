@@ -1,5 +1,5 @@
-import { AdminAuthProvider } from "../../../contexts/AdminAuthContext";
-import AdminProtectedRoute from "../../../components/admin/AdminProtectedRoute";
+// src/app/dashboard/admin/layout.tsx
+import Providers from "app/providers";
 import { ReactNode } from "react";
 
 interface AdminLayoutProps {
@@ -7,9 +7,5 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  return (
-    <AdminAuthProvider>
-      <AdminProtectedRoute>{children}</AdminProtectedRoute>
-    </AdminAuthProvider>
-  );
+  return <Providers>{children}</Providers>;
 }

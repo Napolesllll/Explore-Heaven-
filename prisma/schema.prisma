@@ -48,8 +48,10 @@ model User {
   accounts        Account[]
   sessions        Session[]
   loginAttempts   LoginAttempt[]
-  reviews  Review[]   // ← relación inversa con Review
-  reservas Reserva[]
+  reviews         Review[]
+  reservas        Reserva[]
+  // Relación con Guia si el usuario es una guía
+  guiaProfile     Guia?
 }
 
 model LoginAttempt {
@@ -66,6 +68,7 @@ enum Role {
   USER
   ADMIN
   MODERATOR
+  GUIA
 }
 
 enum Status {
@@ -79,10 +82,8 @@ model VerificationToken {
   token      String
   expires    DateTime
 
-  @@id([identifier, token]) // ✅ Clave primaria compuesta requerida por NextAuth
+  @@id([identifier, token])
 }
-
-
 
 model PendingUser {
   id             String   @id @default(cuid())
@@ -113,16 +114,16 @@ model Reserva {
   id        Int      @id @default(autoincrement())
   nombre    String
   correo    String
-  telefono  String   // Nuevo campo
-  fecha     DateTime // Cambiar de String a DateTime
+  telefono  String
+  fecha     DateTime
   hora      String?
   tourId    String
   guiaId    Int?
   userId    String
-  adultos   Int      // Nuevo campo
-  niños     Int      // Nuevo campo
-  participantes Json?  // Nuevo campo (JSON para datos flexibles)
-  contactoEmergencia Json? // Nuevo campo
+  adultos   Int
+  niños     Int
+  participantes Json?
+  contactoEmergencia Json?
   estado    String? @default("Pagada")
   
   // Relaciones
@@ -136,6 +137,8 @@ model Reserva {
 
 model Guia {
   id          Int      @id @default(autoincrement())
+  userId      String?  @unique // Relación con User
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   nombre      String
   foto        String?
   edad        Int?

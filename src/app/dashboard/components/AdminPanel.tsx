@@ -26,14 +26,15 @@ import ReservationCalendar from "./ReservationCalendar";
 import ReservationList from "./ReservationList";
 import ReservationStats from "./ReservationStats";
 
-import { useAdminAuth } from "../../../contexts/AdminAuthContext";
+import { useRequireAdmin } from "../../../lib/hooks/useAuth";
+import { signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
 
 type MenuItem = {
   id: string;
   label: string;
   icon: React.ReactNode;
-  category: "guias" | "tours" | "general";
+  category: "guias" | "tours" | "general" | "reservas";
 };
 
 const menuItems: MenuItem[] = [
@@ -94,6 +95,7 @@ const menuItems: MenuItem[] = [
 ];
 
 export default function AdminPanel() {
+  const { session, loading } = useRequireAdmin();
   const [activeSection, setActiveSection] = useState<string>("dashboard");
   const [isLoading, setIsLoading] = useState(true);
   const [tours, setTours] = useState<ClientTour[]>([]);
@@ -106,25 +108,28 @@ export default function AdminPanel() {
     totalReservas: 0,
   });
 
-  const { logout } = useAdminAuth();
-
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1200);
+    if (!loading && session) {
+      const timer = setTimeout(() => setIsLoading(false), 1200);
 
-    // Fetch tours y estadísticas
-    Promise.all([
-      fetch("/api/tours")
-        .then((res) => res.json())
-        .then((data) => setTours(data.tours || data)),
-      fetch("/api/guias")
-        .then((res) => res.json())
-        .then((data) =>
-          setStats((prev) => ({ ...prev, totalGuias: data.guias?.length || 0 }))
-        ),
-    ]).catch(console.error);
+      // Fetch tours y estadísticas
+      Promise.all([
+        fetch("/api/tours")
+          .then((res) => res.json())
+          .then((data) => setTours(data.tours || data)),
+        fetch("/api/guias")
+          .then((res) => res.json())
+          .then((data) =>
+            setStats((prev) => ({
+              ...prev,
+              totalGuias: data.guias?.length || 0,
+            }))
+          ),
+      ]).catch(console.error);
 
-    return () => clearTimeout(timer);
-  }, []);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, session]);
 
   const openModal = (tour: ClientTour) => {
     setSelectedTour(tour);
@@ -136,6 +141,10 @@ export default function AdminPanel() {
     setIsModalOpen(false);
     setSelectedTour(null);
     document.body.style.overflow = "auto";
+  };
+
+  const handleLogout = () => {
+    signOut({ callbackUrl: "/dashboard/admin" });
   };
 
   const renderContent = () => {
@@ -154,7 +163,7 @@ export default function AdminPanel() {
         return <TourList />;
       case "manage-dates":
         return <DateManagementContent tours={tours} openModal={openModal} />;
-      // NUEVOS CASOS PARA RESERVAS
+      // CASOS PARA RESERVAS
       case "list-reservations":
         return <ReservationList />;
       case "reservation-calendar":
@@ -168,6 +177,34 @@ export default function AdminPanel() {
     }
   };
 
+  // Mostrar loading mientras NextAuth verifica la sesión
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0c0f1d] to-[#151b35] flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="absolute -inset-4 bg-cyan-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
+            <div className="relative w-24 h-24 rounded-full bg-gradient-to-r from-cyan-600 to-purple-600 flex items-center justify-center animate-spin">
+              <div className="w-20 h-20 rounded-full bg-[#0c0f1d]"></div>
+            </div>
+          </div>
+          <h1 className="mt-8 text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">
+            VERIFICANDO ACCESO
+          </h1>
+          <p className="mt-2 text-gray-400">
+            Validando permisos de administrador
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // El hook useRequireAdmin se encarga de la redirección si no hay sesión
+  if (!session) {
+    return null;
+  }
+
+  // Loading interno del panel
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0c0f1d] to-[#151b35] flex items-center justify-center">
@@ -183,6 +220,9 @@ export default function AdminPanel() {
           </h1>
           <p className="mt-2 text-gray-400">
             Iniciando sistema de administración
+          </p>
+          <p className="mt-1 text-cyan-300 text-sm">
+            Bienvenido, {session.user.name || "Administrador"}
           </p>
         </div>
       </div>
@@ -231,6 +271,21 @@ export default function AdminPanel() {
               >
                 <X size={20} />
               </button>
+            </div>
+          </div>
+
+          {/* Info del Usuario Admin */}
+          <div className="px-6 py-3 border-b border-cyan-500/20">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                {session.user.name?.charAt(0) || "A"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">
+                  {session.user.name || "Administrador"}
+                </p>
+                <p className="text-xs text-cyan-300">{session.user.role}</p>
+              </div>
             </div>
           </div>
 
@@ -357,6 +412,7 @@ export default function AdminPanel() {
                 </p>
               </div>
             </div>
+
             <div className="flex items-center space-x-3">
               <div className="hidden sm:flex items-center space-x-4 text-sm text-gray-400">
                 <span className="flex items-center space-x-1">
@@ -368,27 +424,14 @@ export default function AdminPanel() {
                   <span>{tours.length} Tours</span>
                 </span>
               </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 px-3 py-2 bg-red-600/20 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-600/30 transition-all"
+              >
+                <LogOut size={16} />
+                <span className="hidden sm:inline">Cerrar Sesión</span>
+              </button>
             </div>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <div className="hidden sm:flex items-center space-x-4 text-sm text-gray-400">
-              <span className="flex items-center space-x-1">
-                <Users size={16} />
-                <span>{stats.totalGuias} Guías</span>
-              </span>
-              <span className="flex items-center space-x-1">
-                <MapPin size={16} />
-                <span>{tours.length} Tours</span>
-              </span>
-            </div>
-            <button
-              onClick={logout}
-              className="flex items-center space-x-2 px-3 py-2 bg-red-600/20 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-600/30 transition-all"
-            >
-              <LogOut size={16} />
-              <span className="hidden sm:inline">Cerrar Sesión</span>
-            </button>
           </div>
         </header>
 

@@ -3,7 +3,7 @@
 import React from "react";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "react-hot-toast";
-import AuthForm from "../../components/AuthForm";
+import AuthForm from "../login/page";
 
 export default function AuthPage() {
   return (

@@ -380,7 +380,7 @@ export default function AuthForm() {
 
       {/* Back button */}
       <button
-        onClick={() => router.back()}
+        onClick={() => router.push("/")}
         className="absolute top-6 left-6 z-50 flex items-center space-x-1 bg-gray-800/80 hover:bg-gray-700/90 backdrop-blur-sm border border-yellow-400/30 text-yellow-400 px-4 py-2.5 rounded-xl transition-all duration-300 shadow-lg hover:shadow-yellow-400/20"
       >
         <ArrowLeftIcon className="h-4 w-4" />

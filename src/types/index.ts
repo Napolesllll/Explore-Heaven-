@@ -1,3 +1,5 @@
+import { ReactNode } from "react";
+
 // types/index.ts
 export type ClientAvailableDate = {
   id: string;
@@ -8,6 +10,8 @@ export type ClientAvailableDate = {
 };
 
 export type ClientTour = {
+  ubicacion: ReactNode;
+  imagenDestacada: any;
   id: string;
   nombre: string;
 };
