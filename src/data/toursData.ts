@@ -22,7 +22,7 @@ export const tours: Tour[] = [
     id: "comuna13",
     nombre: "Tour Comuna 13",
     descripcion:
-      "Al caminar por el barrio Comuna 13 de Medellín, uno no puede evitar sentirse confundido. ¿Cómo es posible que un lugar tan hermoso tenga tanta historia oscura? Nuestro recorrido por la Comuna 13 de Medellín explica por qué. [...]",
+      "Al caminar por el barrio Comuna 13 de Medellín, uno no puede evitar sentirse confundido. ¿Cómo es posible que un lugar tan hermoso tenga tanta historia oscura? Nuestro recorrido por la Comuna 13 de Medellín explica por qué.\n\nEntre murales y memoria, esta zona, que alguna vez fue epicentro del conflicto armado colombiano, ha logrado reinventarse sin olvidar su pasado. En los años 90 y principios de los 2000, la Comuna 13 fue escenario de enfrentamientos entre guerrillas, paramilitares y fuerzas del Estado, incluyendo la tristemente célebre Operación Orión en 2002, que dejó profundas cicatrices en la comunidad.\n\nHoy, sin embargo, sus calles laberínticas están llenas de color, música y vida. Los grafitis vibrantes no solo decoran las fachadas, sino que cuentan historias de resistencia, dolor y esperanza. Cada mural es una ventana al alma de sus habitantes, que han transformado el miedo en arte y el silencio en rimas de rap.\n\nAl recorrer sus escaleras eléctricas —símbolo de inclusión y progreso— y escuchar las historias de guías locales como Tatam, uno entiende que la belleza de la Comuna 13 no está solo en sus vistas panorámicas o en su arte urbano, sino en la fuerza de una comunidad que decidió no rendirse.\n\nEste recorrido no es solo turístico: es una experiencia emocional, una lección de resiliencia y una invitación a mirar más allá de lo evidente. Porque en la Comuna 13, cada paso es un testimonio de transformación.",
     salida: "1:00 pm",
     regreso: "5:00 pm",
     duracion: "4 Horas",
@@ -66,7 +66,7 @@ export const tours: Tour[] = [
     id: "museo-antioquia",
     nombre: "Museo de Antioquia",
     descripcion:
-      "El Museo de Antioquia, ubicado en Medellín, Colombia, es un tesoro cultural que cautiva a los visitantes con su rica historia y variada colección de arte. [...]",
+      "El Museo de Antioquia, ubicado en Medellín, Colombia, es un tesoro cultural que cautiva a los visitantes con su rica historia y variada colección de arte. Fundado en 1881, es el primer museo del departamento de Antioquia y el segundo más antiguo de Colombia. Su sede actual, el antiguo Palacio Municipal, se encuentra frente a la emblemática Plaza Botero, en pleno corazón de la ciudad.\n\nEste museo alberga una impresionante colección de obras del maestro Fernando Botero, así como piezas de arte precolombino, moderno y contemporáneo. Además, sus murales de Pedro Nel Gómez y exposiciones temporales ofrecen una mirada profunda a la historia, la identidad y los desafíos sociales de la región.\n\nMás que un espacio de exhibición, el Museo de Antioquia se ha convertido en un agente de transformación social. A través de iniciativas como Museo 360 y programas comunitarios, ha logrado vincular el arte con las realidades del centro de Medellín, generando espacios de diálogo, inclusión y aprendizaje.\n\nVisitar este museo es sumergirse en la memoria cultural de Antioquia, explorar sus múltiples narrativas y descubrir cómo el arte puede ser una herramienta poderosa para el cambio.",
     salida: "10:00 am",
     regreso: "4:00 pm",
     duracion: "6 Horas",
@@ -107,7 +107,7 @@ export const tours: Tour[] = [
     id: "tour-experiencia-cafetera-colombia",
     nombre: "Experiencia Cafetera Inigualable en Colombia",
     descripcion:
-      "Sumérgete en el corazón de la cultura cafetera de Colombia con un recorrido que va más allá de una simple degustación de café. Este tour ofrece una inmersión sensorial completa en una de las tradiciones más emblemáticas del país. Visita Manizales, Salento y el Valle del Cocora, participa en una experiencia cafetera auténtica y descubre por qué el café colombiano es uno de los mejores del mundo.",
+      "Sumérgete en el corazón de la cultura cafetera de Colombia con un recorrido que va más allá de una simple degustación de café. Este tour ofrece una inmersión sensorial completa en una de las tradiciones más emblemáticas del país. Visita Manizales, Salento y el Valle del Cocora, participa en una experiencia cafetera auténtica y descubre por qué el café colombiano es uno de los mejores del mundo.\n\nEl Eje Cafetero colombiano, reconocido por la UNESCO como Patrimonio de la Humanidad en 2011, es mucho más que una región productora de café: es un paisaje cultural vivo que refleja la historia, el trabajo y la pasión de generaciones enteras. Manizales, con su arquitectura republicana y sus montañas imponentes, ofrece una bienvenida cálida entre neblina y aroma a café recién hecho. Salento, por su parte, es la viva imagen de la Colombia rural, con sus casas coloridas, balcones floridos y la cercanía al majestuoso Valle del Cocora, hogar de las palmas de cera más altas del mundo.\n\nDurante esta experiencia, no solo caminarás entre cafetales y aprenderás sobre el proceso de cultivo, recolección y tostado del café, sino que también te conectarás con la esencia de una cultura que gira en torno a esta bebida. Desde los antiguos Jeep Willys que recorren los caminos rurales hasta las fincas que conservan prácticas tradicionales, cada momento está impregnado de autenticidad.\n\nEste tour es ideal para quienes buscan algo más que turismo: es una oportunidad para entender el alma cafetera de Colombia, disfrutar de paisajes inolvidables y llevarse en el corazón el sabor de una historia que se cultiva en cada grano.",
     salida: "Día 1 a las 7:00 A.M.",
     regreso: "Día 3 a las 7:00 P.M.",
     duracion: "3 días",
@@ -157,11 +157,12 @@ export const tours: Tour[] = [
     ],
     precio: "Desde 800 USD por persona"
   },
+
   {
     id: "tour-vida-nocturna-medellin",
     nombre: "Tour Vida Nocturna en Medellín",
     descripcion:
-      "Descubre la vibrante vida nocturna de Medellín con un recorrido exclusivo por las mejores discotecas de la ciudad. Este tour ofrece una experiencia inolvidable para quienes desean disfrutar de música, baile y la auténtica cultura de fiesta paisa. Incluye transporte privado y acceso VIP a los clubes más exclusivos.",
+      "Descubre la vibrante vida nocturna de Medellín con un recorrido exclusivo por las mejores discotecas de la ciudad. Este tour ofrece una experiencia inolvidable para quienes desean disfrutar de música, baile y la auténtica cultura de fiesta paisa. Incluye transporte privado y acceso VIP a los clubes más exclusivos.\n\nProvenza, en el corazón de El Poblado, es el epicentro de la vida nocturna paisa. Sus calles se llenan de energía, luces y ritmos que van desde el reguetón y la salsa hasta la electrónica más sofisticada. Este tour te lleva por una selección de discotecas icónicas como Perro Negro, con su ambiente alternativo y cervezas artesanales; Envy Rooftop, donde la vista panorámica de Medellín se mezcla con cócteles exclusivos; y La House, famosa por su música crossover y atmósfera vibrante.\n\nTambién visitarás lugares como Dulcinea, un espacio VIP frecuentado por celebridades, y Viuz, ideal para los amantes del techno y la electrónica. Cada parada está diseñada para ofrecerte una experiencia única, con acceso preferencial, transporte cómodo y la compañía de un guía que conoce los secretos mejor guardados de la noche paisa.\n\nEste tour no es solo una salida nocturna: es una inmersión en la cultura festiva de Medellín, donde cada club tiene su estilo, cada canción su historia, y cada noche su magia. Prepárate para bailar, brindar y vivir una noche que recordarás por mucho tiempo.",
     salida: "11:30 P.M.",
     regreso: "4:30 A.M.",
     duracion: "1 noche",
@@ -201,11 +202,12 @@ export const tours: Tour[] = [
     ],
     precio: "Desde 150 USD por persona"
   },
+
   {
     id: "pablo-escobar-tour",
     nombre: "Tour Pablo Escobar en Medellín",
     descripcion:
-      "¿Necesitas siquiera una razón para inscribirte en un tour de Pablo Escobar en Medellín?\n\nSi te fascina la vida y el legado de Pablo Escobar, quizás quieras unirte a nuestro Tour de Pablo Escobar en Medellín. Se trata de un recorrido de 3 horas que te llevará a algunos de los lugares más emblemáticos relacionados con el famoso capo de la droga. De hecho, verás sus antiguas propiedades, la casa donde fue asesinado y su lugar de descanso final.\n\nPero no se trata de un simple recorrido turístico. Nuestro tour de Pablo Escobar en Medellín es una experiencia inmersiva. De hecho, le permitirá conocer en profundidad la historia y la cultura de Medellín durante la era de Pablo Escobar.\n\nAdemás, un guía experto te acompañará a través de esos tiempos polémicos. Podrá compartir contigo sus historias y perspectivas personales.",
+      "¿Necesitas siquiera una razón para inscribirte en un tour de Pablo Escobar en Medellín?\n\nSi te fascina la vida y el legado de Pablo Escobar, quizás quieras unirte a nuestro Tour de Pablo Escobar en Medellín. Se trata de un recorrido de 3 horas que te llevará a algunos de los lugares más emblemáticos relacionados con el famoso capo de la droga. De hecho, verás sus antiguas propiedades, la casa donde fue asesinado y su lugar de descanso final.\n\nPero no se trata de un simple recorrido turístico. Nuestro tour de Pablo Escobar en Medellín es una experiencia inmersiva. De hecho, le permitirá conocer en profundidad la historia y la cultura de Medellín durante la era de Pablo Escobar.\n\nAdemás, un guía experto te acompañará a través de esos tiempos polémicos. Podrá compartir contigo sus historias y perspectivas personales.\n\nDurante las décadas de 1980 y 1990, Medellín fue considerada una de las ciudades más peligrosas del mundo, marcada por el auge del narcotráfico y la violencia generada por el Cartel de Medellín. Pablo Escobar, su líder, acumuló una fortuna estimada en más de 30 mil millones de dólares y dejó una huella profunda en la historia del país. Este tour busca ofrecer una mirada crítica y reflexiva sobre ese pasado, visitando sitios como el Parque Memorial Inflexión, que honra a las víctimas del conflicto urbano y promueve la memoria colectiva.\n\nTambién se exploran espacios como el barrio Loreto (antes conocido como barrio Pablo Escobar), donde se han borrado murales que glorificaban al capo y se han reemplazado por expresiones artísticas que celebran la resiliencia de la comunidad. La experiencia está diseñada para fomentar el diálogo sobre el impacto social del narcotráfico y cómo Medellín ha logrado transformarse en una ciudad vibrante, creativa y resiliente.",
     salida: "10:00 am",
     regreso: "4:00 pm",
     duracion: "6 Horas",
@@ -243,11 +245,12 @@ export const tours: Tour[] = [
     precio: "200 USD por persona"
   },
 
+
   {
     id: "tour-guatape",
     nombre: "Tour a Guatapé y El Peñol",
     descripcion:
-      "¡Visitar Medellín sin hacer un Guatapé Tour es como no haber visitado Medellín en absoluto! Este hermoso pueblo colorido, ubicado a solo dos horas de la ciudad, ofrece paisajes naturales impresionantes, actividades acuáticas, historia, arte y mucho más. Disfruta de una experiencia única y completa en este destino imprescindible.",
+      "¡Visitar Medellín sin hacer un Guatapé Tour es como no haber visitado Medellín en absoluto! Este hermoso pueblo colorido, ubicado a solo dos horas de la ciudad, ofrece paisajes naturales impresionantes, actividades acuáticas, historia, arte y mucho más. Disfruta de una experiencia única y completa en este destino imprescindible.\n\nGuatapé, conocido como el pueblo de los zócalos, es una joya arquitectónica y cultural enclavada en el oriente antioqueño. Sus fachadas decoradas con relieves coloridos narran historias de la vida campesina, la colonización y las tradiciones locales. Fundado en 1811, el municipio ha evolucionado de una economía agrícola y ganadera a convertirse en uno de los destinos turísticos más visitados de Colombia, especialmente desde la construcción del embalse de 2.262 hectáreas por parte de las Empresas Públicas de Medellín en la década de 1970.\n\nEl tour también incluye la imponente Piedra del Peñol, un batolito de 220 metros de altura que ofrece una de las vistas panorámicas más espectaculares del país. Subir sus 740 escalones es una experiencia desafiante pero gratificante, rodeada de mitos y leyendas que enriquecen su historia. Algunos relatos locales aseguran que la piedra era objeto de adoración por comunidades prehispánicas, mientras otros afirman que es la punta de un meteorito o que sus grietas fueron hechas por el hacha del diablo.\n\nEste recorrido no solo te conecta con la belleza natural de Antioquia, sino también con su historia, su gente y su capacidad de transformación. Ya sea navegando por la represa, explorando los zócalos o disfrutando de la gastronomía local, Guatapé y El Peñol te ofrecen una experiencia que combina aventura, cultura y descanso en un solo día.",
     salida: "7:00 A.M.",
     regreso: "10:00 P.M.",
     duracion: "1 día",
@@ -288,11 +291,12 @@ export const tours: Tour[] = [
     precio: "Desde 220 USD por persona"
   },
 
+
   {
     id: "tour-parapente",
     nombre: "Tour de Parapente en San Félix",
     descripcion:
-      "Vuela por los cielos de Medellín con esta experiencia de parapente en San Félix. Si eres un amante de la aventura o simplemente deseas disfrutar de vistas espectaculares mientras te relajas, este tour es ideal para ti. Disfruta de un desayuno local, vuelo con piloto certificado y hermosos miradores del Valle de Aburrá.",
+      "Vuela por los cielos de Medellín con esta experiencia de parapente en San Félix. Si eres un amante de la aventura o simplemente deseas disfrutar de vistas espectaculares mientras te relajas, este tour es ideal para ti. Disfruta de un desayuno local, vuelo con piloto certificado y hermosos miradores del Valle de Aburrá.\n\nSan Félix, un corregimiento del municipio de Bello, se ha convertido en el epicentro del parapente en Antioquia gracias a sus condiciones climáticas ideales y sus vientos constantes que permiten volar durante todo el año. A tan solo 45 minutos de Medellín, este lugar ofrece una experiencia única entre montañas, nubes y paisajes que quitan el aliento. Desde lo alto, se puede observar el extenso Valle de Aburrá, con sus municipios rodeados de verde y la ciudad vibrante extendiéndose en el horizonte.\n\nMás de una docena de empresas operan en la zona, ofreciendo vuelos seguros con pilotos certificados y equipos de última generación. El recorrido comienza con un desayuno tradicional antioqueño, seguido por el ascenso a la zona de vuelo, donde el viento frío y fuerte da la bienvenida a los aventureros. Una vez en el aire, los parapentes danzan como cometas sobre el valle, y quienes se atreven a pedir maniobras acrobáticas viven una descarga de adrenalina inolvidable.\n\nAdemás del vuelo, el tour incluye paradas en miradores locales donde se pueden degustar productos típicos como chocolate artesanal y arepas, y adquirir recuerdos hechos por artesanos de la región. Esta experiencia no solo es una aventura aérea, sino también una conexión profunda con la naturaleza, la cultura local y la emoción de volar.",
     salida: "9:00 A.M.",
     regreso: "1:00 P.M.",
     duracion: "4 horas",
@@ -333,7 +337,7 @@ export const tours: Tour[] = [
     id: "tour-atv-medellin",
     nombre: "Tour en ATV por las montañas de Medellín",
     descripcion:
-      "¡Vive una experiencia única y llena de adrenalina con nuestros tours en ATV en Medellín! Recorre rutas emocionantes con quads 4x4, sumérgete en la vibrante naturaleza de Colombia y vive paisajes impresionantes. No necesitas experiencia previa. Todo está incluido para que solo disfrutes. Somos la empresa número 1 en tours de ATV en Medellín. ¡Prepárate para una aventura épica que recordarás por siempre!",
+      "¡Vive una experiencia única y llena de adrenalina con nuestros tours en ATV en Medellín! Recorre rutas emocionantes con quads 4x4, sumérgete en la vibrante naturaleza de Colombia y vive paisajes impresionantes. No necesitas experiencia previa. Todo está incluido para que solo disfrutes. Somos la empresa número 1 en tours de ATV en Medellín. ¡Prepárate para una aventura épica que recordarás por siempre!\n\nEl turismo de aventura en Medellín ha evolucionado significativamente desde principios de los 2000, cuando la ciudad comenzó a reinventarse como un destino seguro y vibrante. Los tours en ATV surgieron como una alternativa emocionante para explorar las montañas, ríos y senderos rurales que rodean el Valle de Aburrá. Hoy, esta actividad se ha consolidado como una de las favoritas entre viajeros que buscan adrenalina y contacto directo con la naturaleza.\n\nEste tour te lleva por caminos escarpados, bosques nublados y paisajes que parecen sacados de una postal. Los quads 4x4 de 450cc permiten recorrer terrenos difíciles con facilidad, mientras que los guías locales, expertos en seguridad y cultura, enriquecen la experiencia con historias y datos curiosos sobre la región. Además, el recorrido incluye una parada en el Río Buey, donde puedes nadar en aguas cristalinas rodeado de vegetación exuberante.\n\nLa experiencia también ofrece momentos de descanso y contemplación: desde una piscina infinita con vista a las montañas hasta un almuerzo típico paisa que celebra los sabores de Antioquia. Este tour no solo es una aventura sobre ruedas, sino una inmersión en la biodiversidad, la gastronomía y la hospitalidad de las montañas paisas.",
     salida: "8:00 A.M.",
     regreso: "5:00 P.M.",
     duracion: "Todo el día (aproximadamente 9 horas)",
@@ -365,21 +369,21 @@ export const tours: Tour[] = [
       "3. Regreso (2 h): Vuelta a tu alojamiento para cerrar esta experiencia intensa y memorable."
     ],
     ubicacion: "https://www.google.com.mx/maps/place/Reserva+Natural+Tahamies/@6.2644079,-75.4491241,17z/data=!3m1!4b1!4m6!3m5!1s0x8e4427598d72d925:0x6dd83a25033e36ad!8m2!3d6.2644079!4d-75.4465492!16s%2Fg%2F11lrl9m0wd?entry=ttu",
-
     fotos: [
       "/images/tours/99.jpg",
       "/images/tours/biker.jpg",
       "/images/tours/can.webp"
     ],
     precio: "Desde 200 USD por persona",
-    preguntasFrecuentes: [],
+    preguntasFrecuentes: []
   },
+
 
   {
     id: "tour-vuelo-guatape",
     nombre: "Vuelo Panorámico sobre Guatapé",
     descripcion:
-      "Tenemos los mejores planes para volar sobre uno de los paisajes más espectaculares de Colombia. Sorprende a tu familia o vive una experiencia única en vuelos privados o compartidos. Desde el cielo podrás admirar la majestuosa represa, la icónica Piedra del Peñol y sus islas, volando a 500 metros de altura y a 150 km/h. Una experiencia inolvidable que combina adrenalina, lujo y paisajes sin igual.",
+      "Tenemos los mejores planes para volar sobre uno de los paisajes más espectaculares de Colombia. Sorprende a tu familia o vive una experiencia única en vuelos privados o compartidos. Desde el cielo podrás admirar la majestuosa represa, la icónica Piedra del Peñol y sus islas, volando a 500 metros de altura y a 150 km/h. Una experiencia inolvidable que combina adrenalina, lujo y paisajes sin igual.\n\nGuatapé, con sus zócalos coloridos y calles vibrantes, es uno de los destinos más encantadores de Antioquia. Pero desde el aire, su belleza adquiere una dimensión completamente nueva. El vuelo panorámico permite contemplar la inmensidad de la represa de Guatapé, un embalse artificial creado en los años 70 que transformó el paisaje y dio origen a un sistema de islas que parecen flotar entre montañas.\n\nUno de los puntos más destacados del recorrido es la Piedra del Peñol, un batolito de 220 metros de altura que ha sido símbolo de la región desde tiempos prehispánicos. Los indígenas tahamíes la consideraban un lugar sagrado, y su primera escalada oficial en 1954 marcó el inicio de su fama turística. Hoy, miles de visitantes suben sus 740 escalones cada año, pero solo desde el aire se puede apreciar su forma imponente y la grieta natural que la atraviesa.\n\nEste tour es ideal para quienes buscan una experiencia exclusiva, ya sea en vuelos compartidos o privados, con opciones que incluyen fotografía profesional, bebidas, snacks y atención personalizada. Más que un paseo aéreo, es una celebración de la majestuosidad natural y cultural de Guatapé, perfecta para ocasiones especiales o simplemente para vivir Colombia desde las alturas.",
     salida: "Horario bajo reserva",
     regreso: "Horario bajo reserva",
     duracion: "6 a 12 minutos de vuelo (dependiendo del plan elegido) + tiempo de traslado",
@@ -415,18 +419,19 @@ export const tours: Tour[] = [
     ],
     ubicacion: "https://www.google.com/maps/place/Hotel+Los+Recuerdos/@6.2272911,-75.1828488,17z/data=!3m1!4b1!4m9!3m8!1s0x8e46a7f756e3022d:0x7a1f526738441b7d!5m2!4m1!1i2!8m2!3d6.2272911!4d-75.1802739!16s%2Fg%2F11b8v9qd0b?entry=ttu",
     precio: "Desde 150 USD por persona",
-    preguntasFrecuentes: [], fotos: [
+    preguntasFrecuentes: [],
+    fotos: [
       "/images/tours/hel.jpg",
       "/images/tours/biker.jpg",
       "/images/tours/can.webp"
-    ],
+    ]
   },
 
   {
     id: "tour-hacienda-napoles",
     nombre: "Tour a la Hacienda Nápoles",
     descripcion:
-      "Explora un parque temático que fue propiedad de Pablo Escobar en un recorrido privado desde Medellín. Sumérgete en una historia única y descubre cómo este lugar se transformó en un espacio de conservación, educación y entretenimiento para toda la familia. Observa animales salvajes, disfruta de atracciones acuáticas, jardines temáticos y conoce a Vanesa, la mascota del parque. ¡Un recorrido que mezcla naturaleza, historia y mucha diversión!",
+      "Explora un parque temático que fue propiedad de Pablo Escobar en un recorrido privado desde Medellín. Sumérgete en una historia única y descubre cómo este lugar se transformó en un espacio de conservación, educación y entretenimiento para toda la familia. Observa animales salvajes, disfruta de atracciones acuáticas, jardines temáticos y conoce a Vanesa, la mascota del parque. ¡Un recorrido que mezcla naturaleza, historia y mucha diversión!\n\nLa Hacienda Nápoles, ubicada en Puerto Triunfo, Antioquia, fue originalmente una finca privada construida en 1978 por Pablo Escobar. En su época, contaba con lujos extravagantes como una pista de aterrizaje, zoológico con especies exóticas, lagos artificiales, esculturas, y hasta una réplica del avión con el que inició su imperio criminal. Tras la caída del Cartel de Medellín, la propiedad pasó a manos del Estado colombiano y permaneció en abandono hasta que, en 2007, comenzó su transformación en parque temático.\n\nHoy, el Parque Temático Hacienda Nápoles es un símbolo de renovación. Con más de 3.000 hectáreas, se ha convertido en un santuario de fauna y flora, con áreas dedicadas a la conservación de especies amenazadas, educación ambiental y recreación familiar. El parque alberga hipopótamos, tigres, jirafas, cebras y muchas otras especies, además de zonas acuáticas, museos, aviarios y jardines temáticos. Su enfoque actual busca cambiar la narrativa de violencia por una de aprendizaje, naturaleza y resiliencia.\n\nEste tour es ideal para quienes desean conocer una parte importante de la historia reciente de Colombia, mientras disfrutan de un día lleno de aventura, reflexión y diversión. Es una experiencia que conecta el pasado con el presente, mostrando cómo un lugar marcado por la controversia puede convertirse en un espacio de esperanza y transformación.",
     salida: "6:00 a.m.",
     regreso: "8:00 p.m.",
     duracion: "14 horas (incluye transporte y recorrido en el parque)",
@@ -463,14 +468,15 @@ export const tours: Tour[] = [
       "/images/tours/can.webp"
     ],
     precio: "Desde 300 USD por persona",
-    preguntasFrecuentes: [],
+    preguntasFrecuentes: []
   },
+
 
   {
     id: "tour-pueblito-paisa",
     nombre: "Tour al Pueblito Paisa",
     descripcion:
-      "El Pueblito Paisa es una réplica a escala real de un pueblo tradicional antioqueño del siglo XIX. Recorre sus calles empedradas, visita casas típicas, prueba la gastronomía local y disfruta de la música y cultura tradicional. Desde su mirador podrás disfrutar de una de las mejores vistas panorámicas de Medellín.",
+      "El Pueblito Paisa es una réplica a escala real de un pueblo tradicional antioqueño del siglo XIX. Recorre sus calles empedradas, visita casas típicas, prueba la gastronomía local y disfruta de la música y cultura tradicional. Desde su mirador podrás disfrutar de una de las mejores vistas panorámicas de Medellín.\n\nUbicado en la cima del Cerro Nutibara, el Pueblito Paisa fue inaugurado en 1978 como un homenaje a las tradiciones rurales de Antioquia. Su arquitectura criolla combina técnicas indígenas como el bahareque con influencias coloniales españolas, y está organizada alrededor de una plaza central con iglesia, alcaldía, barbería, escuela y fonda, tal como se hacía en los pueblos de antaño.\n\nEste lugar es considerado patrimonio cultural y ambiental de Medellín, y funciona como museo vivo al aire libre. Además de sus construcciones típicas, alberga el Museo Ciudad, el Parque de las Esculturas y senderos ecológicos que permiten explorar la fauna y flora del Valle de Aburrá. La escultura del Cacique Nutibara, obra de José Horacio Betancur, preside el lugar como símbolo de la identidad paisa.\n\nDurante festividades como la Feria de las Flores o la temporada decembrina, el Pueblito Paisa se llena de música, trovadores, artesanías y gastronomía típica, convirtiéndose en un punto de encuentro entre lo ancestral y lo contemporáneo. Es el sitio perfecto para entender el alma antioqueña, disfrutar de una bandeja paisa con mazamorra, y tomarse una foto en una tradicional chiva decorada.",
     salida: "3:00 p.m.",
     regreso: "6:00 p.m.",
     duracion: "3 horas",
@@ -504,14 +510,15 @@ export const tours: Tour[] = [
       "/images/tours/can.webp"
     ],
     precio: "60 USD por persona",
-    preguntasFrecuentes: [],
+    preguntasFrecuentes: []
   },
+
 
   {
     id: "tour-metro-medellin",
     nombre: "Tour por el Sistema Metro de Medellín",
     descripcion:
-      "Explora el sistema de transporte más innovador de Colombia: el Metro, Tranvía, Teleférico, Metroplús y rutas integradas. Conoce cómo transformó la ciudad y vive la experiencia de viajar como un local por los corredores más icónicos de Medellín. Este recorrido incluye historia, cultura y vistas panorámicas impresionantes del Valle de Aburrá.",
+      "Explora el sistema de transporte más innovador de Colombia: el Metro, Tranvía, Teleférico, Metroplús y rutas integradas. Conoce cómo transformó la ciudad y vive la experiencia de viajar como un local por los corredores más icónicos de Medellín. Este recorrido incluye historia, cultura y vistas panorámicas impresionantes del Valle de Aburrá.\n\nEl Metro de Medellín, inaugurado en 1995, es mucho más que un medio de transporte: es un símbolo de transformación urbana, orgullo ciudadano y resiliencia colectiva. Fue el primer sistema ferroviario moderno en Colombia y se convirtió en el eje articulador de la movilidad en el Valle de Aburrá. Su desarrollo incluyó la participación activa de la comunidad y dio origen a la reconocida “Cultura Metro”, basada en el respeto, la limpieza y el civismo.\n\nHoy, el sistema cuenta con líneas de tren, tranvía, buses articulados (Metroplús) y metrocables que conectan zonas de difícil acceso en las laderas de la ciudad. Medellín fue pionera mundial en integrar teleféricos como transporte público masivo, logrando reducir trayectos de dos horas a tan solo treinta minutos. Esta innovación ha sido reconocida internacionalmente, ubicando al Metro de Medellín entre los diez mejores sistemas de transporte del mundo.\n\nDurante el tour, los visitantes no solo recorren estaciones emblemáticas como Parque Berrío y San Antonio, sino que también descubren cómo el sistema ha influido en el desarrollo social, económico y ambiental de la ciudad. Desde el tranvía de Ayacucho, que revitalizó un corredor cultural, hasta el Metrocable que lleva al Parque Arví, cada trayecto revela una historia de progreso y conexión.\n\nEste tour es ideal para quienes desean entender Medellín desde su infraestructura más representativa, viajando entre arte urbano, arquitectura moderna y paisajes que narran el renacer de una ciudad.",
     salida: "10:00 a.m.",
     regreso: "3:00 p.m.",
     duracion: "5 horas",
@@ -547,8 +554,8 @@ export const tours: Tour[] = [
       "/images/tours/metro.webp"
     ],
     precio: "80 USD por persona",
-    preguntasFrecuentes: [],
-  },
+    preguntasFrecuentes: []
+  }
 
 
 
