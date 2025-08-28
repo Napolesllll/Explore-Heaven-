@@ -8,8 +8,8 @@ import SidebarRight from "../../app/dashboard/SidebarRight";
 import Feed from "../../app/dashboard/Feed";
 import TopNavbar from "../../app/dashboard/TopNavbar";
 import Image from "next/image";
-import Footer from "components/Footer";
 import EmergencyButton from "components/EmergencyButton";
+import GalacticFooter from "./GalacticFooter";
 
 // Componente de loading mejorado
 const LoadingAnimation = () => {
@@ -198,9 +198,9 @@ export default function DashboardPage() {
         <TopNavbar activeSection={activeSection} onSelect={setActiveSection} />
 
         <Feed activeSection={activeSection} />
-        <Footer />
 
         <EmergencyButton />
+        <GalacticFooter />
       </main>
 
       <SidebarRight />

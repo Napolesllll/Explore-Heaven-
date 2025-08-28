@@ -17,6 +17,35 @@ import {
 import { useReservations } from "./hooks/useReservations";
 import { Reservation } from "../../../types/reservations";
 
+// Funciones para manejar fechas sin problemas de timezone
+const createDateWithoutTimezone = (dateString: string): Date => {
+  return new Date(dateString + "T00:00:00");
+};
+
+const formatDateWithoutTimezone = (dateString: string): string => {
+  const date = createDateWithoutTimezone(dateString);
+  return date.toLocaleDateString("es-ES", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+const formatDateShort = (dateString: string): string => {
+  const date = createDateWithoutTimezone(dateString);
+  return date.toLocaleDateString("es-ES");
+};
+
+const isSameDate = (dateString: string, compareDate: Date): boolean => {
+  const date = createDateWithoutTimezone(dateString);
+  return (
+    date.getDate() === compareDate.getDate() &&
+    date.getMonth() === compareDate.getMonth() &&
+    date.getFullYear() === compareDate.getFullYear()
+  );
+};
+
 // Componente para mostrar las reservas de un día específico
 function DayReservations({
   date,
@@ -28,8 +57,7 @@ function DayReservations({
   onViewReservation: (reservation: Reservation) => void;
 }) {
   const dayReservations = reservations.filter((reservation) => {
-    const reservationDate = new Date(reservation.fechaSeleccionada);
-    return reservationDate.toDateString() === date.toDateString();
+    return isSameDate(reservation.fechaSeleccionada, date);
   });
 
   if (dayReservations.length === 0) return null;
@@ -83,8 +111,7 @@ function DayDetailsModal({
   if (!isOpen || !date) return null;
 
   const dayReservations = reservations.filter((reservation) => {
-    const reservationDate = new Date(reservation.fechaSeleccionada);
-    return reservationDate.toDateString() === date.toDateString();
+    return date ? isSameDate(reservation.fechaSeleccionada, date) : false;
   });
 
   return (
@@ -170,10 +197,7 @@ function DayDetailsModal({
                     <div className="flex items-center gap-2 text-gray-400">
                       <Clock size={14} />
                       <span>
-                        Reservado:{" "}
-                        {new Date(
-                          reservation.fechaCreacion
-                        ).toLocaleDateString()}
+                        Reservado: {formatDateShort(reservation.fechaCreacion)}
                       </span>
                     </div>
                     {reservation.precioTotal && (
@@ -251,8 +275,7 @@ export default function ReservationCalendar() {
       day
     );
     return reservations.filter((reservation) => {
-      const reservationDate = new Date(reservation.fechaSeleccionada);
-      return reservationDate.toDateString() === date.toDateString();
+      return isSameDate(reservation.fechaSeleccionada, date);
     });
   };
 
@@ -282,7 +305,7 @@ export default function ReservationCalendar() {
 
   // Filtrar reservas del mes actual
   const reservationsThisMonth = reservations.filter((r) => {
-    const date = new Date(r.fechaSeleccionada);
+    const date = createDateWithoutTimezone(r.fechaSeleccionada);
     return (
       date.getMonth() === currentDate.getMonth() &&
       date.getFullYear() === currentDate.getFullYear()
@@ -462,7 +485,9 @@ export default function ReservationCalendar() {
                     [
                       ...new Set(
                         reservationsThisMonth.map((r) =>
-                          new Date(r.fechaSeleccionada).getDate()
+                          createDateWithoutTimezone(
+                            r.fechaSeleccionada
+                          ).getDate()
                         )
                       ),
                     ].length

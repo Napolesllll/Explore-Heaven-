@@ -27,6 +27,22 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
+// Función para formatear fechas sin problemas de timezone
+const formatDateWithoutTimezone = (dateString: string): string => {
+  const date = new Date(dateString + "T00:00:00");
+  return date.toLocaleDateString("es-ES", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+const formatDateShort = (dateString: string): string => {
+  const date = new Date(dateString + "T00:00:00");
+  return date.toLocaleDateString("es-ES");
+};
+
 // Tipos para las reservas
 export type ReservationStatus =
   | "pendiente"
@@ -462,15 +478,7 @@ function ReservationDetails({
           <div className="space-y-2 text-sm">
             <p className="text-gray-300">
               <span className="text-gray-400">Fecha:</span>{" "}
-              {new Date(reservation.fechaSeleccionada).toLocaleDateString(
-                "es-ES",
-                {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                }
-              )}
+              {formatDateWithoutTimezone(reservation.fechaSeleccionada)}
             </p>
             <p className="text-gray-300">
               <span className="text-gray-400">Ubicación:</span>{" "}
@@ -543,8 +551,7 @@ function ReservationDetails({
                   {participante.numeroDocumento}
                 </p>
                 <p className="text-gray-400 text-xs">
-                  Nacimiento:{" "}
-                  {new Date(participante.fechaNacimiento).toLocaleDateString()}
+                  Nacimiento: {formatDateShort(participante.fechaNacimiento)}
                 </p>
               </div>
             ))}
@@ -781,7 +788,7 @@ export default function ReservationList() {
       const csvData = filteredReservations.map((reservation) => [
         reservation.id,
         reservation.tourNombre,
-        new Date(reservation.fechaSeleccionada).toLocaleDateString("es-ES"),
+        formatDateShort(reservation.fechaSeleccionada),
         statusConfig[reservation.status].label,
         reservation.nombreReservante,
         reservation.correoReservante,
@@ -967,9 +974,7 @@ export default function ReservationList() {
                       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
                         <span className="flex items-center gap-1">
                           <Calendar size={14} />
-                          {new Date(
-                            reservation.fechaSeleccionada
-                          ).toLocaleDateString()}
+                          {formatDateShort(reservation.fechaSeleccionada)}
                         </span>
                         <span className="flex items-center gap-1">
                           <Users size={14} />

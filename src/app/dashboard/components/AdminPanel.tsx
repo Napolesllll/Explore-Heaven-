@@ -112,11 +112,20 @@ export default function AdminPanel() {
     if (!loading && session) {
       const timer = setTimeout(() => setIsLoading(false), 1200);
 
-      // Fetch tours y estadísticas
+      // Fetch tours, guías y reservas para las estadísticas
       Promise.all([
+        // Fetch tours
         fetch("/api/tours")
           .then((res) => res.json())
-          .then((data) => setTours(data.tours || data)),
+          .then((data) => {
+            const toursData = data.tours || data || [];
+            setTours(toursData);
+            setStats((prev) => ({
+              ...prev,
+              totalTours: toursData.length,
+            }));
+          }),
+        // Fetch guías
         fetch("/api/guias")
           .then((res) => res.json())
           .then((data) =>
@@ -125,6 +134,23 @@ export default function AdminPanel() {
               totalGuias: data.guias?.length || 0,
             }))
           ),
+        // Fetch reservas
+        fetch("/api/admin/reservas")
+          .then((res) => res.json())
+          .then((data) =>
+            setStats((prev) => ({
+              ...prev,
+              totalReservas: data.reservas?.length || 0,
+            }))
+          )
+          .catch((error) => {
+            console.error("Error al cargar reservas:", error);
+            // Si hay error con reservas, mantener el valor en 0
+            setStats((prev) => ({
+              ...prev,
+              totalReservas: 0,
+            }));
+          }),
       ]).catch(console.error);
 
       return () => clearTimeout(timer);
@@ -421,7 +447,11 @@ export default function AdminPanel() {
                 </span>
                 <span className="flex items-center space-x-1">
                   <MapPin size={16} />
-                  <span>{tours.length} Tours</span>
+                  <span>{stats.totalTours} Tours</span>
+                </span>
+                <span className="flex items-center space-x-1">
+                  <Calendar size={16} />
+                  <span>{stats.totalReservas} Reservas</span>
                 </span>
               </div>
               <button
@@ -558,7 +588,9 @@ function DashboardContent({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-300 text-sm font-medium">Total Tours</p>
-              <p className="text-3xl font-bold text-white">{tours.length}</p>
+              <p className="text-3xl font-bold text-white">
+                {stats.totalTours}
+              </p>
             </div>
             <div className="bg-purple-500/20 p-3 rounded-full">
               <MapPin className="text-purple-400" size={24} />

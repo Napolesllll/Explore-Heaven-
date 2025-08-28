@@ -7,6 +7,7 @@ export default function ChangePasswordForm() {
   const { data: session, update } = useSession();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -27,13 +28,22 @@ export default function ChangePasswordForm() {
     console.log("Formulario - Debug:", {
       currentPasswordLength: currentPassword.length,
       newPasswordLength: newPassword.length,
+      confirmPasswordLength: confirmPassword.length,
       areEqual: currentPassword === newPassword,
+      passwordsMatch: newPassword === confirmPassword,
       currentPreview: currentPassword.substring(0, 3) + "...",
       newPreview: newPassword.substring(0, 3) + "...",
+      confirmPreview: confirmPassword.substring(0, 3) + "...",
     });
 
     if (currentPassword === newPassword) {
       setError("La nueva contraseña debe ser diferente a la actual");
+      setLoading(false);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("Las contraseñas nuevas no coinciden");
       setLoading(false);
       return;
     }
@@ -61,6 +71,7 @@ export default function ChangePasswordForm() {
         setSuccess(true);
         setCurrentPassword("");
         setNewPassword("");
+        setConfirmPassword("");
 
         // Limpiar mensaje de éxito después de 5 segundos
         setTimeout(() => {
@@ -187,19 +198,43 @@ export default function ChangePasswordForm() {
             <div className="absolute inset-0 rounded-lg sm:rounded-xl border border-purple-500/30 pointer-events-none opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
           </div>
 
+          <div className="relative">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm text-gray-400 mb-1"
+            >
+              Confirmar nueva contraseña
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              placeholder="Confirma tu nueva contraseña"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+              className="w-full px-4 py-3 text-sm sm:text-base sm:px-5 sm:py-4 bg-gray-800/60 border border-gray-700 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/50 text-white transition-all duration-300 placeholder-gray-500"
+              required
+              disabled={loading}
+            />
+            <div className="absolute inset-0 rounded-lg sm:rounded-xl border border-green-500/30 pointer-events-none opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+          </div>
+
           <button
             type="submit"
             disabled={
               loading ||
               currentPassword.trim() === "" ||
-              newPassword.trim() === ""
+              newPassword.trim() === "" ||
+              confirmPassword.trim() === ""
             }
             className={`
               w-full py-3 px-5 sm:py-4 sm:px-6 rounded-lg sm:rounded-xl font-bold text-white transition-all duration-300 transform hover:scale-[1.02] shadow-lg flex items-center justify-center text-sm sm:text-base
               ${
                 loading
                   ? "bg-gradient-to-r from-blue-600/60 to-purple-600/60 cursor-not-allowed"
-                  : currentPassword.trim() === "" || newPassword.trim() === ""
+                  : currentPassword.trim() === "" ||
+                      newPassword.trim() === "" ||
+                      confirmPassword.trim() === ""
                     ? "bg-gradient-to-r from-gray-600 to-gray-700 cursor-not-allowed opacity-50"
                     : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 shadow-blue-500/20 hover:shadow-blue-500/30"
               }

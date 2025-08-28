@@ -192,26 +192,6 @@ export default function TourSection() {
         </div>
 
         {/* CTA Final */}
-        <div className="mt-16 text-center">
-          <Link
-            href="/tours"
-            className="inline-flex items-center bg-gradient-to-r from-gray-800 to-gray-900 border border-yellow-500/30 px-8 py-4 rounded-full font-bold text-yellow-400 hover:text-yellow-300 hover:border-yellow-500/60 transition-all group"
-          >
-            <span>Ver todos los tours disponibles</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </Link>
-        </div>
       </div>
     </section>
   );
