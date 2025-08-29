@@ -2,8 +2,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedPrisma, getPublicPrisma, withPrismaCleanup } from '../../../lib/prisma-rls';
 
+// Definir tipos para los errores de Prisma
+interface PrismaError {
+  code: string;
+  message: string;
+}
+
 // GET - Listar tours (PÚBLICO - No requiere autenticación)
-export const GET = withPrismaCleanup(async (request: NextRequest) => {
+export const GET = withPrismaCleanup(async () => {
   console.log('🚀 GET /api/tours llamado - Versión RLS (público)');
 
   try {
@@ -95,7 +101,6 @@ export const POST = withPrismaCleanup(async (request: NextRequest) => {
       ubicacion,
       imagenUrl,
       gallery,
-      info,
     } = body;
 
     // Validaciones básicas
@@ -143,7 +148,7 @@ export const POST = withPrismaCleanup(async (request: NextRequest) => {
 
     // Si es un error de Prisma
     if (error && typeof error === 'object' && 'code' in error) {
-      const prismaError = error as any;
+      const prismaError = error as PrismaError;
       console.log('🔍 Código de error Prisma:', prismaError.code);
 
       if (prismaError.code === 'P2002') {
@@ -206,7 +211,7 @@ export const PUT = withPrismaCleanup(async (request: NextRequest) => {
     }
 
     // Preparar datos para actualización (limpiar campos undefined)
-    const cleanData: any = {};
+    const cleanData: Record<string, unknown> = {};
 
     Object.keys(data).forEach(key => {
       if (data[key] !== undefined && data[key] !== null) {
@@ -339,7 +344,7 @@ export const DELETE = withPrismaCleanup(async (request: NextRequest) => {
 
     // Error de clave foránea (hay reservas vinculadas)
     if (error && typeof error === 'object' && 'code' in error) {
-      const prismaError = error as any;
+      const prismaError = error as PrismaError;
       if (prismaError.code === 'P2003' || prismaError.code === 'P2014') {
         return NextResponse.json(
           {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Lock, Eye, EyeOff, Shield, ArrowLeft } from "lucide-react";
 
@@ -13,7 +13,6 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

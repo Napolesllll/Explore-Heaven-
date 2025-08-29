@@ -1,13 +1,8 @@
 "use client";
 
-import {
-  motion,
-  useScroll,
-  useTransform,
-  AnimatePresence,
-} from "framer-motion";
-import { useRef, useState } from "react";
-import { FaRocket, FaGlobeAmericas, FaPlay, FaStar } from "react-icons/fa";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
+import { FaRocket, FaGlobeAmericas } from "react-icons/fa";
 import TestimonialSection from "../../components/blog/TestimonialSection";
 import FAQSection from "../../components/blog/FaqSection";
 import { useRouter } from "next/navigation";

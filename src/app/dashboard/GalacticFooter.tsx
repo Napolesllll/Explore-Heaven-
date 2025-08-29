@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import {
@@ -17,13 +17,6 @@ import {
 
 export default function GalacticFooter() {
   const [currentYear] = useState(new Date().getFullYear());
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const socialLinks = [
     {
@@ -105,26 +98,13 @@ export default function GalacticFooter() {
         {/* Nebulosas flotantes */}
         <motion.div
           className="absolute top-1/4 left-1/6 w-96 h-96 rounded-full bg-purple-900/30 blur-[120px]"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.1, 0.3, 0.1],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-          }}
+          animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.3, 0.1] }}
+          transition={{ duration: 8, repeat: Infinity }}
         />
         <motion.div
           className="absolute bottom-1/4 right-1/6 w-80 h-80 rounded-full bg-cyan-500/20 blur-[100px]"
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            delay: 2,
-          }}
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.4, 0.2] }}
+          transition={{ duration: 10, repeat: Infinity, delay: 2 }}
         />
       </div>
 
@@ -154,7 +134,7 @@ export default function GalacticFooter() {
       {/* Contenido principal */}
       <div className="relative z-10 px-4 py-16">
         <div className="max-w-7xl mx-auto">
-          {/* Header del footer con logo y descripción */}
+          {/* Header del footer */}
           <motion.div
             className="text-center mb-16"
             initial={{ opacity: 0, y: 50 }}
@@ -165,14 +145,8 @@ export default function GalacticFooter() {
             <div className="relative inline-block mb-6">
               <motion.div
                 className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/30 to-purple-600/30 blur-xl"
-                animate={{
-                  scale: [1, 1.2, 1],
-                  rotate: [0, 180, 360],
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                }}
+                animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+                transition={{ duration: 8, repeat: Infinity }}
               />
               <div className="relative bg-[#0c0522]/80 backdrop-blur-md rounded-full p-6 border border-cyan-500/50">
                 <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-center gap-6">
@@ -181,14 +155,12 @@ export default function GalacticFooter() {
                     alt="Explore Heaven Logo"
                     width={80}
                     height={80}
-                    className="h-15 w-auto transition-all duration-300 hover:drop-shadow-[0_0_15px_rgba(234,179,8,0.6)]"
                   />
                   <Image
                     src="/images/horizontal logo1-10.svg"
                     alt="Explore Heaven Horizontal Logo"
                     width={160}
                     height={80}
-                    className="h-18 w-auto transition-all duration-300 hover:drop-shadow-[0_0_15px_rgba(234,179,8,0.6)]"
                   />
                 </div>
               </div>
@@ -211,8 +183,7 @@ export default function GalacticFooter() {
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               <h3 className="text-2xl font-bold text-cyan-300 mb-4 flex items-center gap-2">
-                <FaStar className="text-yellow-400" />
-                Enlaces Rápidos
+                <FaStar className="text-yellow-400" /> Enlaces Rápidos
               </h3>
               <div className="space-y-3">
                 {quickLinks.map((link, index) => (
@@ -228,7 +199,7 @@ export default function GalacticFooter() {
               </div>
             </motion.div>
 
-            {/* Información de contacto */}
+            {/* Contacto */}
             <motion.div
               className="space-y-6"
               initial={{ opacity: 0, y: 50 }}
@@ -237,8 +208,7 @@ export default function GalacticFooter() {
               transition={{ duration: 0.8, delay: 0.4 }}
             >
               <h3 className="text-2xl font-bold text-purple-300 mb-4 flex items-center gap-2">
-                <FaMapMarkerAlt className="text-green-400" />
-                Contáctanos
+                <FaMapMarkerAlt className="text-green-400" /> Contáctanos
               </h3>
               <div className="space-y-4">
                 {contactInfo.map((info, index) => (
@@ -265,8 +235,7 @@ export default function GalacticFooter() {
               transition={{ duration: 0.8, delay: 0.6 }}
             >
               <h3 className="text-2xl font-bold text-yellow-300 mb-4 flex items-center gap-2">
-                <FaHeart className="text-pink-400" />
-                Síguenos
+                <FaHeart className="text-pink-400" /> Síguenos
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 {socialLinks.map((social, index) => (
@@ -289,7 +258,7 @@ export default function GalacticFooter() {
             </motion.div>
           </div>
 
-          {/* Línea divisoria cósmica */}
+          {/* Línea divisoria */}
           <div className="relative mb-8">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
@@ -298,14 +267,8 @@ export default function GalacticFooter() {
               <div className="bg-[#0c0522] px-4">
                 <motion.div
                   className="w-8 h-1 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-full"
-                  animate={{
-                    scaleX: [1, 1.5, 1],
-                    opacity: [0.5, 1, 0.5],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                  }}
+                  animate={{ scaleX: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity }}
                 />
               </div>
             </div>
@@ -327,13 +290,8 @@ export default function GalacticFooter() {
                 Hecho con{" "}
                 <motion.span
                   className="text-red-400"
-                  animate={{
-                    scale: [1, 1.2, 1],
-                  }}
-                  transition={{
-                    duration: 1,
-                    repeat: Infinity,
-                  }}
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
                 >
                   ♥
                 </motion.span>{" "}
@@ -372,32 +330,6 @@ export default function GalacticFooter() {
           />
         ))}
       </div>
-
-      <style jsx global>{`
-        @keyframes title-glow {
-          0% {
-            background-position: 0% 50%;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
-          }
-          50% {
-            background-position: 100% 50%;
-            text-shadow: 0 0 20px rgba(157, 78, 221, 0.7);
-          }
-          100% {
-            background-position: 0% 50%;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
-          }
-        }
-
-        .animate-title-glow {
-          animation: title-glow 4s ease-in-out infinite;
-          background-size: 200% 200%;
-        }
-
-        .bg-size-200 {
-          background-size: 200% 200%;
-        }
-      `}</style>
     </footer>
   );
 }

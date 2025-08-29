@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   FaCalendarAlt,
@@ -23,6 +23,7 @@ import {
   FaChevronUp,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
+import Image from "next/image";
 
 // Tipo para la reserva
 interface Reserva {
@@ -84,7 +85,10 @@ function CustomCalendar({
     return new Set(
       availableDates.map((date) => {
         const d = new Date(date.date);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+          2,
+          "0"
+        )}-${String(d.getDate()).padStart(2, "0")}`;
       })
     );
   }, [availableDates]);
@@ -104,7 +108,7 @@ function CustomCalendar({
   const daysInMonth = lastDay.getDate();
 
   // Generar días del calendario
-  const calendarDays = [];
+  const calendarDays: Array<number | null> = [];
 
   // Días vacíos al inicio
   for (let i = 0; i < firstDayOfWeek; i++) {
@@ -131,20 +135,26 @@ function CustomCalendar({
 
   // Verificar si una fecha está disponible
   const isDateAvailable = (day: number) => {
-    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const dateStr = `${currentMonth.getFullYear()}-${String(
+      currentMonth.getMonth() + 1
+    ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     return availableDatesSet.has(dateStr);
   };
 
   // Verificar si una fecha está seleccionada
   const isDateSelected = (day: number) => {
-    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const dateStr = `${currentMonth.getFullYear()}-${String(
+      currentMonth.getMonth() + 1
+    ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     return selectedDate === dateStr;
   };
 
   // Manejar click en fecha
   const handleDateClick = (day: number) => {
     if (isDateAvailable(day)) {
-      const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const dateStr = `${currentMonth.getFullYear()}-${String(
+        currentMonth.getMonth() + 1
+      ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       onDateSelect(dateStr);
     }
   };
@@ -164,7 +174,6 @@ function CustomCalendar({
     "Diciembre",
   ];
 
-  const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   const dayNamesShort = ["D", "L", "M", "X", "J", "V", "S"];
 
   return (
@@ -256,7 +265,7 @@ export default function ReservaItem({ reserva, onUpdate }: ReservaItemProps) {
   const [loadingFechas, setLoadingFechas] = useState(false);
 
   // Función para obtener fechas disponibles
-  const obtenerFechasDisponibles = async () => {
+  const obtenerFechasDisponibles = useCallback(async () => {
     if (!reserva.tourId) return;
 
     setLoadingFechas(true);
@@ -269,20 +278,20 @@ export default function ReservaItem({ reserva, onUpdate }: ReservaItemProps) {
         console.error("Error al obtener fechas disponibles");
         toast.error("Error al cargar fechas disponibles");
       }
-    } catch (error) {
-      console.error("Error:", error);
+    } catch (err) {
+      console.error("Error:", err);
       toast.error("Error de conexión al cargar fechas");
     } finally {
       setLoadingFechas(false);
     }
-  };
+  }, [reserva.tourId]);
 
   // Cargar fechas disponibles cuando se abre el panel de reprogramación
   useEffect(() => {
     if (showReprogramar) {
       obtenerFechasDisponibles();
     }
-  }, [showReprogramar]);
+  }, [showReprogramar, obtenerFechasDisponibles]);
 
   // Función para obtener el color del estado
   const getEstadoColor = (estado: string | null) => {
@@ -337,8 +346,8 @@ export default function ReservaItem({ reserva, onUpdate }: ReservaItemProps) {
         const errorData = await res.json();
         toast.error(errorData.error || "Error al cancelar reserva");
       }
-    } catch (error) {
-      console.error("Error:", error);
+    } catch (err) {
+      console.error("Error:", err);
       toast.error("Error de conexión al cancelar reserva");
     } finally {
       setLoading(false);
@@ -370,8 +379,8 @@ export default function ReservaItem({ reserva, onUpdate }: ReservaItemProps) {
         const errorData = await res.json();
         toast.error(errorData.error || "Error al reprogramar reserva");
       }
-    } catch (error) {
-      console.error("Error:", error);
+    } catch (err) {
+      console.error("Error:", err);
       toast.error("Error de conexión al reprogramar reserva");
     } finally {
       setLoading(false);
@@ -394,8 +403,8 @@ export default function ReservaItem({ reserva, onUpdate }: ReservaItemProps) {
         month: "short",
         day: "numeric",
       });
-    } catch (error) {
-      console.error("Error al formatear fecha:", error);
+    } catch (err) {
+      console.error("Error al formatear fecha:", err);
       return "Error en fecha";
     }
   };
@@ -410,7 +419,7 @@ export default function ReservaItem({ reserva, onUpdate }: ReservaItemProps) {
         month: "short",
         day: "numeric",
       });
-    } catch (error) {
+    } catch {
       return fecha;
     }
   };
@@ -435,10 +444,14 @@ export default function ReservaItem({ reserva, onUpdate }: ReservaItemProps) {
           <div className="flex items-start gap-2 sm:gap-4 w-full sm:flex-1">
             {reserva.Tour?.imagenUrl && (
               <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden flex-shrink-0 border-2 border-cyan-500/30">
-                <img
+                <Image
                   src={reserva.Tour.imagenUrl}
-                  alt={reserva.Tour.nombre}
+                  alt={reserva.Tour.nombre || "Imagen del tour"}
+                  width={80} // sm:w-20 => 80px
+                  height={80} // sm:h-20 => 80px
                   className="w-full h-full object-cover"
+                  unoptimized={false} // quitar o cambiar según config
+                  priority={false} // opcional
                 />
               </div>
             )}

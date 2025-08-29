@@ -2,6 +2,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedPrisma, withPrismaCleanup } from '../../../lib/prisma-rls';
 
+// Definir tipos para los errores de Prisma
+interface PrismaError {
+  code: string;
+  message: string;
+}
+
 // POST - Crear nueva reserva (CON RLS)
 export const POST = withPrismaCleanup(async (request: NextRequest) => {
   console.log('🚀 POST /api/reservas llamado - Versión RLS');
@@ -193,9 +199,10 @@ export const POST = withPrismaCleanup(async (request: NextRequest) => {
 
     // Si es un error de Prisma
     if (error && typeof error === 'object' && 'code' in error) {
-      console.log('🔍 Código de error Prisma:', (error as any).code);
+      const prismaError = error as PrismaError;
+      console.log('🔍 Código de error Prisma:', prismaError.code);
 
-      if ((error as any).code === 'P2003') {
+      if (prismaError.code === 'P2003') {
         return NextResponse.json(
           {
             error: 'Error de clave foránea - Una de las relaciones no existe',
@@ -217,7 +224,7 @@ export const POST = withPrismaCleanup(async (request: NextRequest) => {
 });
 
 // GET - Obtener reservas del usuario (CON RLS)
-export const GET = withPrismaCleanup(async (request: NextRequest) => {
+export const GET = withPrismaCleanup(async () => {
   try {
     // 🔒 OBTENER PRISMA AUTENTICADO
     const { prisma, user } = await getAuthenticatedPrisma();

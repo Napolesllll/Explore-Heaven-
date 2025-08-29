@@ -1,14 +1,11 @@
 "use client";
-import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { FaCheckCircle, FaSignInAlt } from "react-icons/fa";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 
 export default function AuthSuccessPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const verified = searchParams.get("verified");
 
   const handleLogin = () => {
     router.push("/auth");

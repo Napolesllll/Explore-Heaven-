@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '../../../lib/auth/auth.config';
 import prisma from "../../../lib/prismadb"; // Asegúrate de que la ruta sea correcta
 
 export async function POST(req: NextRequest) {
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(newDate);
   } catch (error) {
+    console.error('Error creando fecha disponible:', error);
     return NextResponse.json({ error: "Error en el servidor" }, { status: 500 });
   }
 }

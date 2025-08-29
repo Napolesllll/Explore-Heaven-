@@ -41,7 +41,7 @@ export default function GuiaList() {
       const res = await fetch("/api/guias");
       const data = await res.json();
       setGuias(data.guias || []);
-    } catch (error) {
+    } catch {
       setGuias([]);
     } finally {
       setIsLoading(false);
@@ -151,9 +151,11 @@ export default function GuiaList() {
       setEditImageFile(null);
       setEditPreviewUrl(null);
       toast.success("Guía actualizado correctamente");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.message || "No se pudo editar el guía.");
+      const message =
+        err instanceof Error ? err.message : "No se pudo editar el guía.";
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }

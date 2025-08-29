@@ -1,13 +1,21 @@
+"use client";
+
 import Image from "next/image";
 import { parseGallery } from "../utils/parseGallery";
 
-export function TourGallery({
-  tour,
-  onImageClick,
-}: {
-  tour: any;
+export interface Tour {
+  id: string;
+  nombre: string;
+  gallery?: string | string[];
+  // Puedes añadir más campos si los usas en otros lugares
+}
+
+interface TourGalleryProps {
+  tour: Tour;
   onImageClick: (img: string) => void;
-}) {
+}
+
+export function TourGallery({ tour, onImageClick }: TourGalleryProps) {
   const galleryImages = parseGallery(tour.gallery);
 
   if (galleryImages.length === 0) return null;
@@ -18,9 +26,10 @@ export function TourGallery({
         <div
           className="w-3 h-3 rounded-full bg-indigo-400 mr-2 animate-pulse"
           aria-hidden="true"
-        ></div>
+        />
         Galería del Tour
       </h3>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {galleryImages.map((img, idx) => (
           <div
@@ -45,3 +54,5 @@ export function TourGallery({
     </div>
   );
 }
+
+export default TourGallery;

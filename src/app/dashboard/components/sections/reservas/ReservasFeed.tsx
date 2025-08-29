@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import ReservaItem from "./ReservaItem";
 import { motion } from "framer-motion";
-import {
-  FaRocket,
-  FaCalendarCheck,
-  FaSadCry,
-  FaRegClock,
-} from "react-icons/fa";
+import { FaCalendarCheck, FaSadCry, FaRegClock } from "react-icons/fa";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
@@ -65,14 +60,15 @@ export default function ReservasFeed() {
         throw new Error(`Error ${res.status}: ${res.statusText}`);
       }
 
-      const data = await res.json();
+      const data: { reservas?: Reserva[] } = await res.json();
       console.log("RESERVAS DEL USUARIO:", data);
 
       // Ahora el API devuelve { reservas: [...] }
       setReservas(data.reservas || []);
-    } catch (error: any) {
-      console.error("Error fetching reservas:", error);
-      setError(error.message || "Error al cargar las reservas");
+    } catch (err: unknown) {
+      console.error("Error fetching reservas:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || "Error al cargar las reservas");
       toast.error("Error al cargar las reservas");
     } finally {
       setLoading(false);

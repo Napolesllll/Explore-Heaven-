@@ -1,25 +1,36 @@
 // app/api/admin/stats/route.ts - ADMIN STATS CON RLS
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getAdminPrisma, withPrismaCleanup } from '../../../../lib/prisma-rls';
 
-// GET - Obtener estadísticas completas del sistema (solo admins)
-export const GET = withPrismaCleanup(async (request: NextRequest) => {
+// Tipado local para las reservas que usamos en los cálculos
+interface ReservaWithRelations {
+    adultos: number;
+    niños: number;
+    createdAt: Date;
+    estado?: string;
+    Tour: {
+        nombre: string;
+        precio: number;
+    };
+}
+
+export const GET = withPrismaCleanup(async () => {
     try {
         // 🔒 VERIFICAR PERMISOS DE ADMIN (automáticamente valida rol)
         const { prisma, user } = await getAdminPrisma();
 
         console.log('📊 Admin obteniendo estadísticas del sistema:', user.email);
 
-        // Obtener fechas importantes
+        // Obtener fechas importantes (no mutamos la misma instancia para evitar confusiones)
         const ahora = new Date();
         const inicioHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
-        const inicioSemana = new Date(ahora.setDate(ahora.getDate() - ahora.getDay()));
+        const inicioSemana = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() - ahora.getDay());
         const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
         const inicioMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
         const finMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth(), 0);
 
         // 🎯 CON RLS ADMIN: Los admins pueden ver TODAS las reservas
-        const todasLasReservas = await prisma.reserva.findMany({
+        const todasLasReservas = (await prisma.reserva.findMany({
             include: {
                 Tour: {
                     select: {
@@ -35,21 +46,21 @@ export const GET = withPrismaCleanup(async (request: NextRequest) => {
                     }
                 }
             }
-        });
+        })) as unknown as ReservaWithRelations[]; // casteado al tipo que necesitamos para cálculos
 
         console.log(`✅ Admin obtuvo ${todasLasReservas.length} reservas totales`);
 
         // Estadísticas básicas
         const totalReservas = todasLasReservas.length;
-        const totalPersonas = todasLasReservas.reduce((sum, r) => sum + r.adultos + r.niños, 0);
-        const ingresosTotales = todasLasReservas.reduce((sum, r) => sum + (r.Tour.precio * (r.adultos + r.niños)), 0);
+        const totalPersonas = todasLasReservas.reduce((sum, r) => sum + (Number(r.adultos || 0) + Number(r.niños || 0)), 0);
+        const ingresosTotales = todasLasReservas.reduce((sum, r) => sum + (Number(r.Tour.precio || 0) * (Number(r.adultos || 0) + Number(r.niños || 0))), 0);
 
         // Reservas por período
-        const reservasHoy = todasLasReservas.filter(r => r.createdAt >= inicioHoy).length;
-        const reservasSemana = todasLasReservas.filter(r => r.createdAt >= inicioSemana).length;
-        const reservasMes = todasLasReservas.filter(r => r.createdAt >= inicioMes).length;
+        const reservasHoy = todasLasReservas.filter(r => new Date(r.createdAt) >= inicioHoy).length;
+        const reservasSemana = todasLasReservas.filter(r => new Date(r.createdAt) >= inicioSemana).length;
+        const reservasMes = todasLasReservas.filter(r => new Date(r.createdAt) >= inicioMes).length;
         const reservasMesAnterior = todasLasReservas.filter(r =>
-            r.createdAt >= inicioMesAnterior && r.createdAt <= finMesAnterior
+            new Date(r.createdAt) >= inicioMesAnterior && new Date(r.createdAt) <= finMesAnterior
         ).length;
 
         // Calcular tasa de crecimiento
@@ -69,12 +80,12 @@ export const GET = withPrismaCleanup(async (request: NextRequest) => {
                 };
             }
             acc[tourNombre].reservas += 1;
-            acc[tourNombre].personas += reserva.adultos + reserva.niños;
-            acc[tourNombre].ingresos += reserva.Tour.precio * (reserva.adultos + reserva.niños);
+            acc[tourNombre].personas += (Number(reserva.adultos || 0) + Number(reserva.niños || 0));
+            acc[tourNombre].ingresos += Number(reserva.Tour.precio || 0) * (Number(reserva.adultos || 0) + Number(reserva.niños || 0));
             return acc;
-        }, {} as any);
+        }, {} as Record<string, { tourNombre: string; reservas: number; personas: number; ingresos: number }>);
 
-        const tourStatsArray = Object.values(tourStats).sort((a: any, b: any) => b.reservas - a.reservas);
+        const tourStatsArray = Object.values(tourStats).sort((a, b) => b.reservas - a.reservas);
         const tourMasPopular = tourStatsArray[0]?.tourNombre || 'N/A';
 
         // Reservas por estado
@@ -82,7 +93,7 @@ export const GET = withPrismaCleanup(async (request: NextRequest) => {
             const estado = mapEstadoToStatus(reserva.estado || 'Pendiente');
             acc[estado] = (acc[estado] || 0) + 1;
             return acc;
-        }, {} as any);
+        }, {} as Record<string, number>);
 
         // Completar estados que no existen
         const estadosCompletos = {
@@ -94,7 +105,7 @@ export const GET = withPrismaCleanup(async (request: NextRequest) => {
         };
 
         // Reservas por mes (últimos 8 meses)
-        const reservasPorMes = [];
+        const reservasPorMes: Array<{ mes: string; reservas: number; ingresos: number }> = [];
         for (let i = 7; i >= 0; i--) {
             const fecha = new Date();
             fecha.setMonth(fecha.getMonth() - i);
@@ -102,10 +113,10 @@ export const GET = withPrismaCleanup(async (request: NextRequest) => {
             const finMesIteracion = new Date(fecha.getFullYear(), fecha.getMonth() + 1, 0);
 
             const reservasDelMes = todasLasReservas.filter(r =>
-                r.createdAt >= inicioMesIteracion && r.createdAt <= finMesIteracion
+                new Date(r.createdAt) >= inicioMesIteracion && new Date(r.createdAt) <= finMesIteracion
             );
 
-            const ingresosMes = reservasDelMes.reduce((sum, r) => sum + (r.Tour.precio * (r.adultos + r.niños)), 0);
+            const ingresosMes = reservasDelMes.reduce((sum, r) => sum + (Number(r.Tour.precio || 0) * (Number(r.adultos || 0) + Number(r.niños || 0))), 0);
 
             reservasPorMes.push({
                 mes: fecha.toLocaleDateString('es-ES', { month: 'long' }),
@@ -174,17 +185,18 @@ export const GET = withPrismaCleanup(async (request: NextRequest) => {
 
         return NextResponse.json(stats);
 
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('💥 Error al obtener estadísticas:', error);
 
-        if (error instanceof Error) {
-            if (error.message === 'Usuario no autenticado') {
+        const err = error as { message?: string };
+        if (err?.message) {
+            if (err.message === 'Usuario no autenticado') {
                 return NextResponse.json({
                     error: 'Necesitas iniciar sesión'
                 }, { status: 401 });
             }
 
-            if (error.message.includes('permisos de administrador')) {
+            if (err.message.includes('permisos de administrador')) {
                 return NextResponse.json({
                     error: 'Acceso denegado - Se requieren permisos de administrador'
                 }, { status: 403 });

@@ -2,12 +2,9 @@
 "use client";
 
 import {
-  GlobeAltIcon,
   ShieldCheckIcon,
   PhoneIcon,
   MapPinIcon,
-  ChatBubbleLeftRightIcon,
-  BuildingStorefrontIcon,
 } from "@heroicons/react/24/outline";
 import {
   FaWhatsapp,

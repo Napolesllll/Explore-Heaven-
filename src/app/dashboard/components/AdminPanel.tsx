@@ -37,6 +37,12 @@ type MenuItem = {
   category: "guias" | "tours" | "general" | "reservas";
 };
 
+type Stats = {
+  totalGuias: number;
+  totalTours: number;
+  totalReservas: number;
+};
+
 const menuItems: MenuItem[] = [
   {
     id: "dashboard",
@@ -102,7 +108,7 @@ export default function AdminPanel() {
   const [selectedTour, setSelectedTour] = useState<ClientTour | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<Stats>({
     totalGuias: 0,
     totalTours: 0,
     totalReservas: 0,
@@ -562,7 +568,7 @@ function DashboardContent({
   tours,
   openModal,
 }: {
-  stats: any;
+  stats: Stats;
   tours: ClientTour[];
   openModal: (tour: ClientTour) => void;
 }) {

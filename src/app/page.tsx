@@ -17,7 +17,6 @@ import SafetyTipsCard from "components/SafetyTipsCard";
 
 // data
 import { features } from "../data/features";
-import { safetyTips } from "../data/safetyTips";
 
 // i18n
 import { getI18n } from "../i18n/getI18";

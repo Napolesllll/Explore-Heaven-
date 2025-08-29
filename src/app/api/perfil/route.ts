@@ -2,6 +2,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthenticatedPrisma, withPrismaCleanup } from '../../../lib/prisma-rls';
 
+// Definir tipos para los errores de Prisma
+interface PrismaError {
+  code: string;
+  message: string;
+}
+
 // PUT - Actualizar perfil de usuario CON RLS
 export const PUT = withPrismaCleanup(async (request: NextRequest) => {
   try {
@@ -91,14 +97,15 @@ export const PUT = withPrismaCleanup(async (request: NextRequest) => {
 
     // Error de Prisma - registro no encontrado
     if (error && typeof error === 'object' && 'code' in error) {
-      if ((error as any).code === 'P2025') {
+      const prismaError = error as PrismaError;
+      if (prismaError.code === 'P2025') {
         return NextResponse.json(
           { error: 'Usuario no encontrado' },
           { status: 404 }
         );
       }
 
-      if ((error as any).code === 'P2002') {
+      if (prismaError.code === 'P2002') {
         return NextResponse.json(
           { error: 'Este email ya está registrado' },
           { status: 400 }
@@ -113,7 +120,7 @@ export const PUT = withPrismaCleanup(async (request: NextRequest) => {
 });
 
 // GET - Obtener perfil del usuario CON RLS
-export const GET = withPrismaCleanup(async (request: NextRequest) => {
+export const GET = withPrismaCleanup(async () => {
   try {
     // 🔒 OBTENER PRISMA AUTENTICADO
     const { prisma, user } = await getAuthenticatedPrisma();

@@ -8,7 +8,6 @@ import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { getI18n } from "../i18n/getI18";
 
-// Definimos el tipo para las traducciones del Navbar
 type NavbarTranslations = {
   services: string;
   tours: string;
@@ -26,9 +25,8 @@ interface NavbarProps {
 export default function Navbar({ lang = "es" }: NavbarProps) {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState(null);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
-  // Obtenemos las traducciones
   const t = getI18n(lang);
   const navbarT: NavbarTranslations = {
     services: t.services,
@@ -150,20 +148,24 @@ export default function Navbar({ lang = "es" }: NavbarProps) {
               whileTap={{ scale: 0.98 }}
             >
               {session?.user ? (
-                <div>
+                <div className="flex items-center space-x-3">
                   <Link href="/auth">
                     <button className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 px-6 py-3.5 rounded-full font-bold shadow-lg hover:shadow-yellow-400/30 transition-all duration-300">
                       {navbarT.logout}
                     </button>
                   </Link>
-                  <p>
+                  <p className="text-sm text-yellow-200">
                     {session.user.name} - {session.user.email}
                   </p>
-                  <img
-                    src={session.user.image}
-                    alt="user-img"
-                    className="w-10 h-10 rounded-full cursor-pointer"
-                  />
+                  {session.user.image && (
+                    <Image
+                      src={session.user.image}
+                      alt={session.user.name || "user-img"}
+                      width={40}
+                      height={40}
+                      className="rounded-full cursor-pointer"
+                    />
+                  )}
                 </div>
               ) : (
                 <Link href="/auth">

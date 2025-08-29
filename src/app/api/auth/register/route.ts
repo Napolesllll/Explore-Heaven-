@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       data: {
         name,
         email,
-        hashedPassword
+        hashedPassword,
         // El status será ACTIVE por defecto según tu modelo
         // El emailVerified será null hasta que se verifique
       },
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       { id: user.id, name: user.name, email: user.email },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("[/api/auth/register] Error:", error);
 
     if (error instanceof z.ZodError) {
@@ -71,6 +71,7 @@ export async function POST(request: Request) {
       });
     }
 
-    return new NextResponse("Error en el servidor", { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    return new NextResponse("Error en el servidor: " + message, { status: 500 });
   }
 }

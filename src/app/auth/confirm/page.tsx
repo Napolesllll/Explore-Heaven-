@@ -10,6 +10,15 @@ import {
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 
+interface Particle {
+  x: number;
+  y: number;
+  size: number;
+  speedX: number;
+  speedY: number;
+  color: string;
+}
+
 export default function ConfirmPage() {
   const params = useSearchParams();
   const router = useRouter();
@@ -37,9 +46,11 @@ export default function ConfirmPage() {
         setStatus("success");
         toast.success("¡Verificación exitosa! Bienvenido 👋");
         setTimeout(() => router.push("/dashboard"), 3000);
-      } catch (err: any) {
+      } catch (err: unknown) {
         setStatus("error");
-        toast.error(err.message || "Enlace inválido o expirado.");
+        toast.error(
+          err instanceof Error ? err.message : "Enlace inválido o expirado."
+        );
       }
     }
 
@@ -56,7 +67,7 @@ export default function ConfirmPage() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const particles: any[] = [];
+    const particles: Particle[] = [];
     const particleCount = 150;
 
     for (let i = 0; i < particleCount; i++) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ElementType } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingUp,
@@ -8,7 +8,6 @@ import {
   Calendar,
   Users,
   DollarSign,
-  MapPin,
   Award,
   Clock,
   Target,
@@ -33,7 +32,7 @@ function StatCard({
   title: string;
   value: string | number;
   subtitle?: string;
-  icon: any;
+  icon: ElementType;
   trend?: "up" | "down";
   trendValue?: string;
   color?: "cyan" | "purple" | "green" | "orange" | "blue" | "red";
@@ -128,7 +127,7 @@ function SimpleBarChart({
 }: {
   data: Array<{ label: string; value: number }>;
   title: string;
-  color?: string;
+  color?: "cyan" | "purple";
 }) {
   const maxValue = Math.max(...data.map((d) => d.value));
 
@@ -324,23 +323,27 @@ export default function ReservationStats() {
         {/* Reservas por mes */}
         <SimpleBarChart
           title="Reservas por Mes"
-          data={stats.reservasPorMes.map((item) => ({
-            label: item.mes,
-            value: item.reservas,
-          }))}
+          data={stats.reservasPorMes.map(
+            (item: { mes: string; reservas: number; ingresos?: number }) => ({
+              label: item.mes,
+              value: item.reservas,
+            })
+          )}
           color="cyan"
         />
 
         {/* Tours más populares */}
         <SimpleBarChart
           title="Tours Más Reservados"
-          data={stats.tourStats.slice(0, 6).map((tour) => ({
-            label:
-              tour.tourNombre.length > 20
-                ? tour.tourNombre.substring(0, 20) + "..."
-                : tour.tourNombre,
-            value: tour.reservas,
-          }))}
+          data={stats.tourStats
+            .slice(0, 6)
+            .map((tour: { tourNombre: string; reservas: number }) => ({
+              label:
+                tour.tourNombre.length > 20
+                  ? tour.tourNombre.substring(0, 20) + "..."
+                  : tour.tourNombre,
+              value: tour.reservas,
+            }))}
           color="purple"
         />
       </div>
@@ -458,53 +461,63 @@ export default function ReservationStats() {
                 </tr>
               </thead>
               <tbody>
-                {stats.tourStats.map((tour, index) => {
-                  const promedioPersonas =
-                    tour.reservas > 0
-                      ? (tour.personas / tour.reservas).toFixed(1)
-                      : "0.0";
-                  const promedioIngresos =
-                    tour.reservas > 0 ? tour.ingresos / tour.reservas : 0;
+                {stats.tourStats.map(
+                  (
+                    tour: {
+                      tourNombre: string;
+                      reservas: number;
+                      personas: number;
+                      ingresos: number;
+                    },
+                    index: number
+                  ) => {
+                    const promedioPersonas =
+                      tour.reservas > 0
+                        ? (tour.personas / tour.reservas).toFixed(1)
+                        : "0.0";
+                    const promedioIngresos =
+                      tour.reservas > 0 ? tour.ingresos / tour.reservas : 0;
 
-                  return (
-                    <motion.tr
-                      key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="border-b border-gray-700/50 hover:bg-gray-800/30 transition-colors"
-                    >
-                      <td className="py-4 px-4">
-                        <div className="text-white font-medium">
-                          {tour.tourNombre}
-                        </div>
-                      </td>
-                      <td className="text-center py-4 px-4">
-                        <div className="text-white font-semibold">
-                          {tour.reservas}
-                        </div>
-                      </td>
-                      <td className="text-center py-4 px-4">
-                        <div className="text-purple-400 font-semibold">
-                          {tour.personas}
-                        </div>
-                        <div className="text-gray-400 text-xs">
-                          {promedioPersonas} prom.
-                        </div>
-                      </td>
-                      <td className="text-center py-4 px-4">
-                        <div className="text-green-400 font-semibold">
-                          ${tour.ingresos.toLocaleString()}
-                        </div>
-                      </td>
-                      <td className="text-center py-4 px-4">
-                        <div className="text-cyan-400 font-semibold">
-                          ${promedioIngresos.toLocaleString()}
-                        </div>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
+                    return (
+                      <motion.tr
+                        key={index}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="border-b border-gray-700/50 hover:bg-gray-800/30 transition-colors"
+                      >
+                        <td className="py-4 px-4">
+                          <div className="text-white font-medium">
+                            {tour.tourNombre}
+                          </div>
+                        </td>
+                        <td className="text-center py-4 px-4">
+                          <div className="text-white font-semibold">
+                            {tour.reservas}
+                          </div>
+                        </td>
+                        <td className="text-center py-4 px-4">
+                          <div className="text-purple-400 font-semibold">
+                            {tour.personas}
+                          </div>
+                          <div className="text-gray-400 text-xs">
+                            {promedioPersonas} prom.
+                          </div>
+                        </td>
+                        <td className="text-center py-4 px-4">
+                          <div className="text-green-400 font-semibold">
+                            ${tour.ingresos.toLocaleString()}
+                          </div>
+                        </td>
+                        <td className="text-center py-4 px-4">
+                          <div className="text-cyan-400 font-semibold">
+                            ${promedioIngresos.toLocaleString()}
+                          </div>
+                        </td>
+                      </motion.tr>
+                    );
+                  }
+                )}
               </tbody>
             </table>
           </div>
@@ -530,45 +543,55 @@ export default function ReservationStats() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.reservasPorMes.slice(-4).map((mes, index) => {
-              const ingresoPromedio =
-                mes.reservas > 0 ? mes.ingresos / mes.reservas : 0;
+            {stats.reservasPorMes
+              .slice(-4)
+              .map(
+                (
+                  mes: { mes: string; reservas: number; ingresos: number },
+                  index: number
+                ) => {
+                  const ingresoPromedio =
+                    mes.reservas > 0 ? mes.ingresos / mes.reservas : 0;
 
-              return (
-                <motion.div
-                  key={mes.mes}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 border border-green-500/30 rounded-lg p-4"
-                >
-                  <div className="text-green-300 text-sm font-medium mb-1">
-                    {mes.mes}
-                  </div>
-                  <div className="text-2xl font-bold text-white mb-2">
-                    ${mes.ingresos.toLocaleString()}
-                  </div>
-                  <div className="text-gray-400 text-sm">
-                    {mes.reservas} reservas
-                  </div>
-                  <div className="text-green-400 text-sm">
-                    ${ingresoPromedio.toLocaleString()} promedio
-                  </div>
-
-                  {/* Barra de progreso visual */}
-                  <div className="mt-3 w-full bg-gray-700 rounded-full h-1">
+                  return (
                     <motion.div
-                      initial={{ width: 0 }}
-                      animate={{
-                        width: `${(mes.ingresos / Math.max(...stats.reservasPorMes.map((m) => m.ingresos))) * 100}%`,
-                      }}
-                      transition={{ duration: 0.8, delay: index * 0.1 + 0.5 }}
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-1 rounded-full"
-                    />
-                  </div>
-                </motion.div>
-              );
-            })}
+                      key={mes.mes}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 border border-green-500/30 rounded-lg p-4"
+                    >
+                      <div className="text-green-300 text-sm font-medium mb-1">
+                        {mes.mes}
+                      </div>
+                      <div className="text-2xl font-bold text-white mb-2">
+                        ${mes.ingresos.toLocaleString()}
+                      </div>
+                      <div className="text-gray-400 text-sm">
+                        {mes.reservas} reservas
+                      </div>
+                      <div className="text-green-400 text-sm">
+                        ${ingresoPromedio.toLocaleString()} promedio
+                      </div>
+
+                      {/* Barra de progreso visual */}
+                      <div className="mt-3 w-full bg-gray-700 rounded-full h-1">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{
+                            width: `${(mes.ingresos / Math.max(...stats.reservasPorMes.map((m: { ingresos: number }) => m.ingresos))) * 100}%`,
+                          }}
+                          transition={{
+                            duration: 0.8,
+                            delay: index * 0.1 + 0.5,
+                          }}
+                          className="bg-gradient-to-r from-green-500 to-emerald-500 h-1 rounded-full"
+                        />
+                      </div>
+                    </motion.div>
+                  );
+                }
+              )}
           </div>
         )}
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { redirect, useRouter } from "next/navigation";
+import { redirect } from "next/navigation"; // 🔥 useRouter eliminado
 import { useState, useEffect, useRef } from "react";
 import SidebarLeft from "../../app/dashboard/SidebarLeft";
 import SidebarRight from "../../app/dashboard/SidebarRight";
@@ -10,6 +10,16 @@ import TopNavbar from "../../app/dashboard/TopNavbar";
 import Image from "next/image";
 import EmergencyButton from "components/EmergencyButton";
 import GalacticFooter from "./GalacticFooter";
+
+// 🔧 Tipo fuerte para partículas
+interface Particle {
+  x: number;
+  y: number;
+  size: number;
+  speedX: number;
+  speedY: number;
+  color: string;
+}
 
 // Componente de loading mejorado
 const LoadingAnimation = () => {
@@ -25,7 +35,7 @@ const LoadingAnimation = () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const particles: any[] = [];
+    const particles: Particle[] = []; // ✅ sin any
     const particleCount = 150;
 
     for (let i = 0; i < particleCount; i++) {

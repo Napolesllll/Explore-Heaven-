@@ -12,10 +12,19 @@ import {
   FaSpinner,
 } from "react-icons/fa";
 
+interface ReservationDetails {
+  tourName: string;
+  date: string;
+  amount: string | number;
+  reference: string;
+  email: string;
+}
+
 export default function ThankYouPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [reservationDetails, setReservationDetails] = useState<any>(null);
+  const [reservationDetails, setReservationDetails] =
+    useState<ReservationDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,7 +48,13 @@ export default function ThankYouPage() {
           throw new Error("No se pudo verificar la reserva");
         }
 
-        const data = await response.json();
+        const data: Partial<ReservationDetails> & {
+          reference?: string;
+          tourName?: string;
+          amount?: string | number;
+          date?: string;
+          email?: string;
+        } = await response.json();
 
         if (!data.tourName || !data.amount) {
           throw new Error("Datos de reserva incompletos");
@@ -58,7 +73,7 @@ export default function ThankYouPage() {
         if (isMobile) {
           localStorage.removeItem("stripe_session");
         }
-      } catch (err) {
+      } catch {
         setError(
           "Error al cargar los detalles de la reserva. Por favor verifica tu correo electrónico para los detalles."
         );
@@ -66,7 +81,6 @@ export default function ThankYouPage() {
       }
     };
 
-    // Si hay session_id, intenta cargar desde API
     if (sessionId) {
       if (isMobile) {
         localStorage.setItem("stripe_session", sessionId);
@@ -75,7 +89,6 @@ export default function ThankYouPage() {
       return;
     }
 
-    // Si no hay session_id, espera un poco y luego lee de localStorage
     if (typeof window !== "undefined") {
       timeout = setTimeout(() => {
         const reserva = localStorage.getItem("last_reservation");
@@ -88,7 +101,7 @@ export default function ThankYouPage() {
           );
           setLoading(false);
         }
-      }, 200); // Espera 200ms para asegurar que localStorage esté disponible
+      }, 200);
     }
 
     return () => {
@@ -96,7 +109,6 @@ export default function ThankYouPage() {
     };
   }, [searchParams, router]);
 
-  // SEO y accesibilidad
   const seoTitle = "Reserva completada | Heaven Explore";
   const seoDescription =
     "Gracias por tu reserva en Heaven Explore. Consulta los detalles de tu pago y recibe confirmación por correo electrónico.";
@@ -124,7 +136,6 @@ export default function ThankYouPage() {
     );
   }
 
-  // Solo muestra error si no hay detalles de reserva y hay error
   if (!reservationDetails && error) {
     return (
       <>
@@ -161,7 +172,6 @@ export default function ThankYouPage() {
     );
   }
 
-  // Mensaje de éxito
   return (
     <>
       <Head>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, InputHTMLAttributes } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
@@ -16,7 +16,23 @@ import {
 import Image from "next/image";
 import { toast } from "react-hot-toast";
 
-function InputField({ id, label, type, icon: Icon, error, ...props }: any) {
+// Tipado para InputField props
+interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
+  id: string;
+  label: string;
+  type: string;
+  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  error?: string;
+}
+
+function InputField({
+  id,
+  label,
+  type,
+  icon: Icon,
+  error,
+  ...props
+}: InputFieldProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
@@ -51,7 +67,7 @@ function InputField({ id, label, type, icon: Icon, error, ...props }: any) {
         <label
           htmlFor={id}
           className={`absolute left-10 transition-all duration-300 transform pointer-events-none ${
-            props.value || isFocused
+            (props.value as string) || isFocused
               ? `-top-3 text-xs px-2 rounded-full ${
                   error
                     ? "text-red-400 bg-gray-900"
@@ -81,7 +97,14 @@ function InputField({ id, label, type, icon: Icon, error, ...props }: any) {
   );
 }
 
-function SocialButton({ provider, label, iconSrc }: any) {
+// Tipado para SocialButton props
+interface SocialButtonProps {
+  provider: string;
+  label: string;
+  iconSrc: string;
+}
+
+function SocialButton({ provider, label, iconSrc }: SocialButtonProps) {
   return (
     <button
       type="button"
@@ -100,6 +123,7 @@ function SocialButton({ provider, label, iconSrc }: any) {
   );
 }
 
+// Particle background con tipado
 const ParticleBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -109,10 +133,21 @@ const ParticleBackground = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
+    const resize = () => {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+    };
+    resize();
 
-    const particles: any[] = [];
+    const particles: {
+      x: number;
+      y: number;
+      radius: number;
+      speedX: number;
+      speedY: number;
+      color: string;
+    }[] = [];
+
     for (let i = 0; i < 50; i++) {
       particles.push({
         x: Math.random() * canvas.width,
@@ -140,12 +175,8 @@ const ParticleBackground = () => {
     };
     animate();
 
-    const onResize = () => {
-      canvas.width = canvas.clientWidth;
-      canvas.height = canvas.clientHeight;
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
   }, []);
 
   return (
@@ -158,7 +189,7 @@ const ParticleBackground = () => {
 
 export default function AuthForm() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [formData, setFormData] = useState({
     email: "",
@@ -170,7 +201,7 @@ export default function AuthForm() {
   const [loading, setLoading] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Si ya hay sesión, vamos al dashboard
+  // Redirigir si ya hay sesión
   useEffect(() => {
     if (status === "authenticated") {
       router.push("/dashboard");
@@ -181,12 +212,8 @@ export default function AuthForm() {
     const { name, value } = e.target;
     setFormData((f) => ({ ...f, [name]: value }));
 
-    // Limpiar error específico cuando el usuario empiece a escribir
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
 
-    // Validación en tiempo real para confirmación de contraseña
     if (
       name === "confirmPassword" ||
       (name === "password" && activeTab === "register")
@@ -194,15 +221,13 @@ export default function AuthForm() {
       const password = name === "password" ? value : formData.password;
       const confirmPassword =
         name === "confirmPassword" ? value : formData.confirmPassword;
-
-      if (confirmPassword && password !== confirmPassword) {
-        setErrors((prev) => ({
-          ...prev,
-          confirmPassword: "Las contraseñas no coinciden",
-        }));
-      } else {
-        setErrors((prev) => ({ ...prev, confirmPassword: "" }));
-      }
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword:
+          confirmPassword && password !== confirmPassword
+            ? "Las contraseñas no coinciden"
+            : "",
+      }));
     }
   };
 
@@ -210,37 +235,22 @@ export default function AuthForm() {
     const { name, email, password, confirmPassword } = formData;
     const newErrors: { [key: string]: string } = {};
 
-    // Validación de email
-    if (!/\S+@\S+\.\S+/.test(email)) {
+    if (!/\S+@\S+\.\S+/.test(email))
       newErrors.email = "Por favor, ingresa un correo válido";
-    }
 
-    // Validación de contraseña
-    if (!/^(?=.*[A-Z])(?=.*[a-zA-Z].*[a-zA-Z]).{6,}$/.test(password)) {
+    if (!/^(?=.*[A-Z])(?=.*[a-zA-Z].*[a-zA-Z]).{6,}$/.test(password))
       newErrors.password = "Mínimo 6 caracteres, 2 letras y 1 mayúscula";
-    }
 
-    // Validaciones específicas para registro
     if (activeTab === "register") {
-      if (!name.trim()) {
-        newErrors.name = "El nombre es obligatorio";
-      }
-
-      if (password !== confirmPassword) {
+      if (!name.trim()) newErrors.name = "El nombre es obligatorio";
+      if (password !== confirmPassword)
         newErrors.confirmPassword = "Las contraseñas no coinciden";
-      }
-
-      if (!confirmPassword) {
+      if (!confirmPassword)
         newErrors.confirmPassword = "Confirma tu contraseña";
-      }
     }
 
     setErrors(newErrors);
-
-    // Mostrar errores como toast también
-    Object.values(newErrors).forEach((error) => {
-      if (error) toast.error(error);
-    });
+    Object.values(newErrors).forEach((error) => error && toast.error(error));
 
     return Object.keys(newErrors).length === 0;
   };
@@ -260,86 +270,43 @@ export default function AuthForm() {
           body: JSON.stringify({ name, email, password }),
         });
 
-        const text = await res.text();
-        let data: { error?: string; message?: string };
-
+        let data: { error?: string; message?: string } = {};
         try {
-          data = JSON.parse(text);
+          data = await res.json();
         } catch {
-          data = { error: text };
+          data = { error: await res.text() };
         }
 
         if (!res.ok) {
-          if (res.status === 409) {
-            toast.error(
-              "Este correo ya está registrado. ¿Quieres iniciar sesión?"
-            );
-            setTimeout(() => setActiveTab("login"), 2000);
-          } else {
-            toast.error(data.error || "Error al registrar");
-          }
+          toast.error(
+            res.status === 409
+              ? "Este correo ya está registrado."
+              : data.error || "Error al registrar"
+          );
+          if (res.status === 409) setTimeout(() => setActiveTab("login"), 2000);
           return;
         }
 
         toast.success(
           "¡Registro exitoso! Revisa tu correo para verificar tu cuenta."
         );
-
-        // Limpiar formulario
         setFormData({ email: "", password: "", confirmPassword: "", name: "" });
-
-        // Redirigir a página de verificación
         router.push("/auth/verify-request?email=" + encodeURIComponent(email));
         return;
       }
 
-      // FLUJO DE INICIO DE SESIÓN
       if (activeTab === "login") {
         const result = await signIn("credentials", {
           redirect: false,
           email,
           password,
         });
-
-        if (result?.error) {
-          // Manejo detallado de errores
-          switch (result.error) {
-            case "EMAIL_NOT_VERIFIED":
-              toast.error(
-                <div>
-                  <p>Por favor verifica tu correo electrónico</p>
-                  <button
-                    className="text-yellow-400 underline mt-1 block"
-                    onClick={() =>
-                      router.push(
-                        "/auth/resend?email=" + encodeURIComponent(email)
-                      )
-                    }
-                  >
-                    Reenviar correo de verificación
-                  </button>
-                </div>
-              );
-              break;
-            case "ACCOUNT_SUSPENDED":
-              toast.error("Tu cuenta ha sido suspendida. Contacta al soporte.");
-              break;
-            case "CredentialsSignin":
-              toast.error(
-                "Credenciales incorrectas. Verifica tu email y contraseña."
-              );
-              break;
-            default:
-              toast.error("Error al iniciar sesión. Intenta nuevamente.");
-          }
-        } else if (result?.ok) {
-          toast.success("¡Bienvenido! Redirigiendo...");
-          // NextAuth manejará la redirección automáticamente
-          window.location.href = "/dashboard";
-        }
+        if (result?.error)
+          toast.error("Error al iniciar sesión. Verifica tus credenciales.");
+        else if (result?.ok) window.location.href = "/dashboard";
       }
     } catch (err) {
-      console.error("handleSubmit error:", err);
+      console.error(err);
       toast.error("Error del servidor. Intenta nuevamente.");
     } finally {
       setLoading(false);
@@ -348,10 +315,8 @@ export default function AuthForm() {
 
   const handleTabChange = (tab: "login" | "register") => {
     if (tab === activeTab) return;
-
     setIsAnimating(true);
     setErrors({});
-
     setTimeout(() => {
       setActiveTab(tab);
       setFormData({ email: "", password: "", confirmPassword: "", name: "" });
@@ -361,7 +326,6 @@ export default function AuthForm() {
 
   return (
     <div className="w-full min-h-screen bg-gray-900 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background with subtle logo */}
       <div className="absolute inset-0 z-0 opacity-10">
         <Image
           src="/images/logo-explore-heaven.png"
@@ -372,13 +336,9 @@ export default function AuthForm() {
         />
       </div>
 
-      {/* Particle background */}
       <ParticleBackground />
-
-      {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900/90 via-gray-900/80 to-gray-900/90 z-0" />
 
-      {/* Back button */}
       <button
         onClick={() => router.push("/")}
         className="absolute top-6 left-6 z-50 flex items-center space-x-1 bg-gray-800/80 hover:bg-gray-700/90 backdrop-blur-sm border border-yellow-400/30 text-yellow-400 px-4 py-2.5 rounded-xl transition-all duration-300 shadow-lg hover:shadow-yellow-400/20"
@@ -387,8 +347,8 @@ export default function AuthForm() {
         <span className="font-medium">Regresar</span>
       </button>
 
-      {/* Main card */}
       <div className="w-full max-w-md z-10">
+        {/* Encabezado */}
         <div className="flex flex-col items-center mb-8">
           <div className="relative w-24 h-24 mb-4">
             <div className="absolute inset-0 bg-yellow-400 rounded-full blur-xl opacity-30"></div>
@@ -410,6 +370,7 @@ export default function AuthForm() {
           <p className="text-gray-400">Descubre experiencias únicas</p>
         </div>
 
+        {/* Card */}
         <div className="bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden border border-gray-700/50">
           {/* Tabs */}
           <div className="flex border-b border-gray-700">
@@ -435,12 +396,9 @@ export default function AuthForm() {
             </button>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             <div
-              className={`space-y-4 transition-all duration-300 ${
-                isAnimating ? "opacity-0" : "opacity-100"
-              }`}
+              className={`space-y-4 transition-all duration-300 ${isAnimating ? "opacity-0" : "opacity-100"}`}
             >
               {activeTab === "register" && (
                 <InputField

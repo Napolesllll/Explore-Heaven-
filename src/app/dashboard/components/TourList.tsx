@@ -8,7 +8,6 @@ import {
   FaUsers,
   FaRoute,
   FaExclamationTriangle,
-  FaInfoCircle,
   FaEdit,
   FaTimes,
   FaMapMarkerAlt,
@@ -16,13 +15,27 @@ import {
   FaImage,
 } from "react-icons/fa";
 
+// Definimos el tipo de Tour
+interface Tour {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  ubicacion: string;
+  maxReservas: number;
+  guias: number;
+  precio: number;
+  salida?: string;
+  regreso?: string;
+  imagenUrl?: string;
+}
+
 export default function TourList() {
-  const [tours, setTours] = useState<any[]>([]);
+  const [tours, setTours] = useState<Tour[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTourId, setSelectedTourId] = useState<string | null>(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editTour, setEditTour] = useState<any>(null);
+  const [editTour, setEditTour] = useState<Tour | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,10 +43,10 @@ export default function TourList() {
     setIsLoading(true);
     try {
       const res = await fetch("/api/tours");
-      const data = await res.json();
-      setTours(data.tours || data);
-    } catch (error) {
-      console.error("Error al obtener tours:", error);
+      const data: { tours?: Tour[] } | Tour[] = await res.json();
+      setTours(Array.isArray(data) ? data : data.tours || []);
+    } catch (err) {
+      console.error("Error al obtener tours:", err);
       setError("Error al cargar los tours");
     } finally {
       setIsLoading(false);
@@ -52,8 +65,8 @@ export default function TourList() {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Error al eliminar");
-      setTours((prev) => prev.filter((t: any) => t.id !== selectedTourId));
-    } catch (error) {
+      setTours((prev) => prev.filter((t) => t.id !== selectedTourId));
+    } catch {
       setError("No se pudo eliminar el tour.");
     } finally {
       setModalVisible(false);
@@ -61,8 +74,8 @@ export default function TourList() {
     }
   };
 
-  const handleEdit = (tour: any) => {
-    const formattedTour = {
+  const handleEdit = (tour: Tour) => {
+    const formattedTour: Tour = {
       ...tour,
       maxReservas: Number(tour.maxReservas),
       guias: Number(tour.guias),
@@ -76,17 +89,24 @@ export default function TourList() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setEditTour((prev: any) => ({
-      ...prev,
-      [name]:
-        name === "maxReservas" || name === "guias" || name === "precio"
-          ? Number(value)
-          : value,
-    }));
+
+    setEditTour((prev) =>
+      prev
+        ? {
+            ...prev,
+            [name]:
+              name === "maxReservas" || name === "guias" || name === "precio"
+                ? Number(value)
+                : value,
+          }
+        : null
+    );
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editTour) return;
+
     setIsSaving(true);
     setError(null);
 
@@ -96,10 +116,7 @@ export default function TourList() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...editTour,
-          id: editTour.id,
-        }),
+        body: JSON.stringify(editTour),
       });
 
       const data = await res.json();
@@ -111,9 +128,11 @@ export default function TourList() {
       await fetchTours();
       setEditModalVisible(false);
       setEditTour(null);
-    } catch (error: any) {
-      console.error("Error al editar:", error);
-      setError(error.message || "No se pudo editar el tour");
+    } catch (err) {
+      console.error("Error al editar:", err);
+      setError(
+        err instanceof Error ? err.message : "No se pudo editar el tour"
+      );
     } finally {
       setIsSaving(false);
     }
@@ -165,7 +184,7 @@ export default function TourList() {
         </div>
       ) : (
         <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-          {tours.map((tour: any) => (
+          {tours.map((tour: Tour) => (
             <motion.div
               key={tour.id}
               initial={{ opacity: 0, y: 20 }}

@@ -105,13 +105,15 @@ export default function AddGuiaForm() {
       setImageFile(null);
       setPreviewUrl(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error al agregar guía:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Hubo un problema al agregar el guía. Intenta nuevamente.";
       setModal({
         isOpen: true,
-        message:
-          error.message ||
-          "Hubo un problema al agregar el guía. Intenta nuevamente.",
+        message: errorMessage,
         type: "error",
       });
     } finally {
@@ -439,11 +441,11 @@ export default function AddGuiaForm() {
             type="submit"
             disabled={isLoading}
             className={`w-full py-4 px-6 text-white font-bold rounded-xl transition-all duration-300 flex items-center justify-center mt-6
-              ${
-                isLoading
-                  ? "bg-gray-700 cursor-not-allowed"
-                  : "bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50"
-              }`}
+             ${
+               isLoading
+                 ? "bg-gray-700 cursor-not-allowed"
+                 : "bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50"
+             }`}
           >
             {isLoading ? (
               <>
@@ -495,7 +497,7 @@ export default function AddGuiaForm() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-lg overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
           <div
             className={`relative rounded-2xl overflow-hidden shadow-2xl transform transition-all duration-300 
-              ${modal.type === "success" ? "shadow-cyan-500/30" : "shadow-red-500/30"}`}
+             ${modal.type === "success" ? "shadow-cyan-500/30" : "shadow-red-500/30"}`}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black opacity-90"></div>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-500/10 via-transparent to-transparent"></div>
@@ -555,11 +557,11 @@ export default function AddGuiaForm() {
                 <button
                   onClick={() => setModal({ ...modal, isOpen: false })}
                   className={`px-8 py-3 rounded-xl font-bold transition-all duration-300
-                    ${
-                      modal.type === "success"
-                        ? "bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50"
-                        : "bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white shadow-lg shadow-red-500/30 hover:shadow-red-500/50"
-                    }`}
+                   ${
+                     modal.type === "success"
+                       ? "bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50"
+                       : "bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white shadow-lg shadow-red-500/30 hover:shadow-red-500/50"
+                   }`}
                 >
                   Aceptar
                 </button>

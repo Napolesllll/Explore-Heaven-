@@ -1,7 +1,20 @@
+"use client";
+
 import { InfoItem } from "./InfoItem";
 import { FaCalendarAlt, FaUsers, FaUserTie } from "react-icons/fa";
 
-export function TourInfoSection({ tour }: { tour: any }) {
+export interface TourInfo {
+  salida?: string;
+  regreso?: string;
+  maxReservas: number;
+  guias: string; // o string[] si quieres manejar varios guías
+}
+
+interface TourInfoSectionProps {
+  tour: TourInfo;
+}
+
+export function TourInfoSection({ tour }: TourInfoSectionProps) {
   const salida = tour.salida || "Por definir";
   const regreso = tour.regreso || "Por definir";
 
@@ -30,3 +43,5 @@ export function TourInfoSection({ tour }: { tour: any }) {
     </div>
   );
 }
+
+export default TourInfoSection;

@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     // 2) Preparamos un FormData web API para Cloudinary
     const uploadData = new FormData();
-    // @ts-ignore: name property sólo para que Cloudinary reconozca el archivo
+    //* @ts-expect-error: name property solo para que Cloudinary reconozca el archivo*/
     uploadData.append("file", file, "upload.jpg");
     uploadData.append("upload_preset", process.env.CLOUDINARY_UPLOAD_PRESET!);
 
@@ -34,11 +34,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: text }, { status: cloudRes.status });
     }
 
-    // 5) Si va bien, parseamos JSON y devolvemos sólo la URL
+    // 5) Si va bien, parseamos JSON y devolvemos solo la URL
     const data = await cloudRes.json();
     return NextResponse.json({ url: data.secure_url });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Upload handler error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({
+      error: err instanceof Error ? err.message : "Error desconocido"
+    }, { status: 500 });
   }
 }

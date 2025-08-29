@@ -11,7 +11,6 @@ import {
   FaCrown,
   FaCalendar,
   FaEnvelope,
-  FaLock,
   FaEdit,
   FaKey,
   FaCamera,

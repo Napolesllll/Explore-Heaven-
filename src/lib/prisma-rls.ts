@@ -1,7 +1,7 @@
-// src/lib/prisma-rls.ts - VERSIÓN CORREGIDA
+// src/lib/prisma-rls.ts
 import { PrismaClient } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
-import { authOptions } from '../app/api/auth/[...nextauth]/route';
+import { authOptions } from '../lib/auth/auth.config';
 
 // Cliente Prisma global con configuración de conexión
 const globalForPrisma = globalThis as unknown as {
@@ -42,7 +42,6 @@ async function clearDatabaseUser(): Promise<void> {
 
 /**
  * Obtiene un cliente Prisma configurado con el usuario autenticado
- * Funciona tanto para usuarios regulares como admins
  */
 export async function getAuthenticatedPrisma() {
     console.log('🔐 getAuthenticatedPrisma() llamado');
@@ -56,7 +55,6 @@ export async function getAuthenticatedPrisma() {
 
     console.log('✅ Sesión encontrada:', session.user.email, session.user.role);
 
-    // Buscar el usuario en la base de datos para obtener ID y rol actualizados
     const user = await prisma.user.findUnique({
         where: { email: session.user.email },
         select: { id: true, email: true, role: true, name: true }
@@ -67,7 +65,6 @@ export async function getAuthenticatedPrisma() {
         throw new Error('Usuario no encontrado');
     }
 
-    // Configurar el usuario en la base de datos para RLS
     const userIdForRLS = user.role === 'ADMIN' ? 'ADMIN_USER' : user.id;
     await setDatabaseUser(userIdForRLS);
 
@@ -82,7 +79,6 @@ export async function getAuthenticatedPrisma() {
 
 /**
  * DEPRECATED: Usar getAuthenticatedPrisma() en su lugar
- * Mantenido por compatibilidad
  */
 export async function getAdminPrisma() {
     console.log('⚠️ getAdminPrisma() está deprecado, usa getAuthenticatedPrisma()');
@@ -98,22 +94,16 @@ export async function getAdminPrisma() {
 
 /**
  * Cliente Prisma público para operaciones que no requieren autenticación
- * (Ej: listar tours públicos, fechas disponibles)
- * ✅ CORREGIDO: Ahora devuelve el cliente directamente
  */
 export async function getPublicPrisma() {
     console.log('🌍 getPublicPrisma() llamado');
 
     try {
-        // Limpiar cualquier configuración de usuario previa
         await clearDatabaseUser();
         console.log('✅ Cliente público configurado');
-
-        // Devolver el cliente directamente, no un wrapper
         return prisma;
     } catch (error) {
         console.error('💥 Error configurando cliente público:', error);
-        // Si falla la limpieza, aún devolver el cliente
         return prisma;
     }
 }
@@ -121,10 +111,10 @@ export async function getPublicPrisma() {
 /**
  * HOC para manejar limpieza automática en routes
  */
-export function withPrismaCleanup<T extends any[], R>(
-    handler: (...args: T) => Promise<R>
+export function withPrismaCleanup<Args extends unknown[], Return>(
+    handler: (...args: Args) => Promise<Return>
 ) {
-    return async (...args: T): Promise<R> => {
+    return async (...args: Args): Promise<Return> => {
         try {
             console.log('🚀 Iniciando handler con limpieza automática');
             const result = await handler(...args);
@@ -134,7 +124,6 @@ export function withPrismaCleanup<T extends any[], R>(
             console.error('💥 Error en handler:', error);
             throw error;
         } finally {
-            // Siempre limpiar al final
             console.log('🧹 Ejecutando limpieza automática...');
             await clearDatabaseUser();
         }

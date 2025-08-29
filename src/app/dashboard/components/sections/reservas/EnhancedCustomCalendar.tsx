@@ -6,7 +6,6 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaInfoCircle,
-  FaExclamationTriangle,
   FaCheckCircle,
   FaTimesCircle,
   FaExclamationCircle,
@@ -78,17 +77,57 @@ function useAvailableDatesForReprogramming(
           throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
 
-        const data = await response.json();
+        const raw = (await response.json()) as unknown;
+
+        if (!Array.isArray(raw)) {
+          throw new Error("Respuesta de API inesperada");
+        }
 
         // Procesar las fechas para añadir información de disponibilidad
-        const processedDates: AvailableDate[] = data.map((dateInfo: any) => ({
-          ...dateInfo,
-          dateObj: new Date(dateInfo.date + "T00:00:00"),
-          // La API ya debería devolver esta información, pero por si acaso:
-          isAvailable: dateInfo.isAvailable ?? true,
-          spotsLeft: dateInfo.spotsLeft ?? 3,
-          userHasReservation: dateInfo.userHasReservation ?? false,
-        }));
+        const processedDates: AvailableDate[] = raw.map((dateInfo) => {
+          // Trabajamos con unknown => transformamos con seguridad
+          const info = (dateInfo as Record<string, unknown>) ?? {};
+
+          const dateField = info.date ?? "";
+          const dateStr = String(dateField);
+
+          const id =
+            typeof info.id === "string" && info.id.trim()
+              ? info.id
+              : `${tourId}-${dateStr}`;
+
+          const tourIdField =
+            typeof info.tourId === "string" && info.tourId.trim()
+              ? info.tourId
+              : tourId;
+
+          const isAvailable =
+            typeof info.isAvailable === "boolean" ? info.isAvailable : true;
+
+          const spotsLeft =
+            typeof info.spotsLeft === "number"
+              ? info.spotsLeft
+              : Number(info.spotsLeft) || 3;
+
+          const userHasReservation =
+            typeof info.userHasReservation === "boolean"
+              ? info.userHasReservation
+              : false;
+
+          const reason =
+            typeof info.reason === "string" ? info.reason : undefined;
+
+          return {
+            id,
+            date: dateStr,
+            tourId: tourIdField,
+            isAvailable,
+            spotsLeft,
+            userHasReservation,
+            reason,
+            dateObj: new Date(dateStr + "T00:00:00"),
+          };
+        });
 
         setAvailableDates(processedDates);
 
@@ -144,7 +183,9 @@ export function EnhancedCustomCalendar({
   const availableDatesMap = useMemo(() => {
     const map = new Map<string, AvailableDate>();
     availableDates.forEach((date) => {
-      const dateStr = `${date.dateObj.getFullYear()}-${String(date.dateObj.getMonth() + 1).padStart(2, "0")}-${String(date.dateObj.getDate()).padStart(2, "0")}`;
+      const dateStr = `${date.dateObj.getFullYear()}-${String(
+        date.dateObj.getMonth() + 1
+      ).padStart(2, "0")}-${String(date.dateObj.getDate()).padStart(2, "0")}`;
       map.set(dateStr, date);
     });
     return map;
@@ -165,7 +206,7 @@ export function EnhancedCustomCalendar({
   const daysInMonth = lastDay.getDate();
 
   // Generar días del calendario
-  const calendarDays = [];
+  const calendarDays: Array<number | null> = [];
 
   // Días vacíos al inicio
   for (let i = 0; i < firstDayOfWeek; i++) {
@@ -192,13 +233,17 @@ export function EnhancedCustomCalendar({
 
   // Obtener información de disponibilidad de una fecha específica
   const getDateAvailability = (day: number) => {
-    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const dateStr = `${currentMonth.getFullYear()}-${String(
+      currentMonth.getMonth() + 1
+    ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     return availableDatesMap.get(dateStr);
   };
 
   // Verificar si una fecha está seleccionada
   const isDateSelected = (day: number) => {
-    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const dateStr = `${currentMonth.getFullYear()}-${String(
+      currentMonth.getMonth() + 1
+    ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     return selectedDate === dateStr;
   };
 
@@ -206,7 +251,9 @@ export function EnhancedCustomCalendar({
   const handleDateClick = (day: number) => {
     const dateInfo = getDateAvailability(day);
     if (dateInfo && dateInfo.isAvailable) {
-      const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const dateStr = `${currentMonth.getFullYear()}-${String(
+        currentMonth.getMonth() + 1
+      ).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
       onDateSelect(dateStr);
     }
   };
@@ -448,7 +495,12 @@ export function EnhancedCustomCalendar({
             const selectedDateInfo = Array.from(
               availableDatesMap.values()
             ).find((d) => {
-              const dateStr = `${d.dateObj.getFullYear()}-${String(d.dateObj.getMonth() + 1).padStart(2, "0")}-${String(d.dateObj.getDate()).padStart(2, "0")}`;
+              const dateStr = `${d.dateObj.getFullYear()}-${String(
+                d.dateObj.getMonth() + 1
+              ).padStart(2, "0")}-${String(d.dateObj.getDate()).padStart(
+                2,
+                "0"
+              )}`;
               return dateStr === selectedDate;
             });
 

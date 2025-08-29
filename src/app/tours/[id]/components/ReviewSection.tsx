@@ -1,8 +1,25 @@
+"use client";
+
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import { Review } from "../types/tours";
 import { FaSpinner, FaTrash, FaUser, FaStar } from "react-icons/fa";
+import { Review } from "../types/tours";
 import { ReviewForm } from "./ReviewForm";
+
+export interface Tour {
+  id: string;
+  nombre: string;
+  precio?: number;
+  maxReservas?: number;
+}
+
+interface ReviewSectionProps {
+  tour: Tour;
+  reviews: Review[];
+  onReviewSubmit: (review: Review) => void;
+  onDeleteReview: (reviewId: string) => void;
+  deletingReviewId: string | null;
+}
 
 export function ReviewSection({
   tour,
@@ -10,13 +27,7 @@ export function ReviewSection({
   onReviewSubmit,
   onDeleteReview,
   deletingReviewId,
-}: {
-  tour: any;
-  reviews: Review[];
-  onReviewSubmit: (review: Review) => void;
-  onDeleteReview: (reviewId: string) => void;
-  deletingReviewId: string | null;
-}) {
+}: ReviewSectionProps) {
   const { data: session } = useSession();
 
   return (
@@ -25,7 +36,7 @@ export function ReviewSection({
         <div
           className="w-3 h-3 rounded-full bg-indigo-400 mr-2 animate-pulse"
           aria-hidden="true"
-        ></div>
+        />
         Experiencias de Viajeros
       </h3>
 
@@ -86,6 +97,7 @@ export function ReviewSection({
                   </div>
                 </div>
               </div>
+
               <div className="flex items-center mb-3">
                 {[...Array(5)].map((_, i) => (
                   <FaStar
@@ -96,8 +108,11 @@ export function ReviewSection({
                   />
                 ))}
               </div>
+
               {review.comment && (
-                <p className="text-gray-200 italic">"{review.comment}"</p>
+                <p className="text-gray-200 italic">
+                  &quot;{review.comment}&quot;
+                </p>
               )}
             </div>
           ))
@@ -106,3 +121,5 @@ export function ReviewSection({
     </div>
   );
 }
+
+export default ReviewSection;

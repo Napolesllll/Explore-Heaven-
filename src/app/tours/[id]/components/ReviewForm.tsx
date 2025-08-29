@@ -1,27 +1,41 @@
-import { useForm } from "react-hook-form";
+"use client";
+
+import { useForm, SubmitHandler } from "react-hook-form";
 import { FaStar } from "react-icons/fa";
 
-export function ReviewForm({
-  tourId,
-  onReviewSubmit,
-}: {
+export interface ReviewData {
   tourId: string;
-  onReviewSubmit: (review: any) => void;
-}) {
+  rating: number;
+  comment?: string;
+}
+
+interface ReviewFormProps {
+  tourId: string;
+  onReviewSubmit: (review: ReviewData) => void;
+}
+
+interface FormValues {
+  rating: number;
+  comment: string;
+}
+
+export function ReviewForm({ tourId, onReviewSubmit }: ReviewFormProps) {
   const {
     register,
     handleSubmit,
     reset,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<{
-    rating: number;
-    comment: string;
-  }>();
+  } = useForm<FormValues>({
+    defaultValues: {
+      rating: 0,
+      comment: "",
+    },
+  });
 
   const watchedRating = watch("rating", 0);
 
-  const onSubmit = async (data: { rating: number; comment: string }) => {
+  const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {
       const response = await fetch(`${window.location.origin}/api/reviews`, {
         method: "POST",
@@ -40,15 +54,21 @@ export function ReviewForm({
         try {
           const errorData = await response.json();
           errorMessage = errorData.error || errorMessage;
-        } catch (e) {}
+        } catch {
+          // Ignorar error al parsear JSON
+        }
         throw new Error(errorMessage);
       }
 
-      const newReview = await response.json();
+      const newReview: ReviewData = await response.json();
       onReviewSubmit(newReview);
       reset();
-    } catch (error: any) {
-      console.error("Error en onSubmitReview:", error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error en onSubmitReview:", error.message);
+      } else {
+        console.error("Error inesperado en onSubmitReview:", error);
+      }
     }
   };
 
@@ -56,6 +76,7 @@ export function ReviewForm({
     <div className="mb-8 p-6 bg-indigo-900/30 rounded-xl border border-indigo-500/30">
       <h4 className="text-lg font-medium mb-4 text-white">Deja tu reseña</h4>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Calificación */}
         <div>
           <label className="block text-indigo-300 mb-2">Calificación</label>
           <div className="flex items-center">
@@ -85,6 +106,7 @@ export function ReviewForm({
           )}
         </div>
 
+        {/* Comentario */}
         <div>
           <label htmlFor="comment" className="block text-indigo-300 mb-2">
             Comentario (opcional)
@@ -95,9 +117,10 @@ export function ReviewForm({
             rows={3}
             className="w-full p-2 rounded bg-gray-800 text-white border border-indigo-500/20 focus:ring-2 focus:ring-indigo-400 outline-none"
             placeholder="Cuéntanos tu experiencia..."
-          ></textarea>
+          />
         </div>
 
+        {/* Botón de envío */}
         <button
           type="submit"
           disabled={isSubmitting}
@@ -109,3 +132,5 @@ export function ReviewForm({
     </div>
   );
 }
+
+export default ReviewForm;

@@ -30,7 +30,12 @@ export async function POST(request: Request) {
             return new NextResponse("Falta configuración de correo", { status: 500 });
         }
 
-        const tokenRecord = await generateVerificationToken(email);
+        const tokenRecord = (await generateVerificationToken(email)) as { token: string; expires?: string | Date };
+
+        if (!tokenRecord || typeof tokenRecord.token !== "string") {
+            console.error("[/api/auth/resend] token inválido:", tokenRecord);
+            return new NextResponse("Error generando token de verificación", { status: 500 });
+        }
 
         // Usar nuestro endpoint personalizado para verificar email
         const verificationUrl = `${baseUrl}/api/auth/verify-email?token=${encodeURIComponent(
@@ -44,7 +49,7 @@ export async function POST(request: Request) {
         });
 
         return new NextResponse("Correo de verificación enviado", { status: 200 });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("[/api/auth/resend]", error);
         if (error instanceof z.ZodError) {
             return new NextResponse("Email inválido", { status: 400 });

@@ -1,16 +1,26 @@
+"use client";
+
 import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 import { StarRating } from "./StarRating";
+
+export interface Tour {
+  id: string;
+  nombre: string;
+  // Agrega aquí otros campos que uses del tour si es necesario
+}
+
+interface TourHeaderProps {
+  tour: Tour;
+  averageRating: number;
+  reviewsCount: number;
+}
 
 export function TourHeader({
   tour,
   averageRating,
   reviewsCount,
-}: {
-  tour: any;
-  averageRating: number;
-  reviewsCount: number;
-}) {
+}: TourHeaderProps) {
   return (
     <>
       <div className="fixed top-6 left-6 z-20">
@@ -39,3 +49,5 @@ export function TourHeader({
     </>
   );
 }
+
+export default TourHeader;

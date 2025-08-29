@@ -50,8 +50,13 @@ const defaultZones: SafeZone[] = [
 
 const SafetyMap = ({ zones = defaultZones }: SafetyMapProps) => {
   useEffect(() => {
-    // Fix para el ícono de marcador en Next.js
-    delete (Icon.Default.prototype as any)._getIconUrl;
+    // Fix para el ícono de marcador en Next.js sin usar `any`
+    const iconDefault = Icon.Default.prototype as unknown as Record<
+      string,
+      unknown
+    >;
+    delete iconDefault._getIconUrl;
+
     Icon.Default.mergeOptions({
       iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
       iconRetinaUrl:

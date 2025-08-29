@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { tours } from "../../../../../data/toursData";
-import TourDetail from "./TourDetail";
+import TourDetail from "./components/tours/TourDetail";
 import { FaArrowLeft, FaRocket, FaStar } from "react-icons/fa";
 
 export default function ToursFeed() {

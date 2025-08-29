@@ -1,4 +1,4 @@
-import SafetyTipsCard from "components/SafetyTipsCard"
+
 
 export const es = {
   whyMedellin: "¿Por qué Medellín?",

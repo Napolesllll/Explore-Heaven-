@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -9,9 +9,7 @@ import {
   Users,
   MapPin,
   Clock,
-  Filter,
   Eye,
-  Plus,
   RefreshCw,
 } from "lucide-react";
 import { useReservations } from "./hooks/useReservations";
@@ -20,16 +18,6 @@ import { Reservation } from "../../../types/reservations";
 // Funciones para manejar fechas sin problemas de timezone
 const createDateWithoutTimezone = (dateString: string): Date => {
   return new Date(dateString + "T00:00:00");
-};
-
-const formatDateWithoutTimezone = (dateString: string): string => {
-  const date = createDateWithoutTimezone(dateString);
-  return date.toLocaleDateString("es-ES", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 };
 
 const formatDateShort = (dateString: string): string => {
@@ -252,7 +240,7 @@ export default function ReservationCalendar() {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   // Generar días vacíos al inicio del mes
-  const emptyDays = Array.from({ length: firstDayWeekday }, (_, i) => null);
+  const emptyDays = Array.from({ length: firstDayWeekday }, () => null);
 
   // Navegación de meses
   const goToPreviousMonth = () => {

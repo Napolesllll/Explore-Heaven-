@@ -28,8 +28,8 @@ export const PATCH = withPrismaCleanup(async (
     try {
       const body = await request.json();
       data = updateReservationSchema.parse(body);
-    } catch (err: any) {
-      if (err.name === 'ZodError') {
+    } catch (err) {
+      if (err instanceof z.ZodError) {
         return NextResponse.json({ error: 'Datos inválidos', details: err.errors }, { status: 400 });
       }
       return NextResponse.json({ error: 'Error interno' }, { status: 500 });

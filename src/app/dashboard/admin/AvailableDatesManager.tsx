@@ -13,7 +13,6 @@ export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
     []
   );
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-  const [loading, setLoading] = useState(false);
   const [bulkAdding, setBulkAdding] = useState(false);
 
   useEffect(() => {
@@ -22,7 +21,7 @@ export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
         const res = await fetch(`/api/available-dates?tourId=${tour.id}`);
         const data = await res.json();
         setAvailableDates(data);
-      } catch (error) {
+      } catch {
         toast.error("Error al cargar fechas");
       }
     };
@@ -55,7 +54,6 @@ export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
         }
       });
 
-      // Actualizar estado con las nuevas fechas creadas
       if (newDates.length > 0) {
         setAvailableDates((prev) => [...prev, ...newDates]);
         toast.success(`${newDates.length} fechas agregadas`);
@@ -66,8 +64,12 @@ export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
       }
 
       setSelectedDates([]);
-    } catch (error: any) {
-      toast.error("Error crítico al agregar fechas");
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error
+          ? `Error crítico: ${error.message}`
+          : "Error crítico al agregar fechas"
+      );
     } finally {
       setBulkAdding(false);
     }
@@ -87,7 +89,6 @@ export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
     }
   };
 
-  // Verificar si una fecha ya está registrada
   const isDateRegistered = (date: Date) => {
     return availableDates.some(
       (d) =>
@@ -132,7 +133,6 @@ export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
             },
           }}
           disabled={(date) => date < new Date() || isDateRegistered(date)}
-          // Forzar diseño horizontal
           numberOfMonths={1}
         />
 
@@ -188,7 +188,7 @@ export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
         {availableDates.length > 0 ? (
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {availableDates
-              .slice() // Crear copia para no mutar el array original
+              .slice()
               .sort(
                 (a, b) =>
                   new Date(a.date).getTime() - new Date(b.date).getTime()

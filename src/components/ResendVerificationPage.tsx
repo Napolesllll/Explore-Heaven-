@@ -1,10 +1,18 @@
-// src/components/ResendVerificationPage.tsx
 "use client";
 
 import { useState, FormEvent, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FaPaperPlane, FaArrowLeft, FaEnvelope } from "react-icons/fa";
 import toast from "react-hot-toast";
+
+interface Particle {
+  x: number;
+  y: number;
+  size: number;
+  speedX: number;
+  speedY: number;
+  color: string;
+}
 
 function ResendVerificationContent() {
   const [email, setEmail] = useState("");
@@ -14,37 +22,30 @@ function ResendVerificationContent() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const searchParams = useSearchParams();
 
-  // Obtener email de los parámetros de URL si existe
   useEffect(() => {
     const emailParam = searchParams.get("email");
-    if (emailParam) {
-      setEmail(decodeURIComponent(emailParam));
-    }
+    if (emailParam) setEmail(decodeURIComponent(emailParam));
   }, [searchParams]);
 
-  // Cooldown timer
   useEffect(() => {
     if (resendCooldown > 0) {
-      const timer = setTimeout(() => {
-        setResendCooldown(resendCooldown - 1);
-      }, 1000);
+      const timer = setTimeout(
+        () => setResendCooldown(resendCooldown - 1),
+        1000
+      );
       return () => clearTimeout(timer);
     }
   }, [resendCooldown]);
 
-  const isValidEmail = (email: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
+  const isValidEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
     if (!isValidEmail(email)) {
       toast.error("Email inválido");
       return;
     }
-
     if (resendCooldown > 0) {
       toast.error(`Espera ${resendCooldown} segundos antes de reenviar`);
       return;
@@ -61,26 +62,22 @@ function ResendVerificationContent() {
       const text = await res.text();
 
       if (!res.ok) {
-        if (res.status === 404) {
+        if (res.status === 404)
           toast.error("No se encontró ninguna cuenta con este email");
-        } else if (res.status === 400 && text.includes("ya está verificada")) {
+        else if (res.status === 400 && text.includes("ya está verificada")) {
           toast.success(
             "Esta cuenta ya está verificada. Puedes iniciar sesión."
           );
           setTimeout(() => router.push("/auth"), 2000);
         } else if (res.status === 429) {
           toast.error("Demasiados intentos. Espera unos minutos.");
-          setResendCooldown(300); // 5 minutos
-        } else {
-          toast.error(text || "Error al reenviar verificación.");
-        }
+          setResendCooldown(300);
+        } else toast.error(text || "Error al reenviar verificación.");
       } else {
         toast.success(
           "Correo de verificación reenviado. Revisa tu bandeja de entrada."
         );
-        setResendCooldown(60); // Cooldown de 60 segundos
-
-        // Redirigir a la página de verificación pendiente
+        setResendCooldown(60);
         router.push(`/auth/verify-request?email=${encodeURIComponent(email)}`);
       }
     } catch (err) {
@@ -91,7 +88,6 @@ function ResendVerificationContent() {
     }
   };
 
-  // Efecto de partículas para el fondo
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -102,7 +98,7 @@ function ResendVerificationContent() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const particles: any[] = [];
+    const particles: Particle[] = [];
     const particleCount = 120;
 
     for (let i = 0; i < particleCount; i++) {
@@ -138,17 +134,17 @@ function ResendVerificationContent() {
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      particles.forEach((particle) => {
+      particles.forEach((p) => {
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fillStyle = particle.color;
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
         ctx.fill();
 
-        particle.x += particle.speedX;
-        particle.y += particle.speedY;
+        p.x += p.speedX;
+        p.y += p.speedY;
 
-        if (particle.x > canvas.width || particle.x < 0) particle.speedX *= -1;
-        if (particle.y > canvas.height || particle.y < 0) particle.speedY *= -1;
+        if (p.x > canvas.width || p.x < 0) p.speedX *= -1;
+        if (p.y > canvas.height || p.y < 0) p.speedY *= -1;
       });
 
       connect();
@@ -161,20 +157,14 @@ function ResendVerificationContent() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gray-900">
-      {/* Canvas de partículas animadas */}
       <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
-
-      {/* Efecto de brillo central */}
       <div className="absolute w-[300px] h-[300px] rounded-full bg-purple-600 blur-[120px] opacity-20" />
-
-      {/* Botón de volver */}
       <button
         onClick={() => router.back()}
         disabled={isLoading}
@@ -183,7 +173,6 @@ function ResendVerificationContent() {
         <FaArrowLeft className="h-4 w-4" />
         <span className="font-medium">Volver</span>
       </button>
-
       {/* Tarjeta de contenido */}
       <div
         className="relative z-10 w-full max-w-md p-8 rounded-3xl 

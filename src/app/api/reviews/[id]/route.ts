@@ -2,11 +2,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import prisma from "../../../../lib/prismadb";
-import { authOptions } from "../../../../app/api/auth/[...nextauth]/route";
+import { authOptions } from "../../../../lib/auth/auth.config";
+
+// Tipo para Next.js 15 - params es ahora una Promise
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteContext
 ) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -16,7 +21,8 @@ export async function DELETE(
     );
   }
 
-  const reviewId = params.id;
+  // Await params para obtener los parámetros
+  const { id: reviewId } = await params;
 
   try {
     // Verificar que la reseña existe y pertenece al usuario

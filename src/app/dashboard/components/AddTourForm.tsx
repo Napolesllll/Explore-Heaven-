@@ -194,7 +194,6 @@ export default function AddTourForm() {
         throw new Error(`Error creando tour: ${text}`);
       }
 
-      const createData = await createRes.json();
       toast.success(`Tour "${nombre}" creado correctamente`);
 
       // Resetear formulario
@@ -210,9 +209,11 @@ export default function AddTourForm() {
       setPreviewUrls([]);
       setFeaturedImageIndex(0);
       setDateError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.message || "Hubo un problema");
+      const errorMessage =
+        err instanceof Error ? err.message : "Hubo un problema";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

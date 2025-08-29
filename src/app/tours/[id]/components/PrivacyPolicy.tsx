@@ -1,15 +1,5 @@
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  FaShieldAlt,
-  FaUser,
-  FaIdCard,
-  FaBirthdayCake,
-  FaArrowLeft,
-  FaArrowRight,
-  FaTimes,
-  FaLock,
-} from "react-icons/fa";
+import { FaTimes, FaLock } from "react-icons/fa";
 
 // Modal de Políticas de Protección de Datos
 function PrivacyPolicyModal({
