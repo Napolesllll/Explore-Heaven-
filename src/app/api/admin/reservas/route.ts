@@ -1,194 +1,203 @@
-// app/api/admin/reservas/route.ts
+// src/app/api/admin/reservas/route.ts - ADMIN CON RLS
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { getAdminPrisma, withPrismaCleanup } from '../../../../lib/prisma-rls';
 
-const prisma = new PrismaClient();
-
-export async function GET(request: NextRequest) {
+// GET - Obtener TODAS las reservas (solo admins)
+export const GET = withPrismaCleanup(async (request: NextRequest) => {
     try {
-        // Verificar si es admin (ajusta según tu lógica de autorización)
-        const session = await getServerSession(authOptions);
+        // 🔒 VERIFICAR PERMISOS DE ADMIN (automáticamente valida rol)
+        const { prisma, user } = await getAdminPrisma();
 
-        if (!session) {
-            return NextResponse.json(
-                { error: 'No autorizado' },
-                { status: 401 }
-            );
-        }
+        console.log('🔍 Admin obteniendo todas las reservas:', user.email);
 
-        // Obtener todas las reservas con información relacionada
+        // 🎯 Los admins pueden ver TODAS las reservas
         const reservas = await prisma.reserva.findMany({
             include: {
-                Tour: {
-                    select: {
-                        id: true,
-                        nombre: true,
-                        imagenUrl: true,
-                        precio: true,
-                        ubicacion: true,
-                    }
-                },
                 user: {
                     select: {
                         id: true,
                         name: true,
-                        email: true,
+                        email: true
+                    }
+                },
+                Tour: {
+                    select: {
+                        id: true,
+                        nombre: true,
+                        descripcion: true,
+                        precio: true,
+                        imagenUrl: true,
+                        ubicacion: true
                     }
                 },
                 Guia: {
                     select: {
                         id: true,
                         nombre: true,
-                        foto: true,
+                        foto: true
                     }
                 }
             },
             orderBy: { createdAt: 'desc' },
         });
 
-        // Transformar datos para que coincidan con el tipo Reservation
-        const reservasTransformadas = reservas.map(reserva => ({
-            id: reserva.id.toString(),
-            tourId: reserva.tourId,
-            tourNombre: reserva.Tour.nombre,
-            tourImagen: reserva.Tour.imagenUrl,
-            tourUbicacion: reserva.Tour.ubicacion || 'Ubicación no especificada',
-            fechaSeleccionada: reserva.fecha.toISOString().split('T')[0],
-            fechaCreacion: reserva.createdAt.toISOString().split('T')[0],
-            status: mapEstadoToStatus(reserva.estado || 'Pendiente'),
-            nombreReservante: reserva.nombre,
-            correoReservante: reserva.correo,
-            telefonoReservante: reserva.telefono,
-            adultos: reserva.adultos,
-            niños: reserva.niños,
-            totalPersonas: reserva.adultos + reserva.niños,
-            participantes: Array.isArray(reserva.participantes)
-                ? reserva.participantes as any[]
-                : [],
-            contactoEmergencia: reserva.contactoEmergencia as any || {
-                nombre: '',
-                telefono: ''
-            },
-            precioTotal: reserva.Tour.precio * (reserva.adultos + reserva.niños),
-            notas: '', // Agregar campo notas al modelo si es necesario
-            guiaNombre: reserva.Guia?.nombre || null,
-            userName: reserva.user.name || 'Usuario desconocido',
-            userEmail: reserva.user.email || reserva.correo,
-        }));
+        console.log(`✅ Admin obtuvo ${reservas.length} reservas totales`);
+
+        // Stats completas del sistema para admin
+        const stats = await Promise.all([
+            prisma.user.count(),
+            prisma.tour.count(),
+            prisma.reserva.count(),
+            prisma.reserva.count({
+                where: { estado: 'Confirmada' }
+            }),
+            prisma.reserva.count({
+                where: { estado: 'Pendiente' }
+            }),
+            prisma.reserva.count({
+                where: { estado: 'Cancelada' }
+            })
+        ]);
+
+        const adminStats = {
+            usuarios: stats[0],
+            tours: stats[1],
+            reservas: stats[2],
+            reservasConfirmadas: stats[3],
+            reservasPendientes: stats[4],
+            reservasCanceladas: stats[5]
+        };
 
         return NextResponse.json({
-            reservas: reservasTransformadas,
-            total: reservasTransformadas.length
-        });
-
-    } catch (error) {
-        console.error('Error al obtener reservas admin:', error);
-        return NextResponse.json(
-            { error: 'Error interno del servidor' },
-            { status: 500 }
-        );
-    }
-}
-
-export async function PUT(request: NextRequest) {
-    try {
-        const session = await getServerSession(authOptions);
-
-        if (!session) {
-            return NextResponse.json(
-                { error: 'No autorizado' },
-                { status: 401 }
-            );
-        }
-
-        const { reservaId, nuevoEstado } = await request.json();
-
-        const reservaActualizada = await prisma.reserva.update({
-            where: { id: parseInt(reservaId) },
-            data: { estado: nuevoEstado },
-            include: {
-                Tour: true,
-                user: true
+            reservas,
+            stats: adminStats,
+            security: {
+                admin_access: true,
+                user_id: user.id,
+                user_role: user.role
             }
         });
 
-        return NextResponse.json(reservaActualizada);
-
     } catch (error) {
-        console.error('Error al actualizar reserva:', error);
-        return NextResponse.json(
-            { error: 'Error interno del servidor' },
-            { status: 500 }
-        );
+        console.error('💥 Error en admin reservas:', error);
+
+        if (error instanceof Error) {
+            if (error.message === 'Usuario no autenticado') {
+                return NextResponse.json({
+                    error: 'Necesitas iniciar sesión'
+                }, { status: 401 });
+            }
+
+            if (error.message.includes('permisos de administrador')) {
+                return NextResponse.json({
+                    error: 'Acceso denegado - Se requieren permisos de administrador'
+                }, { status: 403 });
+            }
+        }
+
+        return NextResponse.json({
+            error: 'Error interno del servidor'
+        }, { status: 500 });
     }
-}
+});
 
-// Función auxiliar para mapear estados
-function mapEstadoToStatus(estado: string) {
-    const estadoMap: { [key: string]: string } = {
-        'Pendiente': 'pendiente',
-        'Confirmada': 'confirmada',
-        'Cancelada': 'cancelada',
-        'Completada': 'completada',
-        'En proceso': 'en_proceso',
-        'Pagada': 'confirmada', // Mapear "Pagada" a "confirmada"
-    };
-
-    return estadoMap[estado] || 'pendiente';
-}
-
-// PATCH - Actualizar campos específicos (como el status)
-export async function PATCH(
-    request: NextRequest,
-    { params }: { params: { id: string } }
-) {
+// PUT - Actualizar estado de reserva (solo admins)
+export const PUT = withPrismaCleanup(async (request: NextRequest) => {
     try {
-        const { id } = params;
+        const { prisma, user } = await getAdminPrisma();
         const body = await request.json();
 
-        // Validar que la reserva existe
-        const reservaExistente = await db.reservas.findUnique({
-            where: { id }
-        });
+        const { id, estado, guiaId } = body;
 
-        if (!reservaExistente) {
+        if (!id || !estado) {
             return NextResponse.json(
-                { success: false, error: 'Reserva no encontrada' },
-                { status: 404 }
+                { error: 'ID y estado son requeridos' },
+                { status: 400 }
             );
         }
 
-        // Actualizar solo los campos proporcionados
-        const reservaActualizada = await db.reservas.update({
+        // Estados válidos
+        const estadosValidos = ['Pendiente', 'Confirmada', 'Cancelada', 'Completada'];
+        if (!estadosValidos.includes(estado)) {
+            return NextResponse.json(
+                { error: 'Estado no válido' },
+                { status: 400 }
+            );
+        }
+
+        console.log(`🔧 Admin actualizando reserva ${id} a estado: ${estado}`);
+
+        const reservaActualizada = await prisma.reserva.update({
             where: { id },
             data: {
-                ...body,
-                fechaActualizacion: new Date().toISOString()
+                estado,
+                ...(guiaId && { guiaId }),
+                updatedAt: new Date()
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true
+                    }
+                },
+                Tour: {
+                    select: {
+                        id: true,
+                        nombre: true,
+                        precio: true
+                    }
+                },
+                Guia: {
+                    select: {
+                        id: true,
+                        nombre: true
+                    }
+                }
             }
         });
 
-        // const reservaActualizada = {
-        //     id,
-        //     ...body,
-        //     fechaActualizacion: new Date().toISOString()
-        // };
-
-        // Log para auditoría
-        console.log(`Reserva ${id} actualizada:`, body);
+        console.log('✅ Reserva actualizada por admin:', reservaActualizada.id);
 
         return NextResponse.json({
-            success: true,
             reserva: reservaActualizada,
-            message: 'Reserva actualizada exitosamente'
+            message: `Reserva actualizada a estado: ${estado}`
         });
 
     } catch (error) {
-        console.error('Error al actualizar reserva:', error);
-        return NextResponse.json(
-            { success: false, error: 'Error al actualizar la reserva' },
-            { status: 500 }
-        );
+        console.error('💥 Error actualizando reserva:', error);
+
+        if (error instanceof Error) {
+            if (error.message === 'Usuario no autenticado') {
+                return NextResponse.json({ error: 'Necesitas iniciar sesión' }, { status: 401 });
+            }
+            if (error.message.includes('permisos de administrador')) {
+                return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+            }
+        }
+
+        // Error de Prisma - registro no encontrado
+        if (error && typeof error === 'object' && 'code' in error) {
+            if ((error as any).code === 'P2025') {
+                return NextResponse.json(
+                    { error: 'Reserva no encontrada' },
+                    { status: 404 }
+                );
+            }
+        }
+
+        return NextResponse.json({
+            error: 'Error al actualizar reserva'
+        }, { status: 500 });
     }
+});
+
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            'Allow': 'GET, PUT, OPTIONS',
+        },
+    });
 }

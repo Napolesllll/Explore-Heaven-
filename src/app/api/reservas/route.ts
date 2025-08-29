@@ -1,27 +1,16 @@
-// app/api/reservas/route.ts
+// app/api/reservas/route.ts - VERSIÓN SEGURA CON RLS
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]/route'; // Ajusta la ruta según tu estructura
+import { getAuthenticatedPrisma, withPrismaCleanup } from '../../../lib/prisma-rls';
 
-const prisma = new PrismaClient();
-
-export async function POST(request: NextRequest) {
-  console.log('🚀 POST /api/reservas llamado');
+// POST - Crear nueva reserva (CON RLS)
+export const POST = withPrismaCleanup(async (request: NextRequest) => {
+  console.log('🚀 POST /api/reservas llamado - Versión RLS');
 
   try {
-    // 🔒 VALIDAR SESIÓN PRIMERO
-    const session = await getServerSession(authOptions);
+    // 🔒 OBTENER PRISMA AUTENTICADO (ya valida la sesión automáticamente)
+    const { prisma, user } = await getAuthenticatedPrisma();
 
-    if (!session || !session.user?.id) {
-      console.log('❌ Usuario no autenticado');
-      return NextResponse.json(
-        { error: 'Debes iniciar sesión para realizar una reserva' },
-        { status: 401 }
-      );
-    }
-
-    console.log('✅ Usuario autenticado:', session.user.id);
+    console.log('✅ Usuario autenticado:', user.id, user.email);
 
     const body = await request.json();
     console.log('📋 Datos recibidos:', body);
@@ -46,7 +35,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar que el tour existe
+    // Verificar que el tour existe (usando RLS - solo verá tours públicos)
     console.log('🔍 Verificando que el tour existe...');
     const tour = await prisma.tour.findUnique({
       where: { id: tourId }
@@ -75,15 +64,16 @@ export async function POST(request: NextRequest) {
     }
     console.log('📅 Fecha encontrada:', fechaData);
 
-    // 🛡️ VALIDACIÓN 1: VERIFICAR QUE EL USUARIO NO TENGA YA UNA RESERVA EN ESA FECHA PARA ESE TOUR
+    // 🛡️ VALIDACIÓN 1: VERIFICAR QUE EL USUARIO NO TENGA YA UNA RESERVA EN ESA FECHA
+    // RLS automáticamente filtrará solo las reservas de este usuario
     const reservaExistente = await prisma.reserva.findFirst({
       where: {
-        userId: session.user.id,
         tourId: tourId,
         fecha: fechaData.date,
         estado: {
-          not: 'Cancelada' // No contar reservas canceladas
+          not: 'Cancelada'
         }
+        // ❗ NO necesitamos agregar userId - RLS lo hace automáticamente
       }
     });
 
@@ -99,16 +89,17 @@ export async function POST(request: NextRequest) {
     }
 
     // 🛡️ VALIDACIÓN 2: VERIFICAR LÍMITE DE 3 RESERVAS POR FECHA
-    const reservasEnFecha = await prisma.reserva.count({
-      where: {
-        tourId: tourId,
-        fecha: fechaData.date,
-        estado: {
-          not: 'Cancelada' // No contar reservas canceladas
-        }
-      }
-    });
+    // Para esto necesitamos contar TODAS las reservas (no solo del usuario)
+    // Usamos una consulta raw para saltarnos RLS temporalmente
+    const reservasEnFechaResult = await prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT COUNT(*) as count
+      FROM "Reserva" 
+      WHERE "tourId" = ${tourId}
+      AND "fecha" = ${fechaData.date}
+      AND "estado" != 'Cancelada'
+    `;
 
+    const reservasEnFecha = Number(reservasEnFechaResult[0].count);
     console.log(`📊 Reservas existentes en esta fecha: ${reservasEnFecha}/3`);
 
     if (reservasEnFecha >= 3) {
@@ -122,28 +113,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 🔥 USAR EL USER ID DE LA SESIÓN
-    const userId = session.user.id;
-    console.log('👤 Usando usuario de sesión:', userId);
-
-    // Verificar que el usuario existe (opcional, por seguridad)
-    const userExists = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, name: true, email: true }
-    });
-
-    if (!userExists) {
-      console.log('❌ Usuario de sesión no encontrado en BD');
-      return NextResponse.json(
-        { error: 'Usuario no válido' },
-        { status: 400 }
-      );
-    }
-
-    console.log('✅ Usuario verificado:', userExists);
-
-    // Crear la reserva
-    console.log('💾 Creando reserva...');
+    // 💾 CREAR LA RESERVA (RLS verificará automáticamente que userId coincide)
+    console.log('💾 Creando reserva con RLS...');
     const reserva = await prisma.reserva.create({
       data: {
         nombre,
@@ -156,31 +127,38 @@ export async function POST(request: NextRequest) {
         participantes: participantes,
         contactoEmergencia: contactoEmergencia,
         tourId,
-        userId, // 🎯 ESTE ES EL CAMBIO CLAVE
+        userId: user.id, // RLS verificará que esto coincide con el usuario actual
         estado: 'Pendiente',
-        // guiaId lo dejamos null ya que es opcional
       },
-    });
-
-    console.log('✅ Reserva creada exitosamente:', reserva);
-
-    // 📊 VERIFICAR SI DESPUÉS DE ESTA RESERVA SE ALCANZÓ EL LÍMITE
-    const totalReservasAhora = await prisma.reserva.count({
-      where: {
-        tourId: tourId,
-        fecha: fechaData.date,
-        estado: {
-          not: 'Cancelada'
+      include: {
+        Tour: {
+          select: {
+            id: true,
+            nombre: true,
+            descripcion: true,
+            precio: true,
+            imagenUrl: true,
+            ubicacion: true
+          }
         }
       }
     });
 
-    console.log(`📊 Total reservas después de crear: ${totalReservasAhora}/3`);
+    console.log('✅ Reserva creada exitosamente:', reserva.id);
 
-    // Mensaje informativo sobre disponibilidad restante
+    // 📊 VERIFICAR DISPONIBILIDAD RESTANTE
+    const totalReservasAhoraResult = await prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT COUNT(*) as count
+      FROM "Reserva" 
+      WHERE "tourId" = ${tourId}
+      AND "fecha" = ${fechaData.date}
+      AND "estado" != 'Cancelada'
+    `;
+
+    const totalReservasAhora = Number(totalReservasAhoraResult[0].count);
     const reservasRestantes = 3 - totalReservasAhora;
-    let mensaje = 'Reserva creada exitosamente';
 
+    let mensaje = 'Reserva creada exitosamente';
     if (totalReservasAhora >= 3) {
       mensaje += '. Esta fecha ya está completamente reservada.';
     } else {
@@ -196,17 +174,32 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('💥 Error al crear reserva:', error);
 
-    // Si es un error de Prisma, dame más detalles
+    // Manejo específico de errores de autenticación
+    if (error instanceof Error) {
+      if (error.message === 'Usuario no autenticado') {
+        return NextResponse.json(
+          { error: 'Debes iniciar sesión para realizar una reserva' },
+          { status: 401 }
+        );
+      }
+
+      if (error.message.includes('Los administradores deben usar')) {
+        return NextResponse.json(
+          { error: 'Acceso no válido para este endpoint' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Si es un error de Prisma
     if (error && typeof error === 'object' && 'code' in error) {
       console.log('🔍 Código de error Prisma:', (error as any).code);
-      console.log('🔍 Meta información:', (error as any).meta);
 
       if ((error as any).code === 'P2003') {
         return NextResponse.json(
           {
-            error: 'Error de clave foránea - Una de las relaciones no existe en la base de datos',
-            details: 'Verifica que el tourId, userId y otros campos de relación existan',
-            prismaError: (error as any).meta
+            error: 'Error de clave foránea - Una de las relaciones no existe',
+            details: 'Verifica que el tourId existe'
           },
           { status: 400 }
         );
@@ -221,27 +214,19 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-export async function GET(request: NextRequest) {
+// GET - Obtener reservas del usuario (CON RLS)
+export const GET = withPrismaCleanup(async (request: NextRequest) => {
   try {
-    // 🔒 VALIDAR SESIÓN PARA GET TAMBIÉN
-    const session = await getServerSession(authOptions);
+    // 🔒 OBTENER PRISMA AUTENTICADO
+    const { prisma, user } = await getAuthenticatedPrisma();
 
-    if (!session || !session.user?.id) {
-      return NextResponse.json(
-        { error: 'Debes iniciar sesión para ver tus reservas' },
-        { status: 401 }
-      );
-    }
+    console.log('🔍 Obteniendo reservas para usuario:', user.id);
 
-    console.log('🔍 Obteniendo reservas para usuario:', session.user.id);
-
-    // 🎯 FILTRAR RESERVAS SOLO PARA EL USUARIO AUTENTICADO
+    // 🎯 CON RLS: Ya solo veremos las reservas de este usuario automáticamente
     const reservas = await prisma.reserva.findMany({
-      where: {
-        userId: session.user.id // 🔥 FILTRO CRÍTICO
-      },
+      // ❗ NO necesitamos where: { userId: user.id } - RLS lo hace automáticamente
       include: {
         Tour: {
           select: {
@@ -256,28 +241,44 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    console.log(`✅ Encontradas ${reservas.length} reservas para el usuario`);
+    console.log(`✅ RLS filtró automáticamente ${reservas.length} reservas para el usuario`);
 
-    // Stats solo para este usuario
+    // Stats solo para este usuario (RLS aplicado automáticamente)
+    const reservasCount = await prisma.reserva.count();
+    const toursCount = await prisma.tour.count(); // Tours son públicos
+
     const userStats = {
       usuarios: 1, // Solo el usuario actual
-      tours: await prisma.tour.count(),
-      reservas: reservas.length // Solo las reservas de este usuario
+      tours: toursCount,
+      reservas: reservasCount // Solo las reservas de este usuario por RLS
     };
 
     return NextResponse.json({
       reservas,
-      stats: userStats
+      stats: userStats,
+      security: {
+        rls_enabled: true,
+        user_id: user.id,
+        filtered_by_rls: true
+      }
     });
 
   } catch (error) {
     console.error('💥 Error al obtener reservas:', error);
+
+    if (error instanceof Error && error.message === 'Usuario no autenticado') {
+      return NextResponse.json(
+        { error: 'Debes iniciar sesión para ver tus reservas' },
+        { status: 401 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Error al obtener reservas' },
       { status: 500 }
     );
   }
-}
+});
 
 export async function OPTIONS() {
   return new NextResponse(null, {

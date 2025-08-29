@@ -1,21 +1,14 @@
-// app/api/admin/stats/route.ts
+// app/api/admin/stats/route.ts - ADMIN STATS CON RLS
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { getAdminPrisma, withPrismaCleanup } from '../../../../lib/prisma-rls';
 
-const prisma = new PrismaClient();
-
-export async function GET(request: NextRequest) {
+// GET - Obtener estadísticas completas del sistema (solo admins)
+export const GET = withPrismaCleanup(async (request: NextRequest) => {
     try {
-        const session = await getServerSession(authOptions);
+        // 🔒 VERIFICAR PERMISOS DE ADMIN (automáticamente valida rol)
+        const { prisma, user } = await getAdminPrisma();
 
-        if (!session) {
-            return NextResponse.json(
-                { error: 'No autorizado' },
-                { status: 401 }
-            );
-        }
+        console.log('📊 Admin obteniendo estadísticas del sistema:', user.email);
 
         // Obtener fechas importantes
         const ahora = new Date();
@@ -25,7 +18,7 @@ export async function GET(request: NextRequest) {
         const inicioMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
         const finMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth(), 0);
 
-        // Obtener todas las reservas
+        // 🎯 CON RLS ADMIN: Los admins pueden ver TODAS las reservas
         const todasLasReservas = await prisma.reserva.findMany({
             include: {
                 Tour: {
@@ -33,9 +26,18 @@ export async function GET(request: NextRequest) {
                         nombre: true,
                         precio: true,
                     }
+                },
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true
+                    }
                 }
             }
         });
+
+        console.log(`✅ Admin obtuvo ${todasLasReservas.length} reservas totales`);
 
         // Estadísticas básicas
         const totalReservas = todasLasReservas.length;
@@ -112,6 +114,39 @@ export async function GET(request: NextRequest) {
             });
         }
 
+        // Estadísticas de usuarios (solo para admins)
+        const totalUsuarios = await prisma.user.count();
+        const usuariosActivos = await prisma.user.count({
+            where: {
+                status: 'ACTIVE'
+            }
+        });
+
+        // Usuarios más activos (solo admins pueden ver esta información)
+        const usuarioStats = await prisma.user.findMany({
+            where: {
+                reservas: {
+                    some: {}
+                }
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                _count: {
+                    select: {
+                        reservas: true
+                    }
+                }
+            },
+            orderBy: {
+                reservas: {
+                    _count: 'desc'
+                }
+            },
+            take: 10
+        });
+
         const stats = {
             totalReservas,
             totalPersonas,
@@ -124,21 +159,46 @@ export async function GET(request: NextRequest) {
             tasaCrecimiento: parseFloat(tasaCrecimiento.toFixed(1)),
             reservasPorEstado: estadosCompletos,
             reservasPorMes,
-            tourStats: tourStatsArray.slice(0, 10) // Top 10 tours
+            tourStats: tourStatsArray.slice(0, 10), // Top 10 tours
+            // Estadísticas adicionales solo para admins
+            totalUsuarios,
+            usuariosActivos,
+            usuarioStats,
+            security: {
+                admin_access: true,
+                user_id: user.id,
+                user_role: user.role,
+                rls_enabled: true
+            }
         };
 
         return NextResponse.json(stats);
 
     } catch (error) {
-        console.error('Error al obtener estadísticas:', error);
+        console.error('💥 Error al obtener estadísticas:', error);
+
+        if (error instanceof Error) {
+            if (error.message === 'Usuario no autenticado') {
+                return NextResponse.json({
+                    error: 'Necesitas iniciar sesión'
+                }, { status: 401 });
+            }
+
+            if (error.message.includes('permisos de administrador')) {
+                return NextResponse.json({
+                    error: 'Acceso denegado - Se requieren permisos de administrador'
+                }, { status: 403 });
+            }
+        }
+
         return NextResponse.json(
             { error: 'Error interno del servidor' },
             { status: 500 }
         );
     }
-}
+});
 
-// Función auxiliar para mapear estados
+// Función auxiliar para mapear estados (sin cambios)
 function mapEstadoToStatus(estado: string) {
     const estadoMap: { [key: string]: string } = {
         'Pendiente': 'pendiente',
@@ -147,6 +207,7 @@ function mapEstadoToStatus(estado: string) {
         'Completada': 'completada',
         'En proceso': 'en_proceso',
         'Pagada': 'confirmada',
+        'Reprogramada': 'pendiente', // Las reprogramadas se consideran pendientes
     };
 
     return estadoMap[estado] || 'pendiente';
