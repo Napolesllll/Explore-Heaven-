@@ -1,8 +1,24 @@
-// components/TourCard.jsx
+// components/TourCard.tsx
 import Image from "next/image";
 import { FaCalendarAlt, FaUserAlt } from "react-icons/fa";
 
-export default function TourCard({ tour }) {
+// Definimos el tipo Tour
+interface Tour {
+  id: string | number;
+  nombre: string;
+  descripcion: string;
+  imagen?: string;
+  salida: string | Date;
+  guias: number;
+  precio?: number;
+  duracion?: string;
+}
+
+interface TourCardProps {
+  tour: Tour;
+}
+
+export default function TourCard({ tour }: TourCardProps) {
   return (
     <div className="bg-gray-900 rounded-xl overflow-hidden border border-yellow-600/30 hover:border-yellow-500 transition-all">
       {tour.imagen && (
@@ -10,8 +26,8 @@ export default function TourCard({ tour }) {
           <Image
             src={tour.imagen}
             alt={tour.nombre}
-            layout="fill"
-            objectFit="cover"
+            fill
+            style={{ objectFit: "cover" }}
             className="hover:scale-105 transition-transform"
           />
         </div>
@@ -26,7 +42,11 @@ export default function TourCard({ tour }) {
         <div className="flex justify-between text-sm text-gray-400">
           <div className="flex items-center gap-2">
             <FaCalendarAlt />
-            <span>{new Date(tour.salida).toLocaleDateString()}</span>
+            <span>
+              {tour.salida instanceof Date
+                ? tour.salida.toLocaleDateString()
+                : new Date(tour.salida).toLocaleDateString()}
+            </span>
           </div>
 
           <div className="flex items-center gap-2">

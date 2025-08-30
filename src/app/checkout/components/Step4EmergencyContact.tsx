@@ -1,17 +1,31 @@
 import { Info } from "lucide-react";
 
-interface EmergencyContact {
-  nombre?: string;
-  telefono?: string;
+interface Person {
+  nombre: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
 }
 
-interface CheckoutFormData {
-  contactoEmergencia?: EmergencyContact;
+interface EmergencyContact {
+  nombre: string;
+  telefono: string;
+}
+
+interface ReservationFormData {
+  fecha?: Date;
+  nombre: string;
+  telefono: string;
+  correo: string;
+  cantidadAdultos: number;
+  cantidadNinos: number;
+  adultos: Person[];
+  ninos: Person[];
+  contactoEmergencia: EmergencyContact;
 }
 
 interface Step4EmergencyContactProps {
-  formData: CheckoutFormData;
-  setFormData: React.Dispatch<React.SetStateAction<CheckoutFormData>>;
+  formData: ReservationFormData;
+  setFormData: React.Dispatch<React.SetStateAction<ReservationFormData>>;
   stepErrors: { [key: string]: string };
 }
 
@@ -48,6 +62,7 @@ export default function Step4EmergencyContact({
                   contactoEmergencia: {
                     ...prev.contactoEmergencia,
                     nombre: e.target.value,
+                    telefono: prev.contactoEmergencia?.telefono || "",
                   },
                 }))
               }
@@ -74,6 +89,7 @@ export default function Step4EmergencyContact({
                   ...prev,
                   contactoEmergencia: {
                     ...prev.contactoEmergencia,
+                    nombre: prev.contactoEmergencia?.nombre || "",
                     telefono: e.target.value,
                   },
                 }))

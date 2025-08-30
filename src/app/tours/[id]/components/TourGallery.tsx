@@ -2,13 +2,7 @@
 
 import Image from "next/image";
 import { parseGallery } from "../utils/parseGallery";
-
-export interface Tour {
-  id: string;
-  nombre: string;
-  gallery?: string | string[];
-  // Puedes añadir más campos si los usas en otros lugares
-}
+import { Tour } from "../types/tours"; // Usar el tipo Tour del archivo de tipos principal
 
 interface TourGalleryProps {
   tour: Tour;
@@ -16,7 +10,11 @@ interface TourGalleryProps {
 }
 
 export function TourGallery({ tour, onImageClick }: TourGalleryProps) {
-  const galleryImages = parseGallery(tour.gallery);
+  // Convertir el gallery a un formato compatible con parseGallery
+  // Manejar string, null o undefined
+  const galleryInput = tour.gallery || null;
+
+  const galleryImages = parseGallery(galleryInput);
 
   if (galleryImages.length === 0) return null;
 

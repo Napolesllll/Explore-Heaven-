@@ -16,14 +16,14 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "El parámetro 'tourId' es requerido" }, { status: 400 });
       }
 
-      // Obtener todas las reservas para el tour
+      // Obtener todas las reservas para el tour - usar tourId como string
       const reservas = await prisma.reserva.findMany({
-        where: { tourId: parseInt(tourId, 10) },
+        where: { tourId: tourId },
         select: { fecha: true },
       });
 
       // Obtener todas las fechas únicas con reservas
-      const fechasReservadas = new Set(reservas.map((reserva) => reserva.fecha));
+      const fechasReservadas = new Set(reservas.map((reserva) => reserva.fecha.toISOString().split("T")[0]));
 
       // Generar fechas disponibles (por ejemplo, los próximos 30 días)
       const fechasDisponibles: string[] = [];
@@ -47,17 +47,11 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "El formato de 'fecha' es inválido. Use 'YYYY-MM-DD'" }, { status: 400 });
       }
 
-      // Validar que `tourId` sea un número válido
-      const tourIdNumber = parseInt(tourId, 10);
-      if (isNaN(tourIdNumber)) {
-        return NextResponse.json({ error: "El 'tourId' debe ser un número válido" }, { status: 400 });
-      }
-
-      // Obtener las reservas existentes para la fecha y el tour
+      // Obtener las reservas existentes para la fecha y el tour - usar tourId como string
       const reservas = await prisma.reserva.findMany({
         where: {
-          fecha,
-          tourId: tourIdNumber,
+          fecha: new Date(fecha),
+          tourId: tourId,
         },
         select: {
           hora: true,
@@ -68,7 +62,9 @@ export async function GET(req: NextRequest) {
       // Contar cuántos guías están ocupados por hora
       const disponibilidad: { [hora: string]: number } = {};
       reservas.forEach((reserva) => {
-        disponibilidad[reserva.hora] = (disponibilidad[reserva.hora] || 0) + 1;
+        if (reserva.hora) {
+          disponibilidad[reserva.hora] = (disponibilidad[reserva.hora] || 0) + 1;
+        }
       });
 
       return NextResponse.json({ disponibilidad });
@@ -102,11 +98,11 @@ export async function POST(req: NextRequest) {
 
     // Caso 1: Crear una reserva
     if (action === "crear-reserva") {
-      const { nombre, correo, fecha, hora, tourId } = body;
+      const { nombre, correo, fecha, hora, tourId, telefono, userId, adultos, niños } = body;
 
       // Validar los datos de la reserva
-      if (!nombre || !correo || !fecha || !hora || !tourId) {
-        return NextResponse.json({ error: "Todos los campos son obligatorios" }, { status: 400 });
+      if (!nombre || !correo || !fecha || !hora || !tourId || !telefono || !userId) {
+        return NextResponse.json({ error: "Todos los campos obligatorios son requeridos" }, { status: 400 });
       }
 
       // Validar formato de la fecha
@@ -114,13 +110,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "El formato de 'fecha' es inválido. Use 'YYYY-MM-DD'" }, { status: 400 });
       }
 
-      // Obtener guías disponibles para la fecha y hora
+      // Obtener guías disponibles para la fecha y hora - usar tourId como string
       const reservas = await prisma.reserva.findMany({
-        where: { fecha, hora, tourId: parseInt(tourId, 10) },
+        where: { fecha: new Date(fecha), hora, tourId: tourId },
         select: { guiaId: true },
       });
 
-      const guiasReservados = new Set(reservas.map((reserva) => reserva.guiaId));
+      const guiasReservados = new Set(reservas.map((reserva) => reserva.guiaId).filter(id => id !== null));
       const guias = await prisma.guia.findMany({
         where: { id: { notIn: Array.from(guiasReservados) } },
         select: { id: true },
@@ -133,15 +129,19 @@ export async function POST(req: NextRequest) {
       // Asignar el primer guía disponible
       const guiaAsignado = guias[0];
 
-      // Crear la reserva
+      // Crear la reserva - usar tourId como string
       const nuevaReserva = await prisma.reserva.create({
         data: {
           nombre,
           correo,
-          fecha,
+          fecha: new Date(fecha),
           hora,
-          tourId: parseInt(tourId, 10),
+          tourId: tourId,
           guiaId: guiaAsignado.id,
+          telefono,
+          userId,
+          adultos: adultos || 1, // Valor por defecto si no se proporciona
+          niños: niños || 0, // Valor por defecto si no se proporciona
         },
       });
 
@@ -194,20 +194,23 @@ export async function PUT(req: NextRequest) {
     }
 
     // Validar y convertir edad si se proporciona
-    const edadInt = edad ? parseInt(edad, 10) : undefined;
-    if (edad && isNaN(edadInt)) {
-      return NextResponse.json({ error: "La edad debe ser un número válido" }, { status: 400 });
+    let edadInt: number | undefined;
+    if (edad !== undefined && edad !== null && edad !== "") {
+      edadInt = parseInt(edad, 10);
+      if (isNaN(edadInt)) {
+        return NextResponse.json({ error: "La edad debe ser un número válido" }, { status: 400 });
+      }
     }
 
     const guiaActualizado = await prisma.guia.update({
       where: { id: parseInt(id, 10) },
       data: {
-        nombre,
-        foto: foto === "" ? null : foto,
-        edad: edadInt,
-        descripcion,
-        celular,
-        cedula,
+        ...(nombre !== undefined && { nombre }),
+        ...(foto !== undefined && { foto: foto === "" ? null : foto }),
+        ...(edadInt !== undefined && { edad: edadInt }),
+        ...(descripcion !== undefined && { descripcion }),
+        ...(celular !== undefined && { celular }),
+        ...(cedula !== undefined && { cedula }),
       },
     });
 

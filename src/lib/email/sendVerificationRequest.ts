@@ -1,13 +1,23 @@
-// src/lib/email/sendVerificationRequest.ts
 import nodemailer from "nodemailer";
+import type { EmailConfig } from "next-auth/providers/email";
+
+// Crear un tipo que acepta tanto EmailConfig de NextAuth como nuestro objeto personalizado
+type EmailProviderConfig = EmailConfig | {
+    server: string | nodemailer.TransportOptions | {
+        host: string;
+        port: number;
+        auth: {
+            user: string;
+            pass: string;
+        };
+    };
+    from: string;
+};
 
 interface SendVerificationRequestParams {
     identifier: string;
     url: string;
-    provider: {
-        server: string;
-        from: string;
-    };
+    provider: EmailProviderConfig;
 }
 
 export async function sendVerificationRequest({
@@ -18,14 +28,15 @@ export async function sendVerificationRequest({
     try {
         console.log(`Preparing to send verification email to: ${email}`);
 
-        // Crear el transportador de nodemailer
+        // Crear el transportador de nodemailer usando el server que envía NextAuth
+        // NextAuth puede enviar el server como string (URL) o como objeto
         const transporter = nodemailer.createTransport(provider.server);
 
-        // Verificar la conexión
+        // Verificar la conexión SMTP
         await transporter.verify();
         console.log("SMTP connection verified successfully");
 
-        // Template del email
+        // Template del email (HTML)
         const html = `
 <!DOCTYPE html>
 <html lang="es">
@@ -35,126 +46,135 @@ export async function sendVerificationRequest({
     <title>Verifica tu cuenta - Explore Heaven</title>
     <style>
         body {
-            margin: 0;
-            padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            color: #ffffff;
-            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
+        
         .container {
             max-width: 600px;
             margin: 0 auto;
-            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
+        
         .header {
-            text-align: center;
-            padding: 40px 0;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 15px 15px 0 0;
-            margin-bottom: 0;
+            padding: 30px;
+            text-align: center;
+            color: white;
         }
+        
         .logo {
-            width: 80px;
-            height: 80px;
-            background: #ffd700;
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
             border-radius: 50%;
-            margin: 0 auto 20px;
             display: flex;
             align-items: center;
             justify-content: center;
+            margin: 0 auto 20px;
             font-size: 24px;
             font-weight: bold;
-            color: #1a1a2e;
-            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
         }
+        
         .content {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 40px;
-            border-radius: 0 0 15px 15px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px 30px;
         }
+        
         .title {
+            color: #333;
             font-size: 28px;
-            font-weight: bold;
-            color: #ffd700;
             margin-bottom: 20px;
             text-align: center;
         }
+        
         .message {
+            color: #666;
             font-size: 16px;
-            color: #e0e0e0;
+            line-height: 1.6;
             margin-bottom: 30px;
             text-align: center;
         }
+        
         .button-container {
             text-align: center;
-            margin: 40px 0;
-        }
-        .verify-button {
-            display: inline-block;
-            background: linear-gradient(135deg, #ffd700 0%, #ffed4a 100%);
-            color: #1a1a2e;
-            text-decoration: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-weight: bold;
-            font-size: 16px;
-            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
-            transition: transform 0.2s ease;
-        }
-        .verify-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 40px rgba(255, 215, 0, 0.4);
-        }
-        .divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #ffd700, transparent);
             margin: 30px 0;
         }
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #888;
-            font-size: 14px;
+        
+        .verify-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: transform 0.2s ease;
         }
-        .security-note {
-            background: rgba(255, 215, 0, 0.1);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 10px;
-            padding: 20px;
+        
+        .verify-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .expire-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
             margin: 20px 0;
         }
+        
+        .divider {
+            height: 1px;
+            background: #eee;
+            margin: 30px 0;
+        }
+        
+        .security-note {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
         .security-note h4 {
-            color: #ffd700;
             margin: 0 0 10px 0;
+            color: #333;
             font-size: 16px;
         }
+        
         .security-note p {
             margin: 0;
+            color: #666;
             font-size: 14px;
-            color: #cccccc;
+            line-height: 1.5;
         }
-        .expire-info {
-            background: rgba(108, 117, 125, 0.1);
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            text-align: center;
-            font-size: 14px;
-            color: #aaa;
-        }
+        
         .url-fallback {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
+            background: #f8f9fa;
             padding: 15px;
-            margin: 20px 0;
+            border-radius: 8px;
             word-break: break-all;
-            font-family: monospace;
             font-size: 12px;
-            color: #ccc;
+            color: #666;
+            text-align: center;
+            margin-top: 10px;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -214,8 +234,7 @@ export async function sendVerificationRequest({
 </html>`;
 
         // Texto plano como fallback
-        const text = `
-¡Hola!
+        const text = `¡Hola!
 
 Gracias por registrarte en Explore Heaven. Para completar tu registro, haz clic en el siguiente enlace para verificar tu dirección de correo electrónico:
 
@@ -252,6 +271,6 @@ Este es un correo automático, por favor no responder.
 
     } catch (error) {
         console.error("Error sending verification email:", error);
-        throw new Error(`Failed to send verification email: ${error.message}`);
+        throw new Error(`Failed to send verification email: ${error}`);
     }
 }

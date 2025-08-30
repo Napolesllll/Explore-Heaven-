@@ -9,7 +9,17 @@ import {
 } from "react-icons/fa";
 import { useAvailableDates } from "../../hooks/useAvailableDates";
 import { useState } from "react";
-import { AvailableDate, CustomCalendarProps } from "./types";
+import { CustomCalendarProps } from "./types";
+
+// Tipo que coincide con lo que devuelve el hook useAvailableDates
+interface DateWithAvailability {
+  id: string;
+  dateObj: Date;
+  isAvailable: boolean;
+  spotsLeft: number;
+  userHasReservation: boolean;
+  reason?: string | null; // Puede ser null
+}
 
 export default function CustomCalendar({
   tour,
@@ -39,7 +49,7 @@ export default function CustomCalendar({
   // Generar días vacíos al inicio del mes
   const emptyDays = Array.from({ length: firstDayWeekday }, () => null);
 
-  const getDateInfo = (day: number): AvailableDate | undefined => {
+  const getDateInfo = (day: number): DateWithAvailability | undefined => {
     const dateToCheck = new Date(
       currentMonth.getFullYear(),
       currentMonth.getMonth(),

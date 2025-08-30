@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -16,14 +16,14 @@ export default function HeroSection({
   cta,
 }: HeroSectionProps) {
   // Animación optimizada para evitar distorsión
-  const characterAnimation = {
+  const characterAnimation: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
       transition: {
         delay: i * 0.05,
-        type: "spring",
+        type: "spring" as const,
         stiffness: 100,
       },
     }),

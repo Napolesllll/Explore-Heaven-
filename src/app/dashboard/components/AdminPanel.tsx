@@ -631,15 +631,16 @@ function DashboardContent({
               className="bg-gray-900/50 rounded-lg p-4 border border-cyan-500/20"
             >
               <div className="flex items-center space-x-3 mb-3">
-                {tour.imagenDestacada && (
-                  <Image
-                    src={tour.imagenDestacada}
-                    alt={tour.nombre}
-                    width={40}
-                    height={40}
-                    className="rounded-lg object-cover"
-                  />
-                )}
+                {tour.imagenDestacada &&
+                  typeof tour.imagenDestacada === "string" && (
+                    <Image
+                      src={tour.imagenDestacada}
+                      alt={tour.nombre}
+                      width={40}
+                      height={40}
+                      className="rounded-lg object-cover"
+                    />
+                  )}
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-white truncate">
                     {tour.nombre}
@@ -688,15 +689,16 @@ function DateManagementContent({
               className="bg-[#0f172a]/80 backdrop-blur-xl rounded-xl border border-cyan-500/30 shadow-lg shadow-cyan-500/10 overflow-hidden p-6"
             >
               <div className="flex items-center mb-4">
-                {tour.imagenDestacada && (
-                  <Image
-                    src={tour.imagenDestacada}
-                    alt={tour.nombre}
-                    width={60}
-                    height={60}
-                    className="rounded-lg mr-4 object-cover"
-                  />
-                )}
+                {tour.imagenDestacada &&
+                  typeof tour.imagenDestacada === "string" && (
+                    <Image
+                      src={tour.imagenDestacada}
+                      alt={tour.nombre}
+                      width={60}
+                      height={60}
+                      className="rounded-lg mr-4 object-cover"
+                    />
+                  )}
                 <div className="flex-1">
                   <h4 className="text-lg font-bold text-white">
                     {tour.nombre}

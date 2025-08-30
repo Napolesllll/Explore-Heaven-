@@ -4,7 +4,7 @@ import prisma from "../../../../../src/lib/prismadb";
 
 // Inicializa Stripe con tu clave secreta
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2025-07-30.basil",
 });
 
 // Endpoint para recibir eventos de Stripe (webhook)
@@ -32,6 +32,12 @@ export async function POST(req: Request) {
     const tourId = session.metadata?.tourId;
     const correo = session.customer_email;
 
+    // Obtener datos adicionales de metadatos si están disponibles
+    const telefono = session.metadata?.telefono || "";
+    const userId = session.metadata?.userId || ""; // Puedes generar un ID temporal o crear un usuario anónimo
+    const adultos = parseInt(session.metadata?.adultos || "1");
+    const niños = parseInt(session.metadata?.niños || "0");
+
     // Verifica que los campos requeridos no sean undefined
     if (!nombre || !fecha || !tourId || !correo) {
       console.error("Faltan datos requeridos para crear la reserva:", { nombre, fecha, tourId, correo });
@@ -45,7 +51,16 @@ export async function POST(req: Request) {
       return new NextResponse("El tourId no existe", { status: 400 });
     }
 
-    console.log("WEBHOOK - Creando reserva:", { nombre, fecha, tourId, correo });
+    console.log("WEBHOOK - Creando reserva:", {
+      nombre,
+      fecha,
+      tourId,
+      correo,
+      telefono,
+      userId,
+      adultos,
+      niños
+    });
 
     try {
       await prisma.reserva.create({
@@ -54,6 +69,10 @@ export async function POST(req: Request) {
           fecha,
           tourId,
           correo,
+          telefono,
+          userId,
+          adultos,
+          niños,
           estado: "Pagada",
           hora: "", // Ajusta si tienes el dato
         },

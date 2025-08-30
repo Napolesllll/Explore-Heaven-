@@ -7,8 +7,20 @@ import PerfilFeed from "./components/sections/perfil/PerfilFeed";
 import GuiasFeed from "./components/sections/guias/GuiasFeed";
 import EmergencyButton from "components/EmergencyButton";
 
+interface User {
+  name: string;
+  email: string;
+  image: string;
+  rol: string;
+  fechaRegistro: string;
+}
+
+interface FeedProps {
+  activeSection: string;
+}
+
 // Simulación de usuario autenticado (reemplaza por tu lógica real)
-const user = {
+const user: User = {
   name: "Juan Pérez",
   email: "juan.perez@email.com",
   image: "https://i.pravatar.cc/150?img=3",
@@ -16,7 +28,7 @@ const user = {
   fechaRegistro: "2024-01-15",
 };
 
-export default function Feed({ activeSection }: { activeSection: string }) {
+export default function Feed({ activeSection }: FeedProps) {
   return (
     <div className="p-6 bg-gradient-to-br from-gray-900 via-black to-gray-800 rounded-lg shadow-lg">
       {activeSection === "inicio" && <HomeFeed />}

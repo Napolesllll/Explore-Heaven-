@@ -2,7 +2,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import {
   FaCheckCircle,
   FaSpinner,
@@ -19,7 +19,7 @@ interface Particle {
   color: string;
 }
 
-export default function ConfirmPage() {
+function ConfirmContent() {
   const params = useSearchParams();
   const router = useRouter();
   const token = params.get("token");
@@ -233,5 +233,22 @@ export default function ConfirmPage() {
         style={{ animationDelay: "2s" }}
       />
     </div>
+  );
+}
+
+export default function ConfirmPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-900">
+          <div className="flex flex-col items-center space-y-4">
+            <FaSpinner className="h-12 w-12 text-indigo-400 animate-spin" />
+            <p className="text-gray-300">Cargando verificación...</p>
+          </div>
+        </div>
+      }
+    >
+      <ConfirmContent />
+    </Suspense>
   );
 }

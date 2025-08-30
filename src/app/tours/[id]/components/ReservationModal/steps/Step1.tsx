@@ -132,7 +132,7 @@ export default function Step1({ tour, nextStep }: Step1Props) {
             tour={tour}
             selectedDateId={selectedDateId}
             onDateSelect={handleDateSelect}
-            errors={errors.fechaId}
+            errors={errors.fechaId?.message}
           />
 
           {errors.fechaId && (

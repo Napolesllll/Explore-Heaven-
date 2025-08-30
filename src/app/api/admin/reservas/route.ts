@@ -2,6 +2,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminPrisma, withPrismaCleanup } from '../../../../lib/prisma-rls';
 
+// Tipos para la actualización de reservas
+interface ReservaUpdateData {
+    estado: string;
+    updatedAt: Date;
+    guiaId?: number | null;
+}
+
 // GET - Obtener TODAS las reservas (solo admins)
 export const GET = withPrismaCleanup(async () => {
     try {
@@ -134,8 +141,8 @@ export const PUT = withPrismaCleanup(async (request: NextRequest) => {
 
         console.log(`🔧 Admin actualizando reserva ${reservaId} a estado: ${estado}`);
 
-        // Preparar datos de actualización
-        const updateData: any = {
+        // Preparar datos de actualización con tipado estricto
+        const updateData: ReservaUpdateData = {
             estado,
             updatedAt: new Date()
         };

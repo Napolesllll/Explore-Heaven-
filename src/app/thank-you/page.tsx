@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Head from "next/head";
@@ -20,7 +20,8 @@ interface ReservationDetails {
   email: string;
 }
 
-export default function ThankYouPage() {
+// Componente que contiene la lógica de useSearchParams
+function ThankYouContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [reservationDetails, setReservationDetails] =
@@ -109,68 +110,160 @@ export default function ThankYouPage() {
     };
   }, [searchParams, router]);
 
-  const seoTitle = "Reserva completada | Heaven Explore";
-  const seoDescription =
-    "Gracias por tu reserva en Heaven Explore. Consulta los detalles de tu pago y recibe confirmación por correo electrónico.";
-
   if (loading) {
     return (
-      <>
-        <Head>
-          <title>{seoTitle}</title>
-          <meta name="description" content={seoDescription} />
-          <meta name="robots" content="noindex,follow" />
-        </Head>
-        <div className="min-h-screen bg-gradient-to-b from-indigo-900 to-indigo-950 flex items-center justify-center p-4">
-          <div className="text-center">
-            <FaSpinner className="animate-spin text-4xl text-white mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">
-              Procesando tu reserva
-            </h2>
-            <p className="text-indigo-200">
-              Estamos confirmando los detalles de tu pago...
-            </p>
-          </div>
+      <div className="min-h-screen bg-gradient-to-b from-indigo-900 to-indigo-950 flex items-center justify-center p-4">
+        <div className="text-center">
+          <FaSpinner className="animate-spin text-4xl text-white mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Procesando tu reserva
+          </h2>
+          <p className="text-indigo-200">
+            Estamos confirmando los detalles de tu pago...
+          </p>
         </div>
-      </>
+      </div>
     );
   }
 
   if (!reservationDetails && error) {
     return (
-      <>
-        <Head>
-          <title>Error en la reserva | Heaven Explore</title>
-          <meta name="description" content={seoDescription} />
-          <meta name="robots" content="noindex,follow" />
-        </Head>
-        <div className="min-h-screen bg-gradient-to-b from-indigo-900 to-indigo-950 flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full bg-red-900/20 backdrop-blur-md rounded-2xl overflow-hidden border border-red-500/30 shadow-xl p-8 text-center">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Error en la reserva
-            </h2>
-            <p className="text-red-200 mb-6">{error}</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Link
-                href="/dashboard"
-                className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition-colors"
-                aria-label="Ir al dashboard"
-              >
-                <FaHome /> Dashboard
-              </Link>
-              <Link
-                href="/contacto"
-                className="flex items-center justify-center gap-2 bg-indigo-800/50 hover:bg-indigo-800/70 text-white py-2 px-4 rounded-lg transition-colors border border-indigo-700"
-                aria-label="Contactar soporte"
-              >
-                <FaEnvelope /> Soporte
-              </Link>
-            </div>
+      <div className="min-h-screen bg-gradient-to-b from-indigo-900 to-indigo-950 flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full bg-red-900/20 backdrop-blur-md rounded-2xl overflow-hidden border border-red-500/30 shadow-xl p-8 text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Error en la reserva
+          </h2>
+          <p className="text-red-200 mb-6">{error}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link
+              href="/dashboard"
+              className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg transition-colors"
+              aria-label="Ir al dashboard"
+            >
+              <FaHome /> Dashboard
+            </Link>
+            <Link
+              href="/contacto"
+              className="flex items-center justify-center gap-2 bg-indigo-800/50 hover:bg-indigo-800/70 text-white py-2 px-4 rounded-lg transition-colors border border-indigo-700"
+              aria-label="Contactar soporte"
+            >
+              <FaEnvelope /> Soporte
+            </Link>
           </div>
         </div>
-      </>
+      </div>
     );
   }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-indigo-900 to-indigo-950 flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full bg-white/5 backdrop-blur-md rounded-2xl overflow-hidden border border-indigo-500/30 shadow-xl">
+        <div className="bg-indigo-700/50 p-6 text-center border-b border-indigo-500/30">
+          <div className="flex justify-center mb-4">
+            <FaCheckCircle className="text-green-400 text-5xl" aria-hidden />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            ¡Reserva Exitosa!
+          </h1>
+          <p className="text-indigo-200">
+            Gracias por tu reserva con Heaven Explore
+          </p>
+        </div>
+
+        <div className="p-6 md:p-8">
+          <h2 className="text-xl font-semibold text-white mb-6">
+            Detalles de tu reserva
+          </h2>
+
+          <div className="space-y-4 mb-8">
+            <div className="flex justify-between border-b border-indigo-500/20 pb-2">
+              <span className="text-indigo-300">Tour:</span>
+              <span className="text-white font-medium">
+                {reservationDetails?.tourName}
+              </span>
+            </div>
+            <div className="flex justify-between border-b border-indigo-500/20 pb-2">
+              <span className="text-indigo-300">Fecha:</span>
+              <span className="text-white font-medium">
+                {reservationDetails?.date}
+              </span>
+            </div>
+            <div className="flex justify-between border-b border-indigo-500/20 pb-2">
+              <span className="text-indigo-300">Total pagado:</span>
+              <span className="text-white font-medium">
+                {reservationDetails?.amount}
+              </span>
+            </div>
+            <div className="flex justify-between border-b border-indigo-500/20 pb-2">
+              <span className="text-indigo-300">Referencia:</span>
+              <span className="text-white font-medium">
+                {reservationDetails?.reference}
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-indigo-900/30 rounded-lg p-4 mb-8">
+            <div className="flex items-start">
+              <FaEnvelope className="text-indigo-300 mt-1 mr-3" aria-hidden />
+              <div>
+                <h3 className="font-medium text-white mb-1">
+                  Confirmación enviada
+                </h3>
+                <p className="text-indigo-200 text-sm">
+                  Hemos enviado los detalles a{" "}
+                  <span className="text-white">
+                    {reservationDetails?.email}
+                  </span>
+                  . Revisa tu bandeja de entrada y spam.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Link
+              href="/dashboard"
+              className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-lg transition-colors"
+              aria-label="Ir al dashboard"
+            >
+              <FaHome /> Dashboard
+            </Link>
+            <Link
+              href="/tours"
+              className="flex items-center justify-center gap-2 bg-indigo-800/50 hover:bg-indigo-800/70 text-white py-3 px-6 rounded-lg transition-colors border border-indigo-700"
+              aria-label="Ver más tours"
+            >
+              <FaShoppingBag /> Más Tours
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Componente de fallback para Suspense
+function ThankYouFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-indigo-900 to-indigo-950 flex items-center justify-center p-4">
+      <div className="text-center">
+        <FaSpinner className="animate-spin text-4xl text-white mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-white mb-2">
+          Cargando página de confirmación
+        </h2>
+        <p className="text-indigo-200">
+          Preparando los detalles de tu reserva...
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Componente principal exportado
+export default function ThankYouPage() {
+  const seoTitle = "Reserva completada | Heaven Explore";
+  const seoDescription =
+    "Gracias por tu reserva en Heaven Explore. Consulta los detalles de tu pago y recibe confirmación por correo electrónico.";
 
   return (
     <>
@@ -179,89 +272,9 @@ export default function ThankYouPage() {
         <meta name="description" content={seoDescription} />
         <meta name="robots" content="noindex,follow" />
       </Head>
-      <div className="min-h-screen bg-gradient-to-b from-indigo-900 to-indigo-950 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full bg-white/5 backdrop-blur-md rounded-2xl overflow-hidden border border-indigo-500/30 shadow-xl">
-          <div className="bg-indigo-700/50 p-6 text-center border-b border-indigo-500/30">
-            <div className="flex justify-center mb-4">
-              <FaCheckCircle className="text-green-400 text-5xl" aria-hidden />
-            </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              ¡Reserva Exitosa!
-            </h1>
-            <p className="text-indigo-200">
-              Gracias por tu reserva con Heaven Explore
-            </p>
-          </div>
-
-          <div className="p-6 md:p-8">
-            <h2 className="text-xl font-semibold text-white mb-6">
-              Detalles de tu reserva
-            </h2>
-
-            <div className="space-y-4 mb-8">
-              <div className="flex justify-between border-b border-indigo-500/20 pb-2">
-                <span className="text-indigo-300">Tour:</span>
-                <span className="text-white font-medium">
-                  {reservationDetails?.tourName}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-indigo-500/20 pb-2">
-                <span className="text-indigo-300">Fecha:</span>
-                <span className="text-white font-medium">
-                  {reservationDetails?.date}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-indigo-500/20 pb-2">
-                <span className="text-indigo-300">Total pagado:</span>
-                <span className="text-white font-medium">
-                  {reservationDetails?.amount}
-                </span>
-              </div>
-              <div className="flex justify-between border-b border-indigo-500/20 pb-2">
-                <span className="text-indigo-300">Referencia:</span>
-                <span className="text-white font-medium">
-                  {reservationDetails?.reference}
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-indigo-900/30 rounded-lg p-4 mb-8">
-              <div className="flex items-start">
-                <FaEnvelope className="text-indigo-300 mt-1 mr-3" aria-hidden />
-                <div>
-                  <h3 className="font-medium text-white mb-1">
-                    Confirmación enviada
-                  </h3>
-                  <p className="text-indigo-200 text-sm">
-                    Hemos enviado los detalles a{" "}
-                    <span className="text-white">
-                      {reservationDetails?.email}
-                    </span>
-                    . Revisa tu bandeja de entrada y spam.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Link
-                href="/dashboard"
-                className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-6 rounded-lg transition-colors"
-                aria-label="Ir al dashboard"
-              >
-                <FaHome /> Dashboard
-              </Link>
-              <Link
-                href="/tours"
-                className="flex items-center justify-center gap-2 bg-indigo-800/50 hover:bg-indigo-800/70 text-white py-3 px-6 rounded-lg transition-colors border border-indigo-700"
-                aria-label="Ver más tours"
-              >
-                <FaShoppingBag /> Más Tours
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Suspense fallback={<ThankYouFallback />}>
+        <ThankYouContent />
+      </Suspense>
     </>
   );
 }

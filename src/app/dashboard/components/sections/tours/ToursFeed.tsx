@@ -41,7 +41,7 @@ export default function ToursFeed() {
     <div className="min-h-screen py-12 mt-10 px-4 bg-gradient-to-br from-[#0c0f1d] via-[#151b35] to-[#0c0f1d]">
       {/* Efecto de partículas galácticas mejorado */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {[...Array(40)].map((_, i) => (
+        {[...Array(40)].map((_, i: number) => (
           <motion.div
             key={i}
             className="absolute rounded-full bg-gradient-to-r from-cyan-400/15 to-purple-500/15"
@@ -134,7 +134,8 @@ export default function ToursFeed() {
                   >
                     <FaStar className="text-yellow-300 text-[10px]" />
                     <span className="text-[10px]">
-                      {tour.calificacion || "5.0"}
+                      {(tour as { calificacion?: string }).calificacion ||
+                        "5.0"}
                     </span>
                   </motion.div>
                 </div>
@@ -165,9 +166,9 @@ export default function ToursFeed() {
                   </p>
 
                   <div className="flex flex-wrap gap-1 mb-3">
-                    {tour.caracteristicas
+                    {(tour as { caracteristicas?: string[] }).caracteristicas
                       ?.slice(0, 3)
-                      .map((caracteristica, i) => (
+                      .map((caracteristica: string, i: number) => (
                         <motion.span
                           key={i}
                           className="text-[10px] px-2 py-1 bg-cyan-900/30 text-cyan-300 rounded-full border border-cyan-500/30"

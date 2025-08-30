@@ -10,7 +10,7 @@ import {
   FaBirthdayCake,
   FaShieldAlt,
 } from "react-icons/fa";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, FieldPath } from "react-hook-form";
 import PrivacyPolicyModal from "../../PrivacyPolicy";
 import { ReservationFormData, TIPOS_DOCUMENTO } from "../types";
 
@@ -34,13 +34,13 @@ export default function Step3({ prevStep, nextStep }: Step3Props) {
   const totalPersonas = adultos + niños;
 
   const handleNext = async () => {
-    const fieldsToValidate: string[] = [];
+    const fieldsToValidate: FieldPath<ReservationFormData>[] = [];
     for (let i = 0; i < totalPersonas; i++) {
       fieldsToValidate.push(
-        `participantes.${i}.nombre`,
-        `participantes.${i}.tipoDocumento`,
-        `participantes.${i}.numeroDocumento`,
-        `participantes.${i}.fechaNacimiento`
+        `participantes.${i}.nombre` as FieldPath<ReservationFormData>,
+        `participantes.${i}.tipoDocumento` as FieldPath<ReservationFormData>,
+        `participantes.${i}.numeroDocumento` as FieldPath<ReservationFormData>,
+        `participantes.${i}.fechaNacimiento` as FieldPath<ReservationFormData>
       );
     }
 

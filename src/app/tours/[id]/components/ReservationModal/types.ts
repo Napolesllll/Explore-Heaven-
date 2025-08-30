@@ -48,8 +48,9 @@ export type DateStats = {
 
 export type CustomCalendarProps = {
     tour: Tour;
-    selectedDateId: string;
+    selectedDateId?: string; // Cambiado a opcional
     onDateSelect: (dateId: string) => void;
+    errors?: string | boolean; // Agregada la propiedad errors
 };
 
 export type StepProps = {

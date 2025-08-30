@@ -1,12 +1,22 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
 import { Toaster } from "react-hot-toast";
-
 import Providers from "./providers";
+import type { Metadata } from "next";
 
-// Metadatos recomendados para Next.js App Router
-export const metadata = {
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+// Metadatos recomendados para Next.js App Router con metadataBase
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXTAUTH_URL || "http://localhost:3000"),
   title: "Explore Heaven Medellín | Turismo Seguro y Experiencias Únicas",
   description:
     "Descubre Medellín de forma segura con Explore Heaven. Tours exclusivos, guías certificados y recomendaciones de seguridad para turistas.",
@@ -22,23 +32,13 @@ export const metadata = {
   },
 };
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

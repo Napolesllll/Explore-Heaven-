@@ -128,11 +128,23 @@ export default function TourDetailPage({ params }: TourDetailPageProps) {
     }
   };
 
-  const handleSubmitReservation = async (data: ReservationFormData) => {
-    if (!tour) return toast.error("Información del tour no disponible");
-    if (status === "loading") return toast.error("Cargando sesión...");
-    if (!session)
-      return toast.error("Debes iniciar sesión para realizar una reserva");
+  const handleSubmitReservation = async (
+    data: ReservationFormData
+  ): Promise<void> => {
+    if (!tour) {
+      toast.error("Información del tour no disponible");
+      return;
+    }
+
+    if (status === "loading") {
+      toast.error("Cargando sesión...");
+      return;
+    }
+
+    if (!session) {
+      toast.error("Debes iniciar sesión para realizar una reserva");
+      return;
+    }
 
     setReservationLoading(true);
 

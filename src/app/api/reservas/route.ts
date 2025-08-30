@@ -127,7 +127,7 @@ export const POST = withPrismaCleanup(async (request: NextRequest) => {
         correo,
         telefono,
         fecha: new Date(fechaData.date),
-        hora: fechaData.hora || 'Por definir',
+        hora: 'Por definir', // Usar valor fijo ya que hora no existe en fechaData
         adultos: Number(adultos),
         niños: Number(niños) || 0,
         participantes: participantes,

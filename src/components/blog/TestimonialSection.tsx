@@ -35,9 +35,9 @@ const testimonials = [
 ];
 
 export default function TestimonialSection() {
-  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
 
-  const openVideo = (url) => {
+  const openVideo = (url: string) => {
     setSelectedVideo(url);
   };
 

@@ -5,14 +5,16 @@ import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 import { ClientTour, ClientAvailableDate } from "../../../types";
 import { Button } from "../components/ui/button";
-import { Calendar } from "../components/ui/calendar";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/dist/style.css";
 import { Plus, Trash2, Loader2, CalendarDays } from "lucide-react";
+import { cn } from "../../../lib/utils";
 
 export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
   const [availableDates, setAvailableDates] = useState<ClientAvailableDate[]>(
     []
   );
-  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+  const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
   const [bulkAdding, setBulkAdding] = useState(false);
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
   }, [tour.id]);
 
   const handleAddDates = async () => {
-    if (selectedDates.length === 0) return;
+    if (!selectedDates || selectedDates.length === 0) return;
 
     setBulkAdding(true);
     try {
@@ -114,11 +116,30 @@ export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
       </div>
 
       <div className="bg-white rounded-xl border border-blue-200 p-5 shadow-sm">
-        <Calendar
+        <DayPicker
           mode="multiple"
           selected={selectedDates}
           onSelect={setSelectedDates}
-          className="w-full"
+          className={cn("rounded-md border bg-white p-3 shadow w-full")}
+          classNames={{
+            months:
+              "flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4",
+            month: "space-y-4",
+            caption: "flex justify-center pt-1 relative items-center",
+            caption_label: "text-sm font-medium",
+            nav: "space-x-1 flex items-center",
+            nav_button:
+              "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+            table: "w-full border-collapse space-y-1",
+            head_row: "flex",
+            head_cell: "text-gray-500 rounded-md w-9 font-normal text-xs",
+            row: "flex w-full mt-2",
+            cell: "text-center text-sm p-1 relative [&:has([aria-selected])]:bg-blue-100",
+            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+            day_selected:
+              "bg-blue-600 text-white hover:bg-blue-700 focus:bg-blue-700",
+            day_today: "border border-blue-500",
+          }}
           modifiers={{
             registered: availableDates.map((d) => new Date(d.date)),
           }}
@@ -132,12 +153,12 @@ export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
               color: "white",
             },
           }}
-          disabled={(date) => date < new Date() || isDateRegistered(date)}
+          disabled={(date: Date) => date < new Date() || isDateRegistered(date)}
           numberOfMonths={1}
         />
 
         <div className="flex flex-wrap gap-3 mt-4">
-          {selectedDates.map((date) => (
+          {selectedDates?.map((date) => (
             <div
               key={date.toString()}
               className="flex items-center bg-blue-100 px-3 py-1.5 rounded-full text-blue-800 font-medium"
@@ -145,7 +166,7 @@ export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
               {format(date, "dd/MM/yyyy")}
               <button
                 onClick={() =>
-                  setSelectedDates(selectedDates.filter((d) => d !== date))
+                  setSelectedDates(selectedDates?.filter((d) => d !== date))
                 }
                 className="ml-2 text-blue-600 hover:text-blue-800"
               >
@@ -158,12 +179,12 @@ export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
 
       <div className="flex justify-between items-center">
         <div className="text-sm text-gray-600">
-          {selectedDates.length} fechas seleccionadas
+          {selectedDates?.length || 0} fechas seleccionadas
         </div>
 
         <Button
           onClick={handleAddDates}
-          disabled={selectedDates.length === 0 || bulkAdding}
+          disabled={!selectedDates || selectedDates.length === 0 || bulkAdding}
           className="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white shadow-lg transition-all"
         >
           {bulkAdding ? (
@@ -174,7 +195,7 @@ export default function AvailableDatesManager({ tour }: { tour: ClientTour }) {
           ) : (
             <>
               <Plus className="mr-2 h-4 w-4" />
-              Agregar ({selectedDates.length}) fechas
+              Agregar ({selectedDates?.length || 0}) fechas
             </>
           )}
         </Button>

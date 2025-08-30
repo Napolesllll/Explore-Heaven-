@@ -13,6 +13,12 @@ import {
 } from "react-icons/fa";
 
 const TourCard = ({ tour }: { tour: Tour }) => {
+  // Ensure Image src is always a string (Next/Image doesn't accept null)
+  const imageSrc: string =
+    tour.imagenUrl && tour.imagenUrl.length > 0
+      ? tour.imagenUrl
+      : "/images/placeholder-tour.jpg"; // put a placeholder in /public
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 50, rotateX: -15 }}
@@ -46,7 +52,6 @@ const TourCard = ({ tour }: { tour: Tour }) => {
       {/* Floating particles with improved physics */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(8)].map((_, i) => {
-          // Use fixed values instead of random to prevent re-renders
           const size = 2 + (i % 3);
           const duration = 4 + (i % 3);
           const delay = i * 0.3;
@@ -100,9 +105,10 @@ const TourCard = ({ tour }: { tour: Tour }) => {
       {/* Compact image section */}
       <div className="relative h-48 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-900/60 z-10"></div>
+
         <Image
-          src={tour.imagenUrl}
-          alt={tour.nombre}
+          src={imageSrc}
+          alt={tour.nombre ?? "Tour"}
           fill
           className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
           priority

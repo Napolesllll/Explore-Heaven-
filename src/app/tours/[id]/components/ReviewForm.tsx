@@ -1,17 +1,13 @@
+// ReviewForm.tsx
 "use client";
 
 import { useForm, SubmitHandler } from "react-hook-form";
 import { FaStar } from "react-icons/fa";
-
-export interface ReviewData {
-  tourId: string;
-  rating: number;
-  comment?: string;
-}
+import { Review } from "../types/tours";
 
 interface ReviewFormProps {
   tourId: string;
-  onReviewSubmit: (review: ReviewData) => void;
+  onReviewSubmit: (review: Review) => void;
 }
 
 interface FormValues {
@@ -60,7 +56,7 @@ export function ReviewForm({ tourId, onReviewSubmit }: ReviewFormProps) {
         throw new Error(errorMessage);
       }
 
-      const newReview: ReviewData = await response.json();
+      const newReview: Review = await response.json();
       onReviewSubmit(newReview);
       reset();
     } catch (error: unknown) {

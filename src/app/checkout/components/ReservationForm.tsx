@@ -27,16 +27,16 @@ interface EmergencyContact {
   telefono: string;
 }
 
-interface FormData {
-  fecha?: string;
+interface ReservationFormData {
+  fecha?: Date;
   nombre: string;
   telefono: string;
   correo: string;
-  cantidadAdultos?: number;
-  cantidadNinos?: number;
-  adultos?: Person[];
-  ninos?: Person[];
-  contactoEmergencia?: EmergencyContact;
+  cantidadAdultos: number;
+  cantidadNinos: number;
+  adultos: Person[];
+  ninos: Person[];
+  contactoEmergencia: EmergencyContact;
 }
 
 interface Tour {
@@ -51,8 +51,8 @@ interface ReservationFormProps {
   hasSubmitted: boolean;
   setShowModal: (show: boolean) => void;
   availableDates: Date[];
-  formData: FormData;
-  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+  formData: ReservationFormData;
+  setFormData: React.Dispatch<React.SetStateAction<ReservationFormData>>;
   showWhatsApp: boolean;
   setShowWhatsApp: (show: boolean) => void;
 }
@@ -71,7 +71,7 @@ export default function ReservationForm({
   setShowWhatsApp,
 }: ReservationFormProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(
-    formData.fecha ? new Date(formData.fecha) : null
+    formData.fecha || null
   );
   const [currentStep, setCurrentStep] = useState(1);
   const [stepErrors, setStepErrors] = useState<{ [key: string]: string }>({});
@@ -85,24 +85,30 @@ export default function ReservationForm({
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
-    setFormData((prev) => ({ ...prev, fecha: date.toISOString() }));
+    setFormData((prev) => ({ ...prev, fecha: date }));
   };
 
   const validateCurrentStep = () => {
     let errors: { [key: string]: string } = {};
 
+    // Crear una versión validable del formData asegurando que todos los campos requeridos estén definidos
+    const validatableFormData = {
+      ...formData,
+      fecha: formData.fecha ? formData.fecha.toISOString() : "", // Convertir Date a string para validación
+    };
+
     switch (currentStep) {
       case 1:
-        errors = validateBasicInfo(formData);
+        errors = validateBasicInfo(validatableFormData);
         break;
       case 2:
-        errors = validatePeopleCount(formData);
+        errors = validatePeopleCount(validatableFormData);
         break;
       case 3:
-        errors = validateParticipants(formData);
+        errors = validateParticipants(validatableFormData);
         break;
       case 4:
-        errors = validateEmergencyContact(formData);
+        errors = validateEmergencyContact(validatableFormData);
         break;
     }
 
@@ -211,7 +217,7 @@ export default function ReservationForm({
 
   const generateWhatsAppMessage = () => {
     const fechaFormatted = formData.fecha
-      ? format(new Date(formData.fecha), "PPP", { locale: es })
+      ? format(formData.fecha, "PPP", { locale: es })
       : "Por definir";
 
     let message = `¡Hola! Me interesa hacer una reserva para el tour: *${tour.nombre}*\n\n`;
@@ -222,9 +228,9 @@ export default function ReservationForm({
     message += `• Fecha deseada: ${fechaFormatted}\n\n`;
 
     message += `👥 *Participantes:*\n`;
-    message += `• Adultos: ${formData.cantidadAdultos || 0}\n`;
-    message += `• Niños: ${formData.cantidadNinos || 0}\n`;
-    message += `• Total: ${(formData.cantidadAdultos || 0) + (formData.cantidadNinos || 0)}\n\n`;
+    message += `• Adultos: ${formData.cantidadAdultos}\n`;
+    message += `• Niños: ${formData.cantidadNinos}\n`;
+    message += `• Total: ${formData.cantidadAdultos + formData.cantidadNinos}\n\n`;
 
     if (formData.adultos && formData.adultos.length > 0) {
       message += `👤 *Datos adultos:*\n`;
@@ -243,8 +249,8 @@ export default function ReservationForm({
     }
 
     message += `🚨 *Contacto de emergencia:*\n`;
-    message += `• Nombre: ${formData.contactoEmergencia?.nombre || ""}\n`;
-    message += `• Teléfono: ${formData.contactoEmergencia?.telefono || ""}\n\n`;
+    message += `• Nombre: ${formData.contactoEmergencia.nombre}\n`;
+    message += `• Teléfono: ${formData.contactoEmergencia.telefono}\n\n`;
 
     message += `¿Podrías confirmarme la disponibilidad y el proceso de reserva? ¡Gracias!`;
 
@@ -430,16 +436,16 @@ export default function ReservationForm({
                 <p>
                   <span className="text-yellow-400">Fecha:</span>{" "}
                   {formData.fecha
-                    ? format(new Date(formData.fecha), "PPP", { locale: es })
+                    ? format(formData.fecha, "PPP", { locale: es })
                     : "Por definir"}
                 </p>
                 <p>
                   <span className="text-yellow-400">Participantes:</span>{" "}
-                  {formData.cantidadAdultos || 0} adultos,{" "}
-                  {formData.cantidadNinos || 0} niños
+                  {formData.cantidadAdultos} adultos, {formData.cantidadNinos}{" "}
+                  niños
                 </p>
 
-                {formData.adultos && formData.adultos.length > 0 && (
+                {formData.adultos.length > 0 && (
                   <div>
                     <p className="text-yellow-400 font-semibold">Adultos:</p>
                     {formData.adultos.map((adulto, i) => (
@@ -451,7 +457,7 @@ export default function ReservationForm({
                   </div>
                 )}
 
-                {formData.ninos && formData.ninos.length > 0 && (
+                {formData.ninos.length > 0 && (
                   <div>
                     <p className="text-yellow-400 font-semibold">Niños:</p>
                     {formData.ninos.map((nino, i) => (
@@ -465,8 +471,8 @@ export default function ReservationForm({
 
                 <p>
                   <span className="text-yellow-400">Contacto emergencia:</span>{" "}
-                  {formData.contactoEmergencia?.nombre || ""} -{" "}
-                  {formData.contactoEmergencia?.telefono || ""}
+                  {formData.contactoEmergencia.nombre} -{" "}
+                  {formData.contactoEmergencia.telefono}
                 </p>
               </div>
             </div>

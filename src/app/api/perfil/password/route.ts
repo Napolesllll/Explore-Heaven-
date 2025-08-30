@@ -46,8 +46,8 @@ export async function PUT(req: Request) {
 
     if (currentPassword === newPassword) {
       console.log("Error: Contraseñas iguales - Debug:", {
-        current: Array.from(currentPassword).map(c => c.charCodeAt(0)),
-        new: Array.from(newPassword).map(c => c.charCodeAt(0))
+        current: [...currentPassword].map((c: string) => c.charCodeAt(0)),
+        new: [...newPassword].map((c: string) => c.charCodeAt(0))
       });
       return NextResponse.json({
         error: "La nueva contraseña debe ser diferente a la actual"
@@ -112,7 +112,7 @@ export async function PUT(req: Request) {
     console.error("Error al cambiar contraseña:", error);
     return NextResponse.json({
       error: "Error interno del servidor",
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
     }, { status: 500 });
   }
 }

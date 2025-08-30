@@ -5,11 +5,16 @@ import { DayPicker, DayPickerSingleProps } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 import { cn } from "../../../../lib/utils";
 
+interface CalendarProps extends DayPickerSingleProps {
+  className?: string;
+  classNames?: Record<string, string>;
+}
+
 export const Calendar = ({
   className,
   classNames,
   ...props
-}: DayPickerSingleProps) => {
+}: CalendarProps) => {
   return (
     <DayPicker
       className={cn("rounded-md border bg-white p-3 shadow", className)}

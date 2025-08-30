@@ -20,9 +20,29 @@ import {
 } from "react-icons/fa";
 import { LogOut } from "lucide-react";
 
-export default function PerfilFeed() {
+// Tipo extendido que incluye todas las propiedades posibles
+interface ExtendedUser {
+  id?: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string;
+  rol?: string; // Mantenemos por compatibilidad
+  fechaRegistro?: string;
+  emailVerified?: Date | null;
+}
+
+interface PerfilFeedProps {
+  user?: ExtendedUser;
+}
+
+export default function PerfilFeed({ user: propUser }: PerfilFeedProps) {
   const { data: session, status, update } = useSession();
-  const user = session?.user;
+
+  // Combinamos el usuario de props con el de sesión, asegurándonos de que tengan el tipo correcto
+  const user: ExtendedUser | undefined =
+    propUser || (session?.user as ExtendedUser);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [uploadState, setUploadState] = useState({
@@ -111,12 +131,14 @@ export default function PerfilFeed() {
       await updateProfilePhoto(imageUrl);
 
       // Actualizar sesión con la nueva imagen
-      await update({
-        user: {
-          ...user,
-          image: imageUrl,
-        },
-      });
+      if (update) {
+        await update({
+          user: {
+            ...user,
+            image: imageUrl,
+          },
+        });
+      }
 
       setUploadState({
         isUploading: false,
@@ -150,6 +172,29 @@ export default function PerfilFeed() {
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
+  };
+
+  // Función helper para obtener el rol del usuario
+  const getUserRole = (user: ExtendedUser) => {
+    return user.role || user.rol || "Explorador";
+  };
+
+  // Función helper para obtener la fecha de registro
+  const getRegistrationDate = (user: ExtendedUser) => {
+    if (user.emailVerified) {
+      return new Date(user.emailVerified).toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } else if (user.fechaRegistro) {
+      return new Date(user.fechaRegistro).toLocaleDateString("es-ES", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    }
+    return "Explorando desde el inicio del tiempo";
   };
 
   if (status === "loading") {
@@ -204,7 +249,7 @@ export default function PerfilFeed() {
     <div className="min-h-screen mt-10 bg-[#0a0b16] py-12 px-4 relative overflow-hidden">
       {/* Efecto de fondo galáctico */}
       <div className="absolute inset-0 overflow-hidden -z-10">
-        {[...Array(30)].map((_, i) => {
+        {[...Array(30)].map((_, i: number) => {
           const size = 2 + (i % 3);
           const duration = 5 + (i % 3);
           const delay = i * 0.1;
@@ -325,7 +370,7 @@ export default function PerfilFeed() {
                 </motion.button>
 
                 {/* Partículas alrededor del avatar */}
-                {[...Array(6)].map((_, i) => {
+                {[...Array(6)].map((_, i: number) => {
                   const angle = (i * Math.PI) / 3;
                   const radius = 50;
                   const x = Math.cos(angle) * radius;
@@ -411,7 +456,7 @@ export default function PerfilFeed() {
             >
               <FaCrown className="text-[#ffd700]" />
               <span className="text-[#ffd700] font-medium">
-                {user.rol || "Explorador"}
+                {getUserRole(user)}
               </span>
             </motion.div>
           </div>
@@ -459,8 +504,7 @@ export default function PerfilFeed() {
                   </h3>
                 </div>
                 <p className="text-[#cbd5e0] text-lg font-light pl-2">
-                  {user.fechaRegistro ||
-                    "Explorando desde el inicio del tiempo"}
+                  {getRegistrationDate(user)}
                 </p>
               </div>
             </motion.div>
@@ -530,7 +574,7 @@ export default function PerfilFeed() {
 
               {/* Efecto de partículas fijas */}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                {[1, 2, 3].map((i) => (
+                {[1, 2, 3].map((i: number) => (
                   <div
                     key={i}
                     className="absolute rounded-full bg-cyan-400 animate-float"

@@ -1,24 +1,37 @@
 // src/components/sections/FeatureCardsSection.tsx
 import dynamic from "next/dynamic";
-import { useTranslation } from "next-i18next";
-import { Feature } from "../../types";
+import { ReactNode } from "react";
 
 const ServiceCard = dynamic(() => import("../ServiceCard"));
 
-const FeatureCardsSection = ({ features }: { features: Feature[] }) => {
-  const { t } = useTranslation("common");
+// Definimos el tipo Feature localmente
+interface Feature {
+  icon: ReactNode;
+  title: string;
+  description: string;
+}
 
+interface FeatureCardsSectionProps {
+  features: Feature[];
+  title?: string;
+}
+
+const FeatureCardsSection = ({
+  features,
+  title = "Nuestras Características",
+}: FeatureCardsSectionProps) => {
   return (
-    <section className="py-20 px-4" aria-label={t("features.ariaLabel")}>
+    <section
+      className="py-20 px-4"
+      aria-label="Características y servicios destacados"
+    >
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-12">
-          {t("features.title")}
-        </h2>
+        <h2 className="text-3xl font-bold text-center mb-12">{title}</h2>
         <div className="grid md:grid-cols-3 gap-8">
           {features.map((feature, index) => (
             <ServiceCard
               key={index}
-              iconName={feature.icon}
+              icon={feature.icon}
               title={feature.title}
               description={feature.description}
             />

@@ -1,4 +1,3 @@
-// src/lib/auth/auth.config.ts
 import { NextAuthOptions } from "next-auth";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "../prismadb";
@@ -7,7 +6,7 @@ import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import EmailProvider from "next-auth/providers/email";
 import bcrypt from "bcryptjs";
-import { validateAdminCredentials } from "./admin-credentials";
+import { URL } from "url";
 
 // Validación de variables de entorno
 const requiredEnvVars = {
@@ -25,26 +24,20 @@ Object.entries(requiredEnvVars).forEach(([key, value]) => {
     }
 });
 
-interface ExtendedToken {
-    id?: string;
-    role?: string;
-    emailVerified?: Date;
-    image?: string;
-    accessToken?: string;
-    refreshToken?: string;
-    email?: string;
-    name?: string;
-}
+// No necesitamos ExtendedJWT ya que JWT ya está extendido en los tipos
+// El JWT ya incluye id, role, emailVerified como requeridos
 
+// Definir el tipo de usuario de sesión extendido
 interface ExtendedSessionUser {
     id: string;
     email: string;
     name?: string | null;
     image?: string | null;
-    role?: string;
-    emailVerified?: Date | null;
+    role: string;
+    emailVerified: Date;
 }
 
+// Opciones de autenticación para NextAuth
 export const authOptions: NextAuthOptions = {
     adapter: PrismaAdapter(prisma),
     session: {
@@ -127,13 +120,15 @@ export const authOptions: NextAuthOptions = {
                         data: { lastLogin: new Date() },
                     });
 
+                    const emailVerified = user.emailVerified || new Date();
+
                     return {
                         id: user.id,
                         email: user.email,
                         name: user.name,
                         image: user.image,
                         role: user.role,
-                        emailVerified: user.emailVerified,
+                        emailVerified,
                     };
                 } catch (error) {
                     console.error("Authorization error:", error);
@@ -141,69 +136,7 @@ export const authOptions: NextAuthOptions = {
                 }
             },
         }),
-        CredentialsProvider({
-            id: "admin-credentials",
-            name: "Administrador",
-            credentials: {
-                password: { label: "Contraseña de Administrador", type: "password" },
-            },
-            async authorize(credentials) {
-                try {
-                    if (!credentials?.password) {
-                        return null;
-                    }
 
-                    const isValidAdmin = await validateAdminCredentials(
-                        credentials.password
-                    );
-                    if (!isValidAdmin) {
-                        return null;
-                    }
-
-                    let adminUser = await prisma.user.findFirst({
-                        where: { role: "ADMIN" },
-                    });
-
-                    if (!adminUser) {
-                        adminUser = await prisma.user.create({
-                            data: {
-                                email: "admin@sistema.com",
-                                name: "Administrador del Sistema",
-                                role: "ADMIN",
-                                emailVerified: new Date(),
-                                status: "ACTIVE",
-                            },
-                        });
-                    }
-
-                    await prisma.loginAttempt.create({
-                        data: {
-                            email: adminUser.email,
-                            success: true,
-                            ip: "unknown",
-                            userAgent: "admin-panel",
-                        },
-                    });
-
-                    await prisma.user.update({
-                        where: { id: adminUser.id },
-                        data: { lastLogin: new Date() },
-                    });
-
-                    return {
-                        id: adminUser.id,
-                        email: adminUser.email,
-                        name: adminUser.name,
-                        image: adminUser.image,
-                        role: adminUser.role,
-                        emailVerified: adminUser.emailVerified,
-                    };
-                } catch (error) {
-                    console.error("Admin authorization error:", error);
-                    return null;
-                }
-            },
-        }),
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID ?? "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
@@ -215,19 +148,15 @@ export const authOptions: NextAuthOptions = {
                 },
             },
         }),
+
         FacebookProvider({
             clientId: process.env.FACEBOOK_CLIENT_ID ?? "",
             clientSecret: process.env.FACEBOOK_CLIENT_SECRET ?? "",
         }),
+
+        // Configuración del proveedor de correo
         EmailProvider({
-            server: {
-                host: process.env.EMAIL_SERVER_HOST,
-                port: parseInt(process.env.EMAIL_SERVER_PORT || "587"),
-                auth: {
-                    user: process.env.EMAIL_SERVER_USER,
-                    pass: process.env.EMAIL_SERVER_PASSWORD,
-                },
-            },
+            server: process.env.EMAIL_SERVER,
             from: process.env.EMAIL_FROM,
             maxAge: 24 * 60 * 60,
             sendVerificationRequest: async ({ identifier, url, provider }) => {
@@ -279,61 +208,40 @@ export const authOptions: NextAuthOptions = {
                 return false;
             }
         },
-        async jwt({ token, user, account, trigger, session }) {
-            const extendedToken = token as ExtendedToken;
 
+        async jwt({ token, user }) {
             if (user) {
-                extendedToken.id = user.id;
-                extendedToken.role = user.role as string;
-                extendedToken.emailVerified = user.emailVerified as Date;
-                extendedToken.image = user.image as string;
-            }
-
-            if (account) {
-                if ("access_token" in account && account.access_token) {
-                    extendedToken.accessToken = account.access_token as string;
-                }
-                if ("refresh_token" in account && account.refresh_token) {
-                    extendedToken.refreshToken = account.refresh_token as string;
+                // Asegurar que todas las propiedades requeridas estén presentes
+                token.id = user.id;
+                token.role = user.role || "USER";
+                token.emailVerified = user.emailVerified || new Date();
+                // Solo asignar image si existe y es string
+                if (user.image && typeof user.image === 'string') {
+                    token.image = user.image;
                 }
             }
 
-            if (trigger === "update" && session) {
-                if (session.user.image !== undefined) {
-                    extendedToken.image = session.user.image ?? undefined;
-                }
-                if (session.user.name !== undefined) {
-                    extendedToken.name = session.user.name ?? undefined;
-                }
-                if (session.user.email !== undefined) {
-                    extendedToken.email = session.user.email ?? undefined;
-                }
-                if ((session.user as { role?: string }).role !== undefined) {
-                    extendedToken.role = (session.user as { role?: string }).role;
-                }
-            }
-
-            return extendedToken;
+            return token;
         },
-        async session({ session, token }) {
-            const extendedToken = token as ExtendedToken;
 
-            if (extendedToken) {
+        async session({ session, token }) {
+            if (token) {
                 const user: ExtendedSessionUser = {
-                    id: extendedToken.id ?? "",
-                    email: extendedToken.email ?? "",
-                    name: extendedToken.name ?? null,
-                    image: extendedToken.image ?? null,
-                    role: extendedToken.role,
-                    emailVerified: extendedToken.emailVerified ?? null,
+                    id: token.id,
+                    email: token.email ?? "",
+                    name: token.name ?? null,
+                    image: typeof token.image === 'string' ? token.image : null,
+                    role: token.role,
+                    emailVerified: token.emailVerified,
                 };
 
                 session.user = user;
-                session.accessToken = extendedToken.accessToken;
+                session.accessToken = token.accessToken;
             }
 
             return session;
         },
+
         async redirect({ url, baseUrl }) {
             if (url.startsWith("/")) return `${baseUrl}${url}`;
             try {

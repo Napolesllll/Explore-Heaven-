@@ -30,6 +30,10 @@ export async function POST(request: Request) {
             return new NextResponse("Falta configuración de correo", { status: 500 });
         }
 
+        // Parsear las configuraciones del servidor de correo desde EMAIL_SERVER
+        const { host, port, user: smtpUser, pass } = JSON.parse(server);
+
+        // Generar el token de verificación
         const tokenRecord = (await generateVerificationToken(email)) as { token: string; expires?: string | Date };
 
         if (!tokenRecord || typeof tokenRecord.token !== "string") {
@@ -37,23 +41,38 @@ export async function POST(request: Request) {
             return new NextResponse("Error generando token de verificación", { status: 500 });
         }
 
-        // Usar nuestro endpoint personalizado para verificar email
+        // Crear la URL de verificación
         const verificationUrl = `${baseUrl}/api/auth/verify-email?token=${encodeURIComponent(
             tokenRecord.token
         )}&email=${encodeURIComponent(email)}&callbackUrl=${encodeURIComponent(`${baseUrl}/dashboard`)}`;
 
+        // Enviar el correo de verificación usando el endpoint personalizado
         await sendVerificationRequest({
             identifier: email,
             url: verificationUrl,
-            provider: { server, from },
+            provider: {
+                server: {
+                    host,  // La propiedad host debe estar dentro de server
+                    port: port || 587,  // Asegúrate de que el puerto sea válido
+                    auth: {
+                        user: smtpUser, // Renombramos 'user' a 'smtpUser' para evitar conflictos
+                        pass,
+                    },
+                },
+                from, // Dirección de correo 'from'
+            },
         });
 
         return new NextResponse("Correo de verificación enviado", { status: 200 });
     } catch (error: unknown) {
         console.error("[/api/auth/resend]", error);
+
+        // Manejar errores de validación de Zod
         if (error instanceof z.ZodError) {
             return new NextResponse("Email inválido", { status: 400 });
         }
+
+        // Manejar otros errores
         return new NextResponse("Error en el servidor", { status: 500 });
     }
 }

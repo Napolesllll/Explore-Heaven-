@@ -1,5 +1,4 @@
 // middleware.ts
-// middleware.ts
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
@@ -79,13 +78,12 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes) except /api/auth
+     * - api/auth (ALL auth routes - esto es clave)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public files (images, etc)
      */
-    '/((?!api(?!/auth)|_next/static|_next/image|favicon.ico|public/).*)',
+    '/((?!api/auth|_next/static|_next/image|favicon.ico|public/).*)',
   ],
 };
-

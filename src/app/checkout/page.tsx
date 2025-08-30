@@ -2,7 +2,7 @@
 
 import Head from "next/head";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { tours } from "../../data/toursData";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -35,11 +35,37 @@ interface Tour {
   salida: string;
   regreso: string;
   duracion: string;
-  fotos?: string[];
-  inclusiones?: string[];
+  fotos: string[];
+  inclusiones: string[];
+  incluido: string[];
+  noIncluido: string[];
+  outfit: string[];
 }
 
-export default function CheckoutPage() {
+interface Person {
+  nombre: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
+}
+
+interface EmergencyContact {
+  nombre: string;
+  telefono: string;
+}
+
+interface ReservationFormData {
+  fecha?: Date;
+  nombre: string;
+  telefono: string;
+  correo: string;
+  cantidadAdultos: number;
+  cantidadNinos: number;
+  adultos: Person[];
+  ninos: Person[];
+  contactoEmergencia: EmergencyContact;
+}
+
+function CheckoutContent() {
   const searchParams = useSearchParams();
 
   const [tour, setTour] = useState<Tour | null>(null);
@@ -50,19 +76,14 @@ export default function CheckoutPage() {
   const [isClient, setIsClient] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ReservationFormData>({
     nombre: "",
     correo: "",
     telefono: "",
-    fecha: "",
     cantidadAdultos: 1,
     cantidadNinos: 0,
     adultos: [{ nombre: "", tipoDocumento: "", numeroDocumento: "" }],
-    ninos: [] as {
-      nombre: string;
-      tipoDocumento: string;
-      numeroDocumento: string;
-    }[],
+    ninos: [],
     contactoEmergencia: { nombre: "", telefono: "" },
   });
 
@@ -74,8 +95,25 @@ export default function CheckoutPage() {
   useEffect(() => {
     const tourId = searchParams.get("tourId");
     if (!tourId) return;
-    const found = tours.find((t) => t.id === tourId) || null;
-    setTour(found);
+    const found = tours.find((t) => t.id === tourId);
+    if (found) {
+      // Mapear el tour desde toursData al tipo Tour del componente
+      const mappedTour: Tour = {
+        id: found.id,
+        nombre: found.nombre,
+        descripcion: found.descripcion,
+        precio: found.precio,
+        salida: found.salida,
+        regreso: found.regreso,
+        duracion: found.duracion,
+        fotos: found.fotos || [],
+        inclusiones: found.incluido || [],
+        incluido: found.incluido || [],
+        noIncluido: found.noIncluido || [],
+        outfit: found.outfit || [],
+      };
+      setTour(mappedTour);
+    }
   }, [searchParams]);
 
   // Cargar fechas disponibles
@@ -114,17 +152,20 @@ export default function CheckoutPage() {
 
   async function sendEmail(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!validateForm() || isSubmitting || hasSubmitted) return;
+    if (!validateForm() || isSubmitting || hasSubmitted || !formRef.current)
+      return;
     setIsSubmitting(true);
     setHasSubmitted(true);
 
     try {
-      const success = await sendReservationEmail(formRef);
+      const success = await sendReservationEmail(
+        formRef as React.RefObject<HTMLFormElement>
+      );
 
       if (success && tour) {
         const reserva = {
           tourName: tour.nombre,
-          date: formData.fecha || "",
+          date: formData.fecha ? formData.fecha.toISOString() : "",
           amount: tour.precio,
           reference: Date.now().toString(),
           email: formData.correo,
@@ -198,7 +239,7 @@ export default function CheckoutPage() {
             transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
           >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
-              {tour.fotos?.length > 0 && <TourImages fotos={tour.fotos} />}
+              {tour.fotos.length > 0 && <TourImages fotos={tour.fotos} />}
               <TourDetails tour={tour} />
             </div>
 
@@ -250,7 +291,7 @@ export default function CheckoutPage() {
             >
               <ReservationForm
                 tour={tour}
-                formRef={formRef}
+                formRef={formRef as React.RefObject<HTMLFormElement>}
                 sendEmail={sendEmail}
                 isSubmitting={isSubmitting}
                 hasSubmitted={hasSubmitted}
@@ -266,5 +307,24 @@ export default function CheckoutPage() {
         </AnimatePresence>
       </div>
     </>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
+          <div className="text-center animate-pulse">
+            <div className="w-20 h-20 mx-auto bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
+              <Calendar className="text-gray-900 w-10 h-10" />
+            </div>
+            <p className="mt-6 text-gray-400">Cargando checkout...</p>
+          </div>
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
   );
 }

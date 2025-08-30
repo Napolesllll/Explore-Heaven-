@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  useState,
-  useEffect,
-  useRef,
-  JSXElementConstructor,
-  Key,
-  ReactElement,
-  ReactNode,
-  ReactPortal,
-} from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Tour } from "../../../../../../../data/toursData";
 import { FaRocket, FaCheckCircle } from "react-icons/fa";
@@ -19,7 +10,12 @@ import ReservationModal from "./ReservationModal";
 import { ReservationFormData } from "./ReservationForm/types";
 import Image from "next/image";
 
-export default function TourDetail({ tour }: { tour: Tour }) {
+type Props = {
+  tour: Tour;
+  onBack?: () => void; // <-- aceptar onBack opcional para compatibilidad con ToursFeed
+};
+
+export default function TourDetail({ tour }: Props) {
   const [formData, setFormData] = useState<ReservationFormData>({
     nombre: "",
     correo: "",
@@ -37,7 +33,10 @@ export default function TourDetail({ tour }: { tour: Tour }) {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
-  const formRef = useRef<HTMLFormElement>(null);
+
+  // Para cumplir con la prop esperada por ReservationModal: RefObject<HTMLFormElement>
+  // usamos la aserción non-null aquí (null!) para evitar el error de asignación de tipos.
+  const formRef = useRef<HTMLFormElement>(null!);
 
   // Generar fechas disponibles localmente
   useEffect(() => {
@@ -49,6 +48,7 @@ export default function TourDetail({ tour }: { tour: Tour }) {
         const date = new Date(today);
         date.setDate(today.getDate() + i);
 
+        // Evitar fines de semana (0 = domingo, 6 = sábado)
         if (date.getDay() !== 0 && date.getDay() !== 6) {
           dates.push(date);
         }
@@ -131,6 +131,14 @@ export default function TourDetail({ tour }: { tour: Tour }) {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
+
+  // Manejo seguro de la propiedad 'caracteristicas' sin usar `any`.
+  // Convertimos primero a `unknown` y luego a `Record<string, unknown>` para evitar
+  // la advertencia de conversión directa entre tipos estructuralmente distintos.
+  const tourAsRecord = tour as unknown as Record<string, unknown>;
+  const caracteristicas: unknown[] = Array.isArray(tourAsRecord.caracteristicas)
+    ? (tourAsRecord.caracteristicas as unknown[])
+    : [];
 
   return (
     <div className="relative min-h-screen py-12 px-4 bg-gradient-to-br from-[#0c0f1d] via-[#151b35] to-[#0c0f1d]">
@@ -256,30 +264,14 @@ export default function TourDetail({ tour }: { tour: Tour }) {
                 Características destacadas
               </h2>
               <div className="flex flex-wrap gap-2">
-                {tour.caracteristicas?.map(
-                  (
-                    caracteristica:
-                      | string
-                      | number
-                      | boolean
-                      | ReactElement<
-                          unknown,
-                          string | JSXElementConstructor<unknown>
-                        >
-                      | Iterable<ReactNode>
-                      | ReactPortal
-                      | null
-                      | undefined,
-                    i: Key
-                  ) => (
-                    <span
-                      key={i}
-                      className="px-3 py-2 bg-cyan-900/30 text-cyan-300 rounded-lg border border-cyan-500/30"
-                    >
-                      {caracteristica}
-                    </span>
-                  )
-                )}
+                {caracteristicas.map((caracteristica, i) => (
+                  <span
+                    key={i}
+                    className="px-3 py-2 bg-cyan-900/30 text-cyan-300 rounded-lg border border-cyan-500/30"
+                  >
+                    {String(caracteristica)}
+                  </span>
+                ))}
               </div>
             </motion.div>
           </motion.div>

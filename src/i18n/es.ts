@@ -1,5 +1,3 @@
-
-
 export const es = {
   whyMedellin: "¿Por qué Medellín?",
   safeTourismParadise: "Paraíso del Turismo Seguro",
@@ -10,11 +8,11 @@ export const es = {
   emergencyCta: "¿Necesitas ayuda inmediata? Presiona nuestro botón de emergencia",
   toursTitle: "Tours",
   loadingMap: "Cargando mapa...",
-  safetyTipsTitle: "Consejos de seguridad esenciales", // es.ts
+  safetyTipsTitle: "Consejos de seguridad esenciales",
   heroTitle: "Tu viaje seguro en Medellín",
   heroSubtitle: "¡Comienza con Explore Heaven!",
   heroCta: "Comienza tu aventura",
-  servicesTitle: "Servicios Premium de Seguridad y Guía",
+  servicesTitle: "Servicios Premium de Seguridad y Guía",  // Solo una vez aquí
   servicesSubtitle: "Diseñado para viajeros internacionales que buscan experiencias seguras y auténticas en Medellín",
   whyDifferent: "¿Por qué somos diferentes?",
   verifiedSafeLocations: "Lugares seguros verificados",
@@ -41,8 +39,6 @@ export const es = {
     "Quédate en áreas bien iluminadas por la noche y evita lugares aislados."
   ],
 
-  servicesTitle: "Servicios Premium de Seguridad y Guía",
-  servicesSubtitle: "Diseñado para viajeros internacionales que buscan experiencias seguras y auténticas",
   certifiedGuides: "Guías Locales Certificados",
   certifiedGuidesDesc: "Profesionales bilingües con entrenamiento en seguridad y conocimiento local",
   secureTransport: "Transporte Seguro",
@@ -55,14 +51,7 @@ export const es = {
   culturalMediationDesc: "Navega costumbres locales y barreras de comunicación de manera segura",
   emergencyProtocols: "Protocolos de Emergencia",
   emergencyProtocolsDesc: "Acceso instantáneo a redes médicas y de seguridad",
-  whyDifferent: "¿Por qué somos diferentes?",
-  verifiedSafeLocations: "Lugares Seguros Verificados",
-  securityMonitoring: "Monitoreo de Seguridad",
-  satisfiedClients: "Clientes Internacionales Satisfechos",
-  ctaTitle: "¿Listo para una experiencia sin preocupaciones?",
-  ctaSubtitle: "Nuestros expertos en seguridad te contactarán para diseñar tu itinerario seguro perfecto",
-  customizePlan: "Personaliza tu Plan",
-  speakWithExpert: "Habla con un Experto en Seguridad",
+
   mostPopularBadge: "Más Popular",
   includedBadge: "Incluido",
   tailoredBadge: "Personalizado",
@@ -70,4 +59,3 @@ export const es = {
 
   // ...otros textos
 };
-

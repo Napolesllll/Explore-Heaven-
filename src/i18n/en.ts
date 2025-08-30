@@ -12,7 +12,7 @@ export const en = {
   heroTitle: "Your Safe Journey in Medellín",
   heroSubtitle: "Starts With Explore Heaven",
   heroCta: "Start Your Adventure",
-  servicesTitle: "Premium Security & Guidance Services",
+  servicesTitle: "Premium Security & Guidance Services",  // Solo una vez aquí
   servicesSubtitle: "Designed for international travelers seeking safe and authentic experiences in Medellín",
   whyDifferent: "Why We're Different",
   verifiedSafeLocations: "Verified Safe Locations",
@@ -39,8 +39,6 @@ export const en = {
     "Stay in well-lit areas at night and avoid isolated places"
   ],
 
-  servicesTitle: "Premium Security & Guidance Services",
-  servicesSubtitle: "Designed for international travelers seeking safe and authentic experiences",
   certifiedGuides: "Certified Local Guides",
   certifiedGuidesDesc: "Bilingual professionals with security training and local knowledge",
   secureTransport: "Secure Transportation",
@@ -53,14 +51,7 @@ export const en = {
   culturalMediationDesc: "Navigate local customs and communication barriers safely",
   emergencyProtocols: "Emergency Protocols",
   emergencyProtocolsDesc: "Instant access to medical and security networks",
-  whyDifferent: "Why We're Different",
-  verifiedSafeLocations: "Verified Safe Locations",
-  securityMonitoring: "Security Monitoring",
-  satisfiedClients: "Satisfied International Clients",
-  ctaTitle: "Ready for a Worry-Free Experience?",
-  ctaSubtitle: "Our security experts will contact you to design your perfect safe itinerary",
-  customizePlan: "Customize Your Plan",
-  speakWithExpert: "Speak with Security Expert",
+
   mostPopularBadge: "Most Popular",
   includedBadge: "Included",
   tailoredBadge: "Tailored",

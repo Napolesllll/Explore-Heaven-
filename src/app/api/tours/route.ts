@@ -125,7 +125,7 @@ export const POST = withPrismaCleanup(async (request: NextRequest) => {
         imagenUrl,
         gallery: gallery || [],
         // info: info, // Si tienes este campo en el schema
-        createdById: user.id, // Registrar quién creó el tour
+        // createdById: user.id, // Campo removido - no existe en el modelo
       },
     });
 
@@ -229,7 +229,7 @@ export const PUT = withPrismaCleanup(async (request: NextRequest) => {
 
     // Agregar metadatos de modificación
     cleanData.updatedAt = new Date();
-    cleanData.updatedById = user.id;
+    // cleanData.updatedById = user.id; // Campo removido - no existe en el modelo
 
     // 💾 ACTUALIZAR TOUR
     const tour = await prisma.tour.update({

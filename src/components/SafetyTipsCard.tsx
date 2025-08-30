@@ -1,22 +1,15 @@
 import { ShieldCheckIcon } from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
-import { getI18n } from "../i18n/getI18"; // Importamos el sistema de traducción
 
 interface SafetyTipsCardProps {
   tips: string[];
   title?: string;
-  lang?: keyof typeof LANGS; // Nuevo prop para idioma
 }
 
 export default function SafetyTipsCard({
   tips,
-  title, // No usamos valor por defecto aquí
-  lang = "es", // Valor por defecto español
+  title = "Consejos de Seguridad", // Valor por defecto en español
 }: SafetyTipsCardProps) {
-  const i18n = getI18n(lang);
-  // Usamos el título personalizado o la traducción por defecto
-  const cardTitle = title || i18n.safetyTipsTitle;
-
   return (
     <motion.div
       className="bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-2xl shadow-2xl border border-yellow-500/20 relative overflow-hidden"
@@ -34,10 +27,7 @@ export default function SafetyTipsCard({
           <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 p-3 rounded-xl shadow-lg">
             <ShieldCheckIcon className="h-8 w-8 text-gray-900" />
           </div>
-          {/* Usamos cardTitle aquí */}
-          <h3 className="text-2xl font-bold text-yellow-400 ml-4">
-            {cardTitle}
-          </h3>
+          <h3 className="text-2xl font-bold text-yellow-400 ml-4">{title}</h3>
         </div>
 
         <ul className="space-y-5">
