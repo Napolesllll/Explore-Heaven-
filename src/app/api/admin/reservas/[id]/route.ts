@@ -1,7 +1,7 @@
 // src/app/api/admin/reservas/[id]/route.ts - HANDLERS PARA UNA RESERVA (ADMIN RLS)
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
-import { getAdminPrisma, withPrismaCleanup } from '../../../../../lib/prisma-rls';
+import { getAdminPrisma, withPrismaCleanup, } from '../../../../../lib/prisma-rls';
 
 // Definición correcta de tipos para Next.js App Router
 type RouteContext = {

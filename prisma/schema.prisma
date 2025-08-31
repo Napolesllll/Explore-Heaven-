@@ -8,19 +8,19 @@ datasource db {
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String? @db.Text
-  access_token       String? @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String? @db.Text
-  session_state      String?
-  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -34,24 +34,23 @@ model Session {
 }
 
 model User {
-  id              String    @id @default(cuid())
-  email           String    @unique
-  name            String?
-  image           String?
-  hashedPassword  String?
-  emailVerified   DateTime?
-  role            Role      @default(USER)
-  status          Status    @default(ACTIVE)
-  lastLogin       DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  accounts        Account[]
-  sessions        Session[]
-  loginAttempts   LoginAttempt[]
-  reviews         Review[]
-  reservas        Reserva[]
-  // Relación con Guia si el usuario es una guía
-  guiaProfile     Guia?
+  id             String         @id @default(cuid())
+  email          String         @unique
+  name           String?
+  image          String?
+  hashedPassword String?
+  emailVerified  DateTime?
+  role           Role           @default(USER)
+  status         Status         @default(ACTIVE)
+  lastLogin      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  accounts       Account[]
+  guiaProfile    Guia?
+  loginAttempts  LoginAttempt[]
+  reservas       Reserva[]
+  reviews        Review[]
+  sessions       Session[]
 }
 
 model LoginAttempt {
@@ -61,20 +60,7 @@ model LoginAttempt {
   ip        String
   userAgent String
   createdAt DateTime @default(now())
-  user      User?    @relation(fields: [email], references: [email])
-}
-
-enum Role {
-  USER
-  ADMIN
-  MODERATOR
-  GUIA
-}
-
-enum Status {
-  ACTIVE
-  SUSPENDED
-  DELETED
+  user      User     @relation(fields: [email], references: [email])
 }
 
 model VerificationToken {
@@ -98,85 +84,94 @@ model PendingUser {
 model Review {
   id        String   @id @default(uuid())
   tourId    String
-  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   rating    Int
   comment   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([tourId])
   @@index([userId])
 }
 
 model Reserva {
-  id        Int      @id @default(autoincrement())
-  nombre    String
-  correo    String
-  telefono  String
-  fecha     DateTime
-  hora      String?
-  tourId    String
-  guiaId    Int?
-  userId    String
-  adultos   Int
-  niños     Int
-  participantes Json?
+  id                 Int      @id @default(autoincrement())
+  nombre             String
+  correo             String
+  telefono           String
+  fecha              DateTime
+  hora               String?
+  tourId             String
+  guiaId             Int?
+  userId             String
+  adultos            Int
+  niños             Int
+  participantes      Json?
   contactoEmergencia Json?
-  estado    String? @default("Pagada")
-  
-  // Relaciones
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  Tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
-  Guia      Guia?    @relation(fields: [guiaId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  estado             String?  @default("Pagada")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  Guia               Guia?    @relation(fields: [guiaId], references: [id], onDelete: Cascade)
+  Tour               Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Guia {
-  id          Int      @id @default(autoincrement())
-  userId      String?  @unique // Relación con User
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id          Int       @id @default(autoincrement())
+  userId      String?   @unique
   nombre      String
   foto        String?
   edad        Int?
   descripcion String?
   celular     String?
   cedula      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  Reservas Reserva[] 
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User?     @relation(fields: [userId], references: [id])
+  Reservas    Reserva[]
 }
 
 model Tour {
-  id          String   @id @default(cuid())
-  nombre      String
-  descripcion String
-  salida      String?  @default("Por definir")
-  regreso     String?  @default("Por definir")
-  maxReservas Int
-  guias       Int
-  precio      Float    @default(0.0)
-  ubicacion   String   @default("Por definir")
-  imagenUrl   String?  @default("https://via.placeholder.com/600x400?text=Imagen+del+Tour")
-  gallery     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  reviews     Review[]
+  id             String          @id @default(cuid())
+  nombre         String
+  descripcion    String
+  salida         String?         @default("Por definir")
+  regreso        String?         @default("Por definir")
+  maxReservas    Int
+  guias          Int
+  precio         Float           @default(0.0)
+  ubicacion      String          @default("Por definir")
+  imagenUrl      String?         @default("https://via.placeholder.com/600x400?text=Imagen+del+Tour")
+  gallery        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   availableDates AvailableDate[]
-  Reservas    Reserva[]
+  Reservas       Reserva[]
+  reviews        Review[]
 }
 
 model AvailableDate {
   id        String   @id @default(cuid())
   date      DateTime
   tourId    String
-  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  tour      Tour     @relation(fields: [tourId], references: [id], onDelete: Cascade)
 
   @@unique([tourId, date])
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+  GUIA
+}
+
+enum Status {
+  ACTIVE
+  SUSPENDED
+  DELETED
 }

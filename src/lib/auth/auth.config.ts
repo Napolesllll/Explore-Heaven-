@@ -1,12 +1,18 @@
+// src/lib/auth/auth.config.ts - VERSIÓN CORREGIDA
 import { NextAuthOptions } from "next-auth";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import prisma from "../prismadb";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import FacebookProvider from "next-auth/providers/facebook";
 import EmailProvider from "next-auth/providers/email";
 import bcrypt from "bcryptjs";
 import { URL } from "url";
+
+// Importar desde el archivo prisma-rls
+import { prisma, setDatabaseUser, clearDatabaseUser } from '../prisma-rls';
+
+// Importar tu función de validación de admin
+import { validateAdminCredentials } from '../auth/admin-credentials';
 
 // Validación de variables de entorno
 const requiredEnvVars = {
@@ -16,6 +22,8 @@ const requiredEnvVars = {
     EMAIL_FROM: process.env.EMAIL_FROM,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    ADMIN_MASTER_PASSWORD: process.env.ADMIN_MASTER_PASSWORD,
+    ADMIN_EMAIL: process.env.ADMIN_EMAIL,
 };
 
 Object.entries(requiredEnvVars).forEach(([key, value]) => {
@@ -23,9 +31,6 @@ Object.entries(requiredEnvVars).forEach(([key, value]) => {
         console.error(`Missing required environment variable: ${key}`);
     }
 });
-
-// No necesitamos ExtendedJWT ya que JWT ya está extendido en los tipos
-// El JWT ya incluye id, role, emailVerified como requeridos
 
 // Definir el tipo de usuario de sesión extendido
 interface ExtendedSessionUser {
@@ -51,6 +56,42 @@ export const authOptions: NextAuthOptions = {
         signIn: "/auth/signin",
     },
     providers: [
+        // Proveedor para administradores (nuevo)
+        CredentialsProvider({
+            id: "admin-credentials",
+            name: "AdminCredentials",
+            credentials: {
+                password: { label: "Password", type: "password" }
+            },
+            async authorize(credentials) {
+                try {
+                    if (!credentials?.password) {
+                        return null;
+                    }
+
+                    // Usar tu función de validación
+                    const isValid = await validateAdminCredentials(credentials.password);
+
+                    if (!isValid) {
+                        return null;
+                    }
+
+                    // Crear un usuario admin simulado
+                    return {
+                        id: "admin-system",
+                        email: process.env.ADMIN_EMAIL || "admin@exploreheaven.com",
+                        name: "Administrator",
+                        role: "ADMIN",
+                        emailVerified: new Date(),
+                    };
+                } catch (error) {
+                    console.error("Admin authorization error:", error);
+                    return null;
+                }
+            },
+        }),
+
+        // Proveedor para usuarios regulares (existente)
         CredentialsProvider({
             id: "credentials",
             name: "Credenciales de Usuario",
@@ -69,6 +110,9 @@ export const authOptions: NextAuthOptions = {
                         return null;
                     }
 
+                    // Configurar RLS para la consulta
+                    await setDatabaseUser('AUTH_SYSTEM');
+
                     const user = await prisma.user.findUnique({
                         where: { email: credentials.email.toLowerCase() },
                         include: {
@@ -78,14 +122,17 @@ export const authOptions: NextAuthOptions = {
                     });
 
                     if (!user || !user.hashedPassword) {
+                        await clearDatabaseUser();
                         return null;
                     }
 
                     if (!user.emailVerified) {
+                        await clearDatabaseUser();
                         throw new Error("EMAIL_NOT_VERIFIED");
                     }
 
                     if (user.status === "SUSPENDED" || user.status === "DELETED") {
+                        await clearDatabaseUser();
                         throw new Error("ACCOUNT_SUSPENDED");
                     }
 
@@ -103,6 +150,7 @@ export const authOptions: NextAuthOptions = {
                                 userAgent: "unknown",
                             },
                         });
+                        await clearDatabaseUser();
                         return null;
                     }
 
@@ -122,6 +170,8 @@ export const authOptions: NextAuthOptions = {
 
                     const emailVerified = user.emailVerified || new Date();
 
+                    await clearDatabaseUser();
+
                     return {
                         id: user.id,
                         email: user.email,
@@ -132,6 +182,7 @@ export const authOptions: NextAuthOptions = {
                     };
                 } catch (error) {
                     console.error("Authorization error:", error);
+                    await clearDatabaseUser();
                     throw error;
                 }
             },
@@ -170,6 +221,9 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
         async signIn({ user, account, profile }) {
             try {
+                // Configurar RLS para operaciones de autenticación
+                await setDatabaseUser('AUTH_SYSTEM');
+
                 if (account?.provider === "email") {
                     const existingUser = await prisma.user.findUnique({
                         where: { email: user.email! },
@@ -181,6 +235,8 @@ export const authOptions: NextAuthOptions = {
                             data: { emailVerified: new Date() },
                         });
                     }
+
+                    await clearDatabaseUser();
                     return true;
                 }
 
@@ -189,6 +245,7 @@ export const authOptions: NextAuthOptions = {
                         account?.provider === "google" &&
                         (profile as { email_verified?: boolean })?.email_verified === false
                     ) {
+                        await clearDatabaseUser();
                         return false;
                     }
 
@@ -197,52 +254,86 @@ export const authOptions: NextAuthOptions = {
                     if (allowedDomains.length > 0 && user.email) {
                         const domain = user.email.split("@")[1];
                         if (!allowedDomains.includes(domain)) {
+                            await clearDatabaseUser();
                             return false;
                         }
                     }
                 }
 
+                // Permitir siempre el inicio de sesión de administrador
+                if (account?.provider === "admin-credentials") {
+                    await clearDatabaseUser();
+                    return true;
+                }
+
+                await clearDatabaseUser();
                 return true;
             } catch (error) {
                 console.error("SignIn callback error:", error);
+                await clearDatabaseUser();
                 return false;
             }
         },
 
-        async jwt({ token, user }) {
-            if (user) {
-                // Asegurar que todas las propiedades requeridas estén presentes
-                token.id = user.id;
-                token.role = user.role || "USER";
-                token.emailVerified = user.emailVerified || new Date();
-                // Solo asignar image si existe y es string
-                if (user.image && typeof user.image === 'string') {
-                    token.image = user.image;
+        async jwt({ token, user, trigger, session }) {
+            try {
+                if (user) {
+                    // Asegurar que todas las propiedades requeridas estén presentes
+                    token.id = user.id;
+                    token.role = user.role || "USER";
+                    token.emailVerified = user.emailVerified || new Date();
+                    // Solo asignar image si existe y es string
+                    if (user.image && typeof user.image === 'string') {
+                        token.image = user.image;
+                    }
                 }
-            }
 
-            return token;
+                // Actualizar token si la sesión cambia (para actualizar rol)
+                if (trigger === "update" && session?.user) {
+                    token.role = session.user.role || token.role;
+                }
+
+                return token;
+            } catch (error) {
+                console.error('Error in JWT callback:', error);
+                return token;
+            }
         },
 
         async session({ session, token }) {
-            if (token) {
-                const user: ExtendedSessionUser = {
-                    id: token.id,
-                    email: token.email ?? "",
-                    name: token.name ?? null,
-                    image: typeof token.image === 'string' ? token.image : null,
-                    role: token.role,
-                    emailVerified: token.emailVerified,
-                };
+            try {
+                if (token) {
+                    const user: ExtendedSessionUser = {
+                        id: token.id as string,
+                        email: token.email ?? "",
+                        name: token.name ?? null,
+                        image: typeof token.image === 'string' ? token.image : null,
+                        role: token.role as string,
+                        emailVerified: token.emailVerified as Date,
+                    };
 
-                session.user = user;
-                session.accessToken = token.accessToken;
+                    session.user = user;
+                    session.accessToken = token.accessToken;
+                }
+
+                return session;
+            } catch (error) {
+                console.error('Error in session callback:', error);
+                return session;
             }
-
-            return session;
         },
 
         async redirect({ url, baseUrl }) {
+            // Prevenir bucles de redirección - solución clave
+            if (url.includes('/auth/signin?callbackUrl=')) {
+                return `${baseUrl}/dashboard/admin`;
+            }
+
+            // Para login de admin, redirigir directamente al dashboard
+            if (url.includes('callbackUrl') && url.includes('admin')) {
+                return `${baseUrl}/dashboard/admin`;
+            }
+
             if (url.startsWith("/")) return `${baseUrl}${url}`;
             try {
                 if (new URL(url).origin === baseUrl) return url;
@@ -252,15 +343,21 @@ export const authOptions: NextAuthOptions = {
     },
     events: {
         async signIn(message) {
-            console.log(
-                `User signed in: ${message.user.email} - Role: ${message.user.role}`
-            );
+            try {
+                console.log(`User signed in: ${message.user.email} - Role: ${message.user.role}`);
+            } catch (error) {
+                console.error('Error in signIn event:', error);
+            }
         },
         async signOut(message) {
             console.log(`User signed out: ${message.token?.email || "unknown"}`);
         },
         async createUser(message) {
-            console.log(`New user created: ${message.user.email}`);
+            try {
+                console.log(`New user created: ${message.user.email}`);
+            } catch (error) {
+                console.error('Error in createUser event:', error);
+            }
         },
         async session({ session }) {
             if (process.env.NODE_ENV === "development") {

@@ -9,14 +9,14 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Cliente Prisma singleton
-const prisma = globalForPrisma.prisma ?? new PrismaClient({
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 // Función para configurar el usuario en la sesión de base de datos
-async function setDatabaseUser(userId: string): Promise<void> {
+export async function setDatabaseUser(userId: string): Promise<void> {
     try {
         console.log('🔧 Configurando usuario en BD:', userId);
         await prisma.$executeRawUnsafe(
@@ -29,7 +29,7 @@ async function setDatabaseUser(userId: string): Promise<void> {
 }
 
 // Función para limpiar la configuración de usuario
-async function clearDatabaseUser(): Promise<void> {
+export async function clearDatabaseUser(): Promise<void> {
     try {
         await prisma.$executeRawUnsafe(
             `SELECT set_config('app.current_user_id', '', false);`
