@@ -55,7 +55,7 @@ const nextConfig: NextConfig = {
       "images.unsplash.com",
     ],
   },
-  reactStrinctMode: true,
+  reactStrictMode: true,
 };
 
 export default nextConfig;

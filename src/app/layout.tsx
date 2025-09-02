@@ -1,18 +1,11 @@
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import Providers from "./providers";
 import type { Metadata } from "next";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Se evita la carga de Google Fonts en tiempo de compilación para prevenir
+// errores de red durante el build en entornos sin conexión.
+// Usamos las fuentes definidas en CSS (globals.css) o las fuentes del sistema.
 
 // Metadatos recomendados para Next.js App Router con metadataBase
 export const metadata: Metadata = {
@@ -39,9 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`antialiased font-sans`}>
         <Providers>
           <Toaster position="top-right" reverseOrder={false} />
           {children}

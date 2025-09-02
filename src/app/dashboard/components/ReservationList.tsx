@@ -662,7 +662,7 @@ export default function ReservationList() {
   const [exporting, setExporting] = useState(false);
 
   // Función mejorada para normalizar fechas
-  const normalizeDateString = (date: any): string => {
+  const normalizeDateString = (date: unknown): string => {
     if (!date) return new Date().toISOString().split("T")[0];
 
     if (date instanceof Date) {
@@ -691,32 +691,35 @@ export default function ReservationList() {
         return "en_proceso" as ReservationStatus;
       };
 
-      const parseMaybeJson = (value: any) => {
+      const parseMaybeJson = (value: unknown) => {
         if (!value) return [];
         if (Array.isArray(value)) return value;
         if (typeof value === "string") {
           try {
             const parsed = JSON.parse(value);
             return Array.isArray(parsed) ? parsed : [];
-          } catch (e) {
+          } catch (err) {
+            console.warn("parseMaybeJson failed:", err);
             return [];
           }
         }
         return [];
       };
 
-      const parseContacto = (value: any) => {
+      const parseContacto = (value: unknown) => {
         if (!value) return { nombre: "", telefono: "" };
         if (typeof value === "string") {
           try {
             return JSON.parse(value);
-          } catch (e) {
+          } catch (err) {
+            console.warn("parseContacto failed:", err);
             return { nombre: "", telefono: String(value) };
           }
         }
+        const v = value as Record<string, unknown>;
         return {
-          nombre: value.nombre || "",
-          telefono: value.telefono || value.telefonoEmergencia || "",
+          nombre: v.nombre || "",
+          telefono: v.telefono || v.telefonoEmergencia || "",
         };
       };
 
@@ -755,37 +758,60 @@ export default function ReservationList() {
               );
               const transformedFallback: Reservation[] = (
                 rawFallback || []
-              ).map((r: any) => {
-                const adultos = Number(r.adultos || 0);
-                const ninos = Number(r["niños"] ?? r.ninos ?? 0);
+              ).map((r: unknown) => {
+                const rec = r as Record<string, unknown>;
+                const adultos = Number(rec.adultos || 0);
+                const ninos = Number(rec["niños"] ?? rec.ninos ?? 0);
+                const tour = rec.Tour as Record<string, unknown> | undefined;
                 return {
-                  id: String(r.id),
-                  tourId: String(r.tourId || (r.Tour && r.Tour.id) || ""),
-                  tourNombre: (r.Tour && r.Tour.nombre) || r.tourNombre || "",
+                  id: String(rec.id),
+                  tourId: String(rec.tourId || tour?.id || ""),
+                  tourNombre:
+                    (tour && (tour.nombre as string)) ||
+                    (rec.tourNombre as unknown as string) ||
+                    "",
                   tourImagen:
-                    (r.Tour && r.Tour.imagenUrl) || r.tourImagen || undefined,
+                    (tour && (tour.imagenUrl as string)) ||
+                    (rec.tourImagen as unknown as string) ||
+                    undefined,
                   tourUbicacion:
-                    (r.Tour && r.Tour.ubicacion) || r.tourUbicacion || "",
+                    (tour && (tour.ubicacion as string)) ||
+                    (rec.tourUbicacion as unknown as string) ||
+                    "",
                   fechaSeleccionada: normalizeDateString(
-                    r.fecha || r.fechaSeleccionada
+                    rec.fecha || rec.fechaSeleccionada
                   ),
                   fechaCreacion:
-                    r.createdAt instanceof Date
-                      ? r.createdAt.toISOString()
-                      : String(r.createdAt || new Date().toISOString()),
-                  status: mapEstadoToStatus(r.estado),
-                  nombreReservante: r.nombre || r.nombreReservante || "",
-                  correoReservante: r.correo || r.correoReservante || "",
-                  telefonoReservante: r.telefono || r.telefonoReservante || "",
+                    rec.createdAt instanceof Date
+                      ? rec.createdAt.toISOString()
+                      : String(rec.createdAt || new Date().toISOString()),
+                  status: mapEstadoToStatus(rec.estado as unknown as string),
+                  nombreReservante:
+                    (rec.nombre as unknown as string) ||
+                    (rec.nombreReservante as unknown as string) ||
+                    "",
+                  correoReservante:
+                    (rec.correo as unknown as string) ||
+                    (rec.correoReservante as unknown as string) ||
+                    "",
+                  telefonoReservante:
+                    (rec.telefono as unknown as string) ||
+                    (rec.telefonoReservante as unknown as string) ||
+                    "",
                   adultos,
                   niños: ninos,
                   totalPersonas: adultos + ninos,
-                  participantes: parseMaybeJson(r.participantes),
-                  contactoEmergencia: parseContacto(r.contactoEmergencia),
+                  participantes: parseMaybeJson(rec.participantes),
+                  contactoEmergencia: parseContacto(rec.contactoEmergencia),
                   precioTotal:
-                    (r.Tour && Number(r.Tour.precio)) ||
-                    (r.precioTotal ? Number(r.precioTotal) : undefined),
-                  notas: r.notas || r.observaciones || undefined,
+                    (tour && Number(tour.precio as unknown as number)) ||
+                    (rec.precioTotal
+                      ? Number(rec.precioTotal as unknown as string)
+                      : undefined),
+                  notas:
+                    (rec.notas as unknown as string) ||
+                    (rec.observaciones as unknown as string) ||
+                    undefined,
                 } as Reservation;
               });
               setReservations(transformedFallback);
@@ -802,38 +828,61 @@ export default function ReservationList() {
 
         const raw = data.reservas || [];
 
-        const transformed: Reservation[] = raw.map((r: any) => {
-          const adultos = Number(r.adultos || 0);
-          const ninos = Number(r["niños"] ?? r.ninos ?? 0);
+        const transformed: Reservation[] = raw.map((r: unknown) => {
+          const rec = r as Record<string, unknown>;
+          const adultos = Number(rec.adultos || 0);
+          const ninos = Number(rec["niños"] ?? rec.ninos ?? 0);
+          const tour = rec.Tour as Record<string, unknown> | undefined;
 
           return {
-            id: String(r.id),
-            tourId: String(r.tourId || (r.Tour && r.Tour.id) || ""),
-            tourNombre: (r.Tour && r.Tour.nombre) || r.tourNombre || "",
+            id: String(rec.id),
+            tourId: String(rec.tourId || tour?.id || ""),
+            tourNombre:
+              (tour && (tour.nombre as string)) ||
+              (rec.tourNombre as unknown as string) ||
+              "",
             tourImagen:
-              (r.Tour && r.Tour.imagenUrl) || r.tourImagen || undefined,
+              (tour && (tour.imagenUrl as string)) ||
+              (rec.tourImagen as unknown as string) ||
+              undefined,
             tourUbicacion:
-              (r.Tour && r.Tour.ubicacion) || r.tourUbicacion || "",
+              (tour && (tour.ubicacion as string)) ||
+              (rec.tourUbicacion as unknown as string) ||
+              "",
             fechaSeleccionada: normalizeDateString(
-              r.fecha || r.fechaSeleccionada
+              rec.fecha || rec.fechaSeleccionada
             ),
             fechaCreacion:
-              r.createdAt instanceof Date
-                ? r.createdAt.toISOString()
-                : String(r.createdAt || new Date().toISOString()),
-            status: mapEstadoToStatus(r.estado),
-            nombreReservante: r.nombre || r.nombreReservante || "",
-            correoReservante: r.correo || r.correoReservante || "",
-            telefonoReservante: r.telefono || r.telefonoReservante || "",
+              rec.createdAt instanceof Date
+                ? rec.createdAt.toISOString()
+                : String(rec.createdAt || new Date().toISOString()),
+            status: mapEstadoToStatus(rec.estado as unknown as string),
+            nombreReservante:
+              (rec.nombre as unknown as string) ||
+              (rec.nombreReservante as unknown as string) ||
+              "",
+            correoReservante:
+              (rec.correo as unknown as string) ||
+              (rec.correoReservante as unknown as string) ||
+              "",
+            telefonoReservante:
+              (rec.telefono as unknown as string) ||
+              (rec.telefonoReservante as unknown as string) ||
+              "",
             adultos,
             niños: ninos,
             totalPersonas: adultos + ninos,
-            participantes: parseMaybeJson(r.participantes),
-            contactoEmergencia: parseContacto(r.contactoEmergencia),
+            participantes: parseMaybeJson(rec.participantes),
+            contactoEmergencia: parseContacto(rec.contactoEmergencia),
             precioTotal:
-              (r.Tour && Number(r.Tour.precio)) ||
-              (r.precioTotal ? Number(r.precioTotal) : undefined),
-            notas: r.notas || r.observaciones || undefined,
+              (tour && Number(tour.precio as unknown as number)) ||
+              (rec.precioTotal
+                ? Number(rec.precioTotal as unknown as string)
+                : undefined),
+            notas:
+              (rec.notas as unknown as string) ||
+              (rec.observaciones as unknown as string) ||
+              undefined,
           } as Reservation;
         });
 

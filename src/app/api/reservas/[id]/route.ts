@@ -10,69 +10,80 @@ const updateReservationSchema = z.object({
 });
 
 // Función para transformar reserva de Prisma a formato consistente para usuarios
-const transformReservaForUser = (reserva: any) => {
+const transformReservaForUser = (reserva: unknown): Record<string, unknown> => {
+  if (!reserva || typeof reserva !== 'object') return {} as unknown as Record<string, unknown>;
+  const r = reserva as Record<string, unknown>;
+
   // Manejar participantes (puede ser string JSON o array)
-  let participantes = [];
-  if (reserva.participantes) {
-    if (typeof reserva.participantes === 'string') {
+  let participantes: unknown[] = [];
+  if (r.participantes) {
+    const p = r.participantes;
+    if (typeof p === 'string') {
       try {
-        participantes = JSON.parse(reserva.participantes);
-      } catch (e) {
-        console.warn('Error parsing participantes:', e);
+        const parsed = JSON.parse(p);
+        participantes = Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        console.warn('Error parsing participantes:', err);
         participantes = [];
       }
-    } else if (Array.isArray(reserva.participantes)) {
-      participantes = reserva.participantes;
+    } else if (Array.isArray(p)) {
+      participantes = p;
     }
   }
 
   // Manejar contacto de emergencia
   let contactoEmergencia = { nombre: '', telefono: '' };
-  if (reserva.contactoEmergencia) {
-    if (typeof reserva.contactoEmergencia === 'string') {
+  if (r.contactoEmergencia) {
+    const c = r.contactoEmergencia;
+    if (typeof c === 'string') {
       try {
-        contactoEmergencia = JSON.parse(reserva.contactoEmergencia);
-      } catch (e) {
-        console.warn('Error parsing contactoEmergencia:', e);
+        const parsed = JSON.parse(c);
+        if (parsed && typeof parsed === 'object') {
+          contactoEmergencia = parsed as { nombre: string; telefono: string };
+        }
+      } catch (err) {
+        console.warn('Error parsing contactoEmergencia:', err);
       }
-    } else if (typeof reserva.contactoEmergencia === 'object') {
-      contactoEmergencia = reserva.contactoEmergencia;
+    } else if (typeof c === 'object') {
+      contactoEmergencia = c as { nombre: string; telefono: string };
     }
   }
 
   // Formatear fecha como string
-  const fechaFormateada = reserva.fecha instanceof Date
-    ? reserva.fecha.toISOString().split('T')[0]
-    : String(reserva.fecha || '');
+  const fechaVal = r.fecha;
+  const fechaFormateada = fechaVal instanceof Date
+    ? fechaVal.toISOString().split('T')[0]
+    : String(fechaVal || '');
 
   return {
-    id: reserva.id,
-    nombre: reserva.nombre || '',
-    correo: reserva.correo || '',
-    telefono: reserva.telefono || '',
+    id: r.id,
+    nombre: r.nombre || '',
+    correo: r.correo || '',
+    telefono: r.telefono || '',
     fecha: fechaFormateada,
-    hora: reserva.hora || 'Por definir',
-    tourId: String(reserva.tourId || ''),
-    userId: String(reserva.userId || ''),
-    adultos: Number(reserva.adultos || 0),
-    niños: Number(reserva.niños || 0),
+    hora: r.hora || 'Por definir',
+    tourId: String(r.tourId || ''),
+    userId: String(r.userId || ''),
+    adultos: Number(r.adultos || 0),
+    'niños': Number(r['niños'] || r['ni\u00f1os'] || 0),
     participantes: Array.isArray(participantes) ? participantes : [],
     contactoEmergencia,
-    estado: reserva.estado || 'Pendiente',
-    Tour: reserva.Tour ? {
-      id: String(reserva.Tour.id),
-      nombre: reserva.Tour.nombre || 'Tour sin nombre',
-      imagenUrl: reserva.Tour.imagenUrl || '',
-      precio: Number(reserva.Tour.precio || 0),
-      ubicacion: reserva.Tour.ubicacion || 'Ubicación no especificada'
-    } : undefined,
-    createdAt: reserva.createdAt instanceof Date
-      ? reserva.createdAt.toISOString()
-      : String(reserva.createdAt || new Date().toISOString()),
-    updatedAt: reserva.updatedAt instanceof Date
-      ? reserva.updatedAt.toISOString()
-      : String(reserva.updatedAt || new Date().toISOString())
-  };
+    estado: r.estado || 'Pendiente',
+    Tour: r.Tour
+      ? (() => {
+        const t = r.Tour as Record<string, unknown>;
+        return {
+          id: String(t.id),
+          nombre: (t.nombre as unknown as string) || 'Tour sin nombre',
+          imagenUrl: (t.imagenUrl as unknown as string) || '',
+          precio: Number((t.precio as unknown as number) || 0),
+          ubicacion: (t.ubicacion as unknown as string) || 'Ubicación no especificada',
+        };
+      })()
+      : undefined,
+    createdAt: r.createdAt instanceof Date ? (r.createdAt as Date).toISOString() : String(r.createdAt || new Date().toISOString()),
+    updatedAt: r.updatedAt instanceof Date ? (r.updatedAt as Date).toISOString() : String(r.updatedAt || new Date().toISOString()),
+  } as Record<string, unknown>;
 };
 
 // GET - Obtener reserva específica CON FILTRADO EXPLÍCITO POR USUARIO

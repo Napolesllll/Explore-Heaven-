@@ -46,37 +46,50 @@ const isSameDate = (dateString: string, compareDate: Date): boolean => {
   }
 };
 
-// Función para normalizar las reservas y mapear campos
-const normalizeReservation = (reservation: any): Reservation => {
+// Funcin para normalizar las reservas y mapear campos
+const normalizeReservation = (reservation: unknown): Reservation => {
+  const r = reservation as Record<string, unknown>;
+  const t = r.Tour as Record<string, unknown> | undefined;
+
+  const adultos = Number(r.adultos ?? 1);
+  const ninos = Number(r["niños"] ?? r["ni\u00f1os"] ?? 0);
+  const totalPersonas = Number((r.totalPersonas ?? adultos + ninos) || 1);
+
   return {
-    id: reservation.id,
-    tourId: reservation.tourId || reservation.Tour?.id || "",
+    id: String(r.id),
+    tourId: String(r.tourId ?? t?.id ?? ""),
     // Mapear campos que pueden tener nombres diferentes
-    fechaSeleccionada:
-      reservation.fechaSeleccionada || reservation.fecha || reservation.date,
-    fechaCreacion: reservation.fechaCreacion || reservation.createdAt,
-    nombreReservante: reservation.nombreReservante || reservation.nombre,
-    correoReservante:
-      reservation.correoReservante || reservation.correo || reservation.email,
-    telefonoReservante:
-      reservation.telefonoReservante || reservation.telefono || "",
-    adultos: reservation.adultos || 1,
-    niños: reservation.niños || 0,
-    totalPersonas:
-      reservation.totalPersonas || reservation.adultos + reservation.niños || 1,
-    tourNombre:
-      reservation.tourNombre || reservation.Tour?.nombre || "Tour sin nombre",
-    tourUbicacion:
-      reservation.tourUbicacion ||
-      reservation.Tour?.ubicacion ||
-      "Ubicación no especificada",
-    status: reservation.status || reservation.estado || "Pendiente",
-    precioTotal:
-      reservation.precioTotal ||
-      reservation.Tour?.precio * (reservation.totalPersonas || 1),
-    participantes: reservation.participantes || [],
-    contactoEmergencia: reservation.contactoEmergencia || null,
-  };
+    fechaSeleccionada: String(r.fechaSeleccionada ?? r.fecha ?? r.date ?? ""),
+    fechaCreacion: String(
+      r.fechaCreacion ?? r.createdAt ?? new Date().toISOString()
+    ),
+    nombreReservante: String(r.nombreReservante ?? r.nombre ?? ""),
+    correoReservante: String(r.correoReservante ?? r.correo ?? r.email ?? ""),
+    telefonoReservante: String(r.telefonoReservante ?? r.telefono ?? ""),
+    adultos,
+    niños: ninos,
+    totalPersonas,
+    tourNombre: String(r.tourNombre ?? t?.nombre ?? "Tour sin nombre"),
+    tourUbicacion: String(
+      r.tourUbicacion ?? t?.ubicacion ?? "Ubicación no especificada"
+    ),
+    status: String(
+      r.status ?? r.estado ?? "Pendiente"
+    ) as unknown as Reservation["status"],
+    precioTotal: r.precioTotal
+      ? Number(r.precioTotal)
+      : t && t.precio
+        ? Number(t.precio) * totalPersonas
+        : undefined,
+    participantes: Array.isArray(r.participantes)
+      ? (r.participantes as unknown[])
+      : [],
+    contactoEmergencia:
+      (r.contactoEmergencia as unknown as {
+        nombre: string;
+        telefono: string;
+      }) || null,
+  } as Reservation;
 };
 
 // Componente para mostrar las reservas de un día específico
