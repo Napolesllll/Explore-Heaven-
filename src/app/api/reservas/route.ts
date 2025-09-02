@@ -1,4 +1,4 @@
-// app/api/reservas/route.ts - VERSIÓN SEGURA CON RLS CORREGIDA
+// app/api/reservas/route.ts - VERSIÓN CORREGIDA CON FILTRADO EXPLÍCITO POR USUARIO
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedPrisma, withPrismaCleanup } from '../../../lib/prisma-rls';
 
@@ -45,7 +45,7 @@ const transformReservaForUser = (reserva: any) => {
     : String(reserva.fecha || '');
 
   return {
-    id: reserva.id, // Mantener como number para compatibilidad con ReservasFeed
+    id: reserva.id,
     nombre: reserva.nombre || '',
     correo: reserva.correo || '',
     telefono: reserva.telefono || '',
@@ -74,9 +74,9 @@ const transformReservaForUser = (reserva: any) => {
   };
 };
 
-// POST - Crear nueva reserva (CON RLS)
+// POST - Crear nueva reserva
 export const POST = withPrismaCleanup(async (request: NextRequest) => {
-  console.log('🚀 POST /api/reservas llamado - Versión RLS');
+  console.log('🚀 POST /api/reservas llamado');
 
   try {
     // 🔒 OBTENER PRISMA AUTENTICADO (ya valida la sesión automáticamente)
@@ -107,7 +107,7 @@ export const POST = withPrismaCleanup(async (request: NextRequest) => {
       );
     }
 
-    // Verificar que el tour existe (usando RLS - solo verá tours públicos)
+    // Verificar que el tour existe
     console.log('🔍 Verificando que el tour existe...');
     const tour = await prisma.tour.findUnique({
       where: { id: tourId }
@@ -137,15 +137,15 @@ export const POST = withPrismaCleanup(async (request: NextRequest) => {
     console.log('📅 Fecha encontrada:', fechaData);
 
     // 🛡️ VALIDACIÓN 1: VERIFICAR QUE EL USUARIO NO TENGA YA UNA RESERVA EN ESA FECHA
-    // RLS automáticamente filtrará solo las reservas de este usuario
+    // ✅ FILTRADO EXPLÍCITO POR USUARIO - ESTO ES LO QUE FALTABA
     const reservaExistente = await prisma.reserva.findFirst({
       where: {
+        userId: user.id, // ✅ FILTRO EXPLÍCITO POR USER ID
         tourId: tourId,
         fecha: fechaData.date,
         estado: {
           not: 'Cancelada'
         }
-        // ❗ NO necesitamos agregar userId - RLS lo hace automáticamente
       }
     });
 
@@ -162,7 +162,6 @@ export const POST = withPrismaCleanup(async (request: NextRequest) => {
 
     // 🛡️ VALIDACIÓN 2: VERIFICAR LÍMITE DE 3 RESERVAS POR FECHA
     // Para esto necesitamos contar TODAS las reservas (no solo del usuario)
-    // Usamos una consulta raw para saltarnos RLS temporalmente
     const reservasEnFechaResult = await prisma.$queryRaw<[{ count: bigint }]>`
       SELECT COUNT(*) as count
       FROM "Reserva" 
@@ -185,21 +184,21 @@ export const POST = withPrismaCleanup(async (request: NextRequest) => {
       );
     }
 
-    // 💾 CREAR LA RESERVA (RLS verificará automáticamente que userId coincide)
-    console.log('💾 Creando reserva con RLS...');
+    // 💾 CREAR LA RESERVA
+    console.log('💾 Creando reserva...');
     const reserva = await prisma.reserva.create({
       data: {
         nombre,
         correo,
         telefono,
         fecha: new Date(fechaData.date),
-        hora: 'Por definir', // Usar valor fijo ya que hora no existe en fechaData
+        hora: 'Por definir',
         adultos: Number(adultos),
         niños: Number(niños) || 0,
         participantes: JSON.stringify(participantes || []),
         contactoEmergencia: JSON.stringify(contactoEmergencia || { nombre: '', telefono: '' }),
         tourId,
-        userId: user.id, // RLS verificará que esto coincide con el usuario actual
+        userId: user.id, // ✅ ASIGNACIÓN EXPLÍCITA DEL USER ID
         estado: 'Pendiente',
       },
       include: {
@@ -292,7 +291,7 @@ export const POST = withPrismaCleanup(async (request: NextRequest) => {
   }
 });
 
-// GET - Obtener reservas del usuario (CON RLS)
+// GET - Obtener reservas del usuario - ✅ FILTRADO EXPLÍCITO POR USUARIO
 export const GET = withPrismaCleanup(async () => {
   try {
     // 🔒 OBTENER PRISMA AUTENTICADO
@@ -300,9 +299,11 @@ export const GET = withPrismaCleanup(async () => {
 
     console.log('🔍 Obteniendo reservas para usuario:', user.id);
 
-    // 🎯 CON RLS: Ya solo veremos las reservas de este usuario automáticamente
+    // 🎯 ✅ FILTRADO EXPLÍCITO POR USER ID - ESTO ES LO QUE FALTABA
     const reservas = await prisma.reserva.findMany({
-      // ❗ NO necesitamos where: { userId: user.id } - RLS lo hace automáticamente
+      where: {
+        userId: user.id // ✅ FILTRO EXPLÍCITO POR USER ID
+      },
       include: {
         Tour: {
           select: {
@@ -317,19 +318,24 @@ export const GET = withPrismaCleanup(async () => {
       orderBy: { createdAt: 'desc' },
     });
 
-    console.log(`✅ RLS filtró automáticamente ${reservas.length} reservas para el usuario`);
+    console.log(`✅ Se encontraron ${reservas.length} reservas para el usuario ${user.id}`);
 
     // Transformar reservas al formato esperado por ReservasFeed
     const reservasTransformadas = reservas.map(transformReservaForUser);
 
-    // Stats solo para este usuario (RLS aplicado automáticamente)
-    const reservasCount = await prisma.reserva.count();
+    // Stats solo para este usuario (con filtrado explícito)
+    const reservasCount = await prisma.reserva.count({
+      where: {
+        userId: user.id // ✅ CONTAR SOLO RESERVAS DE ESTE USUARIO
+      }
+    });
+
     const toursCount = await prisma.tour.count(); // Tours son públicos
 
     const userStats = {
       usuarios: 1, // Solo el usuario actual
       tours: toursCount,
-      reservas: reservasCount // Solo las reservas de este usuario por RLS
+      reservas: reservasCount // Solo las reservas de este usuario
     };
 
     return NextResponse.json({
@@ -337,9 +343,9 @@ export const GET = withPrismaCleanup(async () => {
       reservas: reservasTransformadas,
       stats: userStats,
       security: {
-        rls_enabled: true,
+        user_filtering_enabled: true,
         user_id: user.id,
-        filtered_by_rls: true
+        reservas_found: reservas.length
       }
     });
 

@@ -1,4 +1,4 @@
-// app/api/reservas/[id]/route.ts - VERSIÓN SEGURA CON RLS CORREGIDA
+// app/api/reservas/[id]/route.ts - VERSIÓN COMPLETA CON FILTRADO EXPLÍCITO POR USUARIO
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedPrisma, withPrismaCleanup } from '../../../../lib/prisma-rls';
 import { z } from 'zod';
@@ -46,7 +46,7 @@ const transformReservaForUser = (reserva: any) => {
     : String(reserva.fecha || '');
 
   return {
-    id: reserva.id, // Mantener como number para compatibilidad con ReservasFeed
+    id: reserva.id,
     nombre: reserva.nombre || '',
     correo: reserva.correo || '',
     telefono: reserva.telefono || '',
@@ -75,7 +75,95 @@ const transformReservaForUser = (reserva: any) => {
   };
 };
 
-// PATCH - Actualizar reserva (cancelar/reprogramar) CON RLS
+// GET - Obtener reserva específica CON FILTRADO EXPLÍCITO POR USUARIO
+export const GET = withPrismaCleanup(async (
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) => {
+  try {
+    // 🔒 OBTENER PRISMA AUTENTICADO
+    const { prisma, user } = await getAuthenticatedPrisma();
+
+    const { id } = await context.params;
+
+    if (!id || isNaN(parseInt(id))) {
+      return NextResponse.json({
+        success: false,
+        error: 'ID de reserva inválido'
+      }, { status: 400 });
+    }
+
+    console.log(`📋 Usuario ${user.id} consultando reserva ${id}`);
+
+    // 🎯 ✅ FILTRADO EXPLÍCITO POR USER ID
+    const reserva = await prisma.reserva.findFirst({
+      where: {
+        id: parseInt(id),
+        userId: user.id // ✅ FILTRO EXPLÍCITO POR USER ID
+      },
+      include: {
+        Tour: {
+          select: {
+            id: true,
+            nombre: true,
+            imagenUrl: true,
+            precio: true,
+            ubicacion: true
+          }
+        }
+      }
+    });
+
+    if (!reserva) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Reserva no encontrada o no tienes permisos para verla'
+        },
+        { status: 404 }
+      );
+    }
+
+    // Transformar respuesta
+    const reservaTransformada = transformReservaForUser(reserva);
+
+    return NextResponse.json({
+      success: true,
+      reserva: reservaTransformada,
+      security: {
+        user_filtering_enabled: true,
+        user_id: user.id
+      }
+    });
+
+  } catch (error) {
+    console.error('💥 Error al obtener reserva:', error);
+
+    if (error instanceof Error) {
+      if (error.message === 'Usuario no autenticado') {
+        return NextResponse.json({
+          success: false,
+          error: 'No autenticado'
+        }, { status: 401 });
+      }
+
+      if (error.message.includes('Los administradores deben usar')) {
+        return NextResponse.json({
+          success: false,
+          error: 'Acceso no válido para este endpoint'
+        }, { status: 403 });
+      }
+    }
+
+    return NextResponse.json({
+      success: false,
+      error: 'Error al obtener reserva',
+      message: error instanceof Error ? error.message : 'Error desconocido'
+    }, { status: 500 });
+  }
+});
+
+// PATCH - Actualizar reserva (cancelar/reprogramar) CON FILTRADO EXPLÍCITO POR USUARIO
 export const PATCH = withPrismaCleanup(async (
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -115,10 +203,12 @@ export const PATCH = withPrismaCleanup(async (
 
     console.log(`🔧 Usuario ${user.id} intentando ${action} reserva ${id}`);
 
-    // 🎯 CON RLS: automáticamente solo veremos reservas de este usuario
-    const reservaExistente = await prisma.reserva.findUnique({
-      where: { id: parseInt(id) },
-      // ❗ NO necesitamos filtrar por userId - RLS lo hace automáticamente
+    // 🎯 ✅ FILTRADO EXPLÍCITO POR USER ID - ESTO ES LO QUE FALTABA
+    const reservaExistente = await prisma.reserva.findFirst({
+      where: {
+        id: parseInt(id),
+        userId: user.id // ✅ FILTRO EXPLÍCITO POR USER ID
+      },
       include: {
         Tour: true
       }
@@ -147,10 +237,31 @@ export const PATCH = withPrismaCleanup(async (
     if (action === 'cancelar') {
       console.log('🗑️ Cancelando reserva ID:', id);
 
-      // 🎯 RLS verificará automáticamente que pertenece al usuario
-      reservaActualizada = await prisma.reserva.update({
-        where: { id: parseInt(id) },
-        data: { estado: 'Cancelada', updatedAt: new Date() },
+      // 🎯 ✅ ACTUALIZACIÓN CON FILTRADO EXPLÍCITO POR USER ID
+      reservaActualizada = await prisma.reserva.updateMany({
+        where: {
+          id: parseInt(id),
+          userId: user.id // ✅ VERIFICACIÓN EXPLÍCITA DE PROPIEDAD
+        },
+        data: {
+          estado: 'Cancelada',
+          updatedAt: new Date()
+        }
+      });
+
+      if (reservaActualizada.count === 0) {
+        return NextResponse.json({
+          success: false,
+          error: 'Reserva no encontrada o no tienes permisos para cancelarla'
+        }, { status: 404 });
+      }
+
+      // Obtener la reserva actualizada para la respuesta
+      const reservaCancelada = await prisma.reserva.findFirst({
+        where: {
+          id: parseInt(id),
+          userId: user.id
+        },
         include: {
           Tour: {
             select: {
@@ -165,6 +276,7 @@ export const PATCH = withPrismaCleanup(async (
       });
 
       console.log('✅ Reserva cancelada exitosamente. Cupo liberado para:', reservaExistente.fecha);
+      reservaActualizada = reservaCancelada;
 
     } else if (action === 'reprogramar') {
       if (!nuevaFecha) {
@@ -188,14 +300,14 @@ export const PATCH = withPrismaCleanup(async (
 
       // 🛡️ VALIDACIONES DE DISPONIBILIDAD
 
-      // 1. RLS verificará automáticamente que solo vemos reservas del usuario
+      // 1. ✅ VERIFICACIÓN EXPLÍCITA - SOLO RESERVAS DEL USUARIO
       const reservaEnNuevaFecha = await prisma.reserva.findFirst({
         where: {
+          userId: user.id, // ✅ FILTRO EXPLÍCITO POR USER ID
           tourId: reservaExistente.tourId,
           fecha: fechaNueva,
           estado: { not: 'Cancelada' },
           id: { not: parseInt(id) } // Excluir la reserva actual
-          // ❗ NO necesitamos userId - RLS filtra automáticamente
         }
       });
 
@@ -210,7 +322,7 @@ export const PATCH = withPrismaCleanup(async (
         );
       }
 
-      // 2. Para límite global, necesitamos consulta raw (saltarse RLS)
+      // 2. Para límite global, necesitamos consulta raw (contar TODAS las reservas)
       const reservasEnNuevaFechaResult = await prisma.$queryRaw<[{ count: bigint }]>`
         SELECT COUNT(*) as count
         FROM "Reserva" 
@@ -236,13 +348,31 @@ export const PATCH = withPrismaCleanup(async (
       console.log(`📅 Reprogramando reserva de ${reservaExistente.fecha} a ${fechaNueva}`);
       console.log(`📊 Reservas en nueva fecha: ${reservasEnNuevaFecha}/3`);
 
-      // 🎯 RLS verificará automáticamente que la reserva pertenece al usuario
-      reservaActualizada = await prisma.reserva.update({
-        where: { id: parseInt(id) },
+      // 🎯 ✅ ACTUALIZACIÓN CON FILTRADO EXPLÍCITO POR USER ID
+      const updateResult = await prisma.reserva.updateMany({
+        where: {
+          id: parseInt(id),
+          userId: user.id // ✅ VERIFICACIÓN EXPLÍCITA DE PROPIEDAD
+        },
         data: {
           fecha: fechaNueva,
           estado: 'Reprogramada',
           updatedAt: new Date()
+        }
+      });
+
+      if (updateResult.count === 0) {
+        return NextResponse.json({
+          success: false,
+          error: 'Reserva no encontrada o no tienes permisos para reprogramarla'
+        }, { status: 404 });
+      }
+
+      // Obtener la reserva actualizada para la respuesta
+      reservaActualizada = await prisma.reserva.findFirst({
+        where: {
+          id: parseInt(id),
+          userId: user.id
         },
         include: {
           Tour: {
@@ -260,8 +390,15 @@ export const PATCH = withPrismaCleanup(async (
       console.log('✅ Reserva reprogramada exitosamente');
     }
 
+    if (!reservaActualizada) {
+      return NextResponse.json({
+        success: false,
+        error: 'Error al procesar la actualización'
+      }, { status: 500 });
+    }
+
     // Transformar respuesta
-    const reservaTransformada = transformReservaForUser(reservaActualizada!);
+    const reservaTransformada = transformReservaForUser(reservaActualizada);
 
     // Información adicional sobre disponibilidad
     let mensaje = '';
@@ -286,7 +423,7 @@ export const PATCH = withPrismaCleanup(async (
       ...reservaTransformada,
       mensaje,
       security: {
-        rls_enabled: true,
+        user_filtering_enabled: true,
         user_id: user.id,
         action_performed: action
       }
@@ -319,7 +456,7 @@ export const PATCH = withPrismaCleanup(async (
   }
 });
 
-// DELETE - Eliminar reserva CON RLS  
+// DELETE - Eliminar reserva CON FILTRADO EXPLÍCITO POR USUARIO  
 export const DELETE = withPrismaCleanup(async (
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -339,10 +476,23 @@ export const DELETE = withPrismaCleanup(async (
 
     console.log(`🗑️ Usuario ${user.id} intentando eliminar reserva ${id}`);
 
-    // 🎯 CON RLS: Solo veremos la reserva si pertenece al usuario
-    const reservaExistente = await prisma.reserva.findUnique({
-      where: { id: parseInt(id) }
-      // ❗ NO necesitamos filtrar por userId - RLS lo hace automáticamente
+    // 🎯 ✅ FILTRADO EXPLÍCITO POR USER ID
+    const reservaExistente = await prisma.reserva.findFirst({
+      where: {
+        id: parseInt(id),
+        userId: user.id // ✅ FILTRO EXPLÍCITO POR USER ID
+      },
+      include: {
+        Tour: {
+          select: {
+            id: true,
+            nombre: true,
+            imagenUrl: true,
+            precio: true,
+            ubicacion: true
+          }
+        }
+      }
     });
 
     if (!reservaExistente) {
@@ -357,33 +507,32 @@ export const DELETE = withPrismaCleanup(async (
 
     console.log('🗑️ Eliminando reserva ID:', id, 'Fecha:', reservaExistente.fecha);
 
-    // 🎯 RLS verificará automáticamente que pertenece al usuario
-    const reservaEliminada = await prisma.reserva.delete({
-      where: { id: parseInt(id) },
-      include: {
-        Tour: {
-          select: {
-            id: true,
-            nombre: true,
-            imagenUrl: true,
-            precio: true,
-            ubicacion: true
-          }
-        }
+    // 🎯 ✅ ELIMINACIÓN CON FILTRADO EXPLÍCITO POR USER ID
+    const deleteResult = await prisma.reserva.deleteMany({
+      where: {
+        id: parseInt(id),
+        userId: user.id // ✅ VERIFICACIÓN EXPLÍCITA DE PROPIEDAD
       }
     });
 
+    if (deleteResult.count === 0) {
+      return NextResponse.json({
+        success: false,
+        error: 'Reserva no encontrada o no tienes permisos para eliminarla'
+      }, { status: 404 });
+    }
+
     console.log('✅ Reserva eliminada exitosamente. Cupo liberado.');
 
-    // Transformar respuesta
-    const reservaTransformada = transformReservaForUser(reservaEliminada);
+    // Transformar respuesta usando los datos de la reserva antes de eliminar
+    const reservaTransformada = transformReservaForUser(reservaExistente);
 
     return NextResponse.json({
       success: true,
       reserva: reservaTransformada,
       message: 'Reserva eliminada correctamente. El cupo ha sido liberado para otros usuarios.',
       security: {
-        rls_enabled: true,
+        user_filtering_enabled: true,
         user_id: user.id,
         action_performed: 'delete'
       }
@@ -406,6 +555,14 @@ export const DELETE = withPrismaCleanup(async (
           error: 'Acceso no válido para este endpoint'
         }, { status: 403 });
       }
+
+      // Manejar errores específicos de Prisma
+      if (error.message.includes('Record to delete does not exist')) {
+        return NextResponse.json({
+          success: false,
+          error: 'Reserva no encontrada o ya eliminada'
+        }, { status: 404 });
+      }
     }
 
     return NextResponse.json({
@@ -416,11 +573,15 @@ export const DELETE = withPrismaCleanup(async (
   }
 });
 
+// OPTIONS - Configurar métodos permitidos
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      'Allow': 'PATCH, DELETE, OPTIONS',
+      'Allow': 'GET, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, PATCH, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
 }
