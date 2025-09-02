@@ -1,7 +1,6 @@
 // src/lib/prisma-rls.ts
 import { PrismaClient } from '@prisma/client';
 import { getServerSession } from "next-auth/next";
-import { authOptions } from '../lib/auth/auth.config';
 
 // Cliente Prisma global con configuración de conexión
 const globalForPrisma = globalThis as unknown as {
@@ -46,6 +45,10 @@ export async function clearDatabaseUser(): Promise<void> {
 export async function getAuthenticatedPrisma() {
     console.log('🔐 getAuthenticatedPrisma() llamado');
 
+    // Importar authOptions dinámicamente para evitar dependencia circular
+    // (auth.config.ts importa prisma-rls, así que la importación estática causa
+    // que `prisma` sea accedido antes de su inicialización).
+    const { authOptions } = await import('../lib/auth/auth.config');
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user?.email) {
