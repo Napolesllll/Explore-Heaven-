@@ -1,4 +1,4 @@
-// app/api/reservas/[id]/route.ts - VERSIÓN SEGURA CON RLS
+// app/api/reservas/[id]/route.ts - VERSIÓN SEGURA CON RLS CORREGIDA
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedPrisma, withPrismaCleanup } from '../../../../lib/prisma-rls';
 import { z } from 'zod';
@@ -8,6 +8,72 @@ const updateReservationSchema = z.object({
   action: z.enum(['cancelar', 'reprogramar']),
   nuevaFecha: z.string().optional(),
 });
+
+// Función para transformar reserva de Prisma a formato consistente para usuarios
+const transformReservaForUser = (reserva: any) => {
+  // Manejar participantes (puede ser string JSON o array)
+  let participantes = [];
+  if (reserva.participantes) {
+    if (typeof reserva.participantes === 'string') {
+      try {
+        participantes = JSON.parse(reserva.participantes);
+      } catch (e) {
+        console.warn('Error parsing participantes:', e);
+        participantes = [];
+      }
+    } else if (Array.isArray(reserva.participantes)) {
+      participantes = reserva.participantes;
+    }
+  }
+
+  // Manejar contacto de emergencia
+  let contactoEmergencia = { nombre: '', telefono: '' };
+  if (reserva.contactoEmergencia) {
+    if (typeof reserva.contactoEmergencia === 'string') {
+      try {
+        contactoEmergencia = JSON.parse(reserva.contactoEmergencia);
+      } catch (e) {
+        console.warn('Error parsing contactoEmergencia:', e);
+      }
+    } else if (typeof reserva.contactoEmergencia === 'object') {
+      contactoEmergencia = reserva.contactoEmergencia;
+    }
+  }
+
+  // Formatear fecha como string
+  const fechaFormateada = reserva.fecha instanceof Date
+    ? reserva.fecha.toISOString().split('T')[0]
+    : String(reserva.fecha || '');
+
+  return {
+    id: reserva.id, // Mantener como number para compatibilidad con ReservasFeed
+    nombre: reserva.nombre || '',
+    correo: reserva.correo || '',
+    telefono: reserva.telefono || '',
+    fecha: fechaFormateada,
+    hora: reserva.hora || 'Por definir',
+    tourId: String(reserva.tourId || ''),
+    userId: String(reserva.userId || ''),
+    adultos: Number(reserva.adultos || 0),
+    niños: Number(reserva.niños || 0),
+    participantes: Array.isArray(participantes) ? participantes : [],
+    contactoEmergencia,
+    estado: reserva.estado || 'Pendiente',
+    Tour: reserva.Tour ? {
+      id: String(reserva.Tour.id),
+      nombre: reserva.Tour.nombre || 'Tour sin nombre',
+      imagenUrl: reserva.Tour.imagenUrl || '',
+      precio: Number(reserva.Tour.precio || 0),
+      ubicacion: reserva.Tour.ubicacion || 'Ubicación no especificada'
+    } : undefined,
+    createdAt: reserva.createdAt instanceof Date
+      ? reserva.createdAt.toISOString()
+      : String(reserva.createdAt || new Date().toISOString()),
+    updatedAt: reserva.updatedAt instanceof Date
+      ? reserva.updatedAt.toISOString()
+      : String(reserva.updatedAt || new Date().toISOString())
+  };
+};
 
 // PATCH - Actualizar reserva (cancelar/reprogramar) CON RLS
 export const PATCH = withPrismaCleanup(async (
@@ -21,7 +87,10 @@ export const PATCH = withPrismaCleanup(async (
     const { id } = await context.params;
 
     if (!id || isNaN(parseInt(id))) {
-      return NextResponse.json({ error: 'ID de reserva inválido' }, { status: 400 });
+      return NextResponse.json({
+        success: false,
+        error: 'ID de reserva inválido'
+      }, { status: 400 });
     }
 
     let data;
@@ -30,9 +99,16 @@ export const PATCH = withPrismaCleanup(async (
       data = updateReservationSchema.parse(body);
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return NextResponse.json({ error: 'Datos inválidos', details: err.errors }, { status: 400 });
+        return NextResponse.json({
+          success: false,
+          error: 'Datos inválidos',
+          details: err.errors
+        }, { status: 400 });
       }
-      return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+      return NextResponse.json({
+        success: false,
+        error: 'Error interno'
+      }, { status: 500 });
     }
 
     const { action, nuevaFecha } = data;
@@ -50,14 +126,20 @@ export const PATCH = withPrismaCleanup(async (
 
     if (!reservaExistente) {
       return NextResponse.json(
-        { error: 'Reserva no encontrada o no tienes permisos para modificarla' },
+        {
+          success: false,
+          error: 'Reserva no encontrada o no tienes permisos para modificarla'
+        },
         { status: 404 }
       );
     }
 
     // Verificar que la reserva no esté ya cancelada
     if (reservaExistente.estado === 'Cancelada') {
-      return NextResponse.json({ error: 'La reserva ya está cancelada' }, { status: 400 });
+      return NextResponse.json({
+        success: false,
+        error: 'La reserva ya está cancelada'
+      }, { status: 400 });
     }
 
     let reservaActualizada;
@@ -68,13 +150,15 @@ export const PATCH = withPrismaCleanup(async (
       // 🎯 RLS verificará automáticamente que pertenece al usuario
       reservaActualizada = await prisma.reserva.update({
         where: { id: parseInt(id) },
-        data: { estado: 'Cancelada' },
+        data: { estado: 'Cancelada', updatedAt: new Date() },
         include: {
           Tour: {
             select: {
+              id: true,
               nombre: true,
               imagenUrl: true,
               precio: true,
+              ubicacion: true
             }
           }
         }
@@ -84,7 +168,10 @@ export const PATCH = withPrismaCleanup(async (
 
     } else if (action === 'reprogramar') {
       if (!nuevaFecha) {
-        return NextResponse.json({ error: 'Nueva fecha es requerida para reprogramar' }, { status: 400 });
+        return NextResponse.json({
+          success: false,
+          error: 'Nueva fecha es requerida para reprogramar'
+        }, { status: 400 });
       }
 
       // Validar que la nueva fecha sea futura
@@ -93,7 +180,10 @@ export const PATCH = withPrismaCleanup(async (
       hoy.setHours(0, 0, 0, 0);
 
       if (fechaNueva < hoy) {
-        return NextResponse.json({ error: 'La nueva fecha debe ser futura' }, { status: 400 });
+        return NextResponse.json({
+          success: false,
+          error: 'La nueva fecha debe ser futura'
+        }, { status: 400 });
       }
 
       // 🛡️ VALIDACIONES DE DISPONIBILIDAD
@@ -112,6 +202,7 @@ export const PATCH = withPrismaCleanup(async (
       if (reservaEnNuevaFecha) {
         return NextResponse.json(
           {
+            success: false,
             error: 'Ya tienes una reserva para este tour en la nueva fecha seleccionada',
             details: 'No puedes tener múltiples reservas para el mismo tour en la misma fecha'
           },
@@ -134,6 +225,7 @@ export const PATCH = withPrismaCleanup(async (
       if (reservasEnNuevaFecha >= 3) {
         return NextResponse.json(
           {
+            success: false,
             error: 'La nueva fecha seleccionada ya está completamente reservada',
             details: 'Se ha alcanzado el límite máximo de 3 reservas para esa fecha'
           },
@@ -149,14 +241,17 @@ export const PATCH = withPrismaCleanup(async (
         where: { id: parseInt(id) },
         data: {
           fecha: fechaNueva,
-          estado: 'Reprogramada'
+          estado: 'Reprogramada',
+          updatedAt: new Date()
         },
         include: {
           Tour: {
             select: {
+              id: true,
               nombre: true,
               imagenUrl: true,
               precio: true,
+              ubicacion: true
             }
           }
         }
@@ -165,17 +260,8 @@ export const PATCH = withPrismaCleanup(async (
       console.log('✅ Reserva reprogramada exitosamente');
     }
 
-    // Formatear respuesta
-    const reservaFormateada = {
-      ...reservaActualizada,
-      fecha: reservaActualizada!.fecha.toISOString().split('T')[0],
-      participantes: typeof reservaActualizada!.participantes === 'string'
-        ? JSON.parse(reservaActualizada!.participantes)
-        : reservaActualizada!.participantes,
-      contactoEmergencia: typeof reservaActualizada!.contactoEmergencia === 'string'
-        ? JSON.parse(reservaActualizada!.contactoEmergencia)
-        : reservaActualizada!.contactoEmergencia,
-    };
+    // Transformar respuesta
+    const reservaTransformada = transformReservaForUser(reservaActualizada!);
 
     // Información adicional sobre disponibilidad
     let mensaje = '';
@@ -192,11 +278,12 @@ export const PATCH = withPrismaCleanup(async (
       `;
 
       const reservasRestantesEnNuevaFecha = 3 - Number(reservasRestantesResult[0].count);
-      mensaje = `Reserva reprogramada exitosamente. Quedan ${reservasRestantesEnNuevaFecha} cupos disponibles en la nueva fecha.`;
+      mensaje = `Reserva reprogramada exitosamente. Quedan ${reservasRestantesEnNuevaFecha} cupo${reservasRestantesEnNuevaFecha !== 1 ? 's' : ''} disponibles en la nueva fecha.`;
     }
 
     return NextResponse.json({
-      ...reservaFormateada,
+      success: true,
+      ...reservaTransformada,
       mensaje,
       security: {
         rls_enabled: true,
@@ -210,15 +297,22 @@ export const PATCH = withPrismaCleanup(async (
 
     if (error instanceof Error) {
       if (error.message === 'Usuario no autenticado') {
-        return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+        return NextResponse.json({
+          success: false,
+          error: 'No autenticado'
+        }, { status: 401 });
       }
 
       if (error.message.includes('Los administradores deben usar')) {
-        return NextResponse.json({ error: 'Acceso no válido para este endpoint' }, { status: 403 });
+        return NextResponse.json({
+          success: false,
+          error: 'Acceso no válido para este endpoint'
+        }, { status: 403 });
       }
     }
 
     return NextResponse.json({
+      success: false,
       error: 'Error al actualizar reserva',
       message: error instanceof Error ? error.message : 'Error desconocido'
     }, { status: 500 });
@@ -237,7 +331,10 @@ export const DELETE = withPrismaCleanup(async (
     const { id } = await context.params;
 
     if (!id || isNaN(parseInt(id))) {
-      return NextResponse.json({ error: 'ID de reserva inválido' }, { status: 400 });
+      return NextResponse.json({
+        success: false,
+        error: 'ID de reserva inválido'
+      }, { status: 400 });
     }
 
     console.log(`🗑️ Usuario ${user.id} intentando eliminar reserva ${id}`);
@@ -250,7 +347,10 @@ export const DELETE = withPrismaCleanup(async (
 
     if (!reservaExistente) {
       return NextResponse.json(
-        { error: 'Reserva no encontrada o no tienes permisos para eliminarla' },
+        {
+          success: false,
+          error: 'Reserva no encontrada o no tienes permisos para eliminarla'
+        },
         { status: 404 }
       );
     }
@@ -258,13 +358,29 @@ export const DELETE = withPrismaCleanup(async (
     console.log('🗑️ Eliminando reserva ID:', id, 'Fecha:', reservaExistente.fecha);
 
     // 🎯 RLS verificará automáticamente que pertenece al usuario
-    await prisma.reserva.delete({
-      where: { id: parseInt(id) }
+    const reservaEliminada = await prisma.reserva.delete({
+      where: { id: parseInt(id) },
+      include: {
+        Tour: {
+          select: {
+            id: true,
+            nombre: true,
+            imagenUrl: true,
+            precio: true,
+            ubicacion: true
+          }
+        }
+      }
     });
 
     console.log('✅ Reserva eliminada exitosamente. Cupo liberado.');
 
+    // Transformar respuesta
+    const reservaTransformada = transformReservaForUser(reservaEliminada);
+
     return NextResponse.json({
+      success: true,
+      reserva: reservaTransformada,
       message: 'Reserva eliminada correctamente. El cupo ha sido liberado para otros usuarios.',
       security: {
         rls_enabled: true,
@@ -278,15 +394,22 @@ export const DELETE = withPrismaCleanup(async (
 
     if (error instanceof Error) {
       if (error.message === 'Usuario no autenticado') {
-        return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+        return NextResponse.json({
+          success: false,
+          error: 'No autenticado'
+        }, { status: 401 });
       }
 
       if (error.message.includes('Los administradores deben usar')) {
-        return NextResponse.json({ error: 'Acceso no válido para este endpoint' }, { status: 403 });
+        return NextResponse.json({
+          success: false,
+          error: 'Acceso no válido para este endpoint'
+        }, { status: 403 });
       }
     }
 
     return NextResponse.json({
+      success: false,
       error: 'Error al eliminar reserva',
       message: error instanceof Error ? error.message : 'Error desconocido'
     }, { status: 500 });

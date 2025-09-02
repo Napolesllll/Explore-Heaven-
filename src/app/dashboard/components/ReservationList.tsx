@@ -26,20 +26,65 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-// Función para formatear fechas sin problemas de timezone
-const formatDateWithoutTimezone = (dateString: string): string => {
-  const date = new Date(dateString + "T00:00:00");
-  return date.toLocaleDateString("es-ES", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+// Funciones para formatear fechas sin problemas de timezone - CORREGIDAS
+const createDateWithoutTimezone = (dateString: string | Date): Date => {
+  // Si ya es un objeto Date, devolverlo directamente
+  if (dateString instanceof Date) {
+    return dateString;
+  }
+
+  // Si es null o undefined, devolver fecha actual
+  if (!dateString) {
+    return new Date();
+  }
+
+  // Convertir a string si no lo es
+  const dateStr = String(dateString);
+
+  // Manejar diferentes formatos de fecha
+  if (dateStr.includes("T")) {
+    // Si ya tiene formato ISO, extraer solo la parte de la fecha
+    const datePart = dateStr.split("T")[0];
+    return new Date(datePart + "T00:00:00");
+  }
+
+  // Si es solo una fecha YYYY-MM-DD
+  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    return new Date(dateStr + "T00:00:00");
+  }
+
+  // Para otros formatos, intentar crear la fecha directamente
+  try {
+    return new Date(dateStr);
+  } catch (error) {
+    console.error("Error creating date:", error, dateStr);
+    return new Date();
+  }
 };
 
-const formatDateShort = (dateString: string): string => {
-  const date = new Date(dateString + "T00:00:00");
-  return date.toLocaleDateString("es-ES");
+const formatDateWithoutTimezone = (dateString: string | Date): string => {
+  try {
+    const date = createDateWithoutTimezone(dateString);
+    return date.toLocaleDateString("es-ES", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch (error) {
+    console.error("Error formatting date:", error, dateString);
+    return "Fecha inválida";
+  }
+};
+
+const formatDateShort = (dateString: string | Date): string => {
+  try {
+    const date = createDateWithoutTimezone(dateString);
+    return date.toLocaleDateString("es-ES");
+  } catch (error) {
+    console.error("Error formatting short date:", error, dateString);
+    return "Fecha inválida";
+  }
 };
 
 // Tipos para las reservas
@@ -120,6 +165,18 @@ const statusConfig = {
 // Componente para mostrar el status
 function StatusBadge({ status }: { status: ReservationStatus }) {
   const config = statusConfig[status];
+
+  if (!config) {
+    return (
+      <div
+        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-gray-400 bg-gray-900/20 border-gray-500/30 border`}
+      >
+        <AlertTriangle size={12} />
+        {status || "Desconocido"}
+      </div>
+    );
+  }
+
   const Icon = config.icon;
 
   return (
@@ -604,22 +661,185 @@ export default function ReservationList() {
   }>({ isOpen: false, reservation: null });
   const [exporting, setExporting] = useState(false);
 
+  // Función mejorada para normalizar fechas
+  const normalizeDateString = (date: any): string => {
+    if (!date) return new Date().toISOString().split("T")[0];
+
+    if (date instanceof Date) {
+      return date.toISOString().split("T")[0];
+    }
+
+    const dateStr = String(date);
+    if (dateStr.includes("T")) {
+      return dateStr.split("T")[0];
+    }
+
+    return dateStr;
+  };
+
   // Cargar reservas desde la API
   useEffect(() => {
     const fetchReservations = async () => {
+      // Helper: map admin 'estado' string to local ReservationStatus
+      const mapEstadoToStatus = (estado?: string) => {
+        if (!estado) return "pendiente" as ReservationStatus;
+        const lower = estado.toLowerCase();
+        if (lower.includes("pend")) return "pendiente" as ReservationStatus;
+        if (lower.includes("confirm")) return "confirmada" as ReservationStatus;
+        if (lower.includes("cancel")) return "cancelada" as ReservationStatus;
+        if (lower.includes("complet")) return "completada" as ReservationStatus;
+        return "en_proceso" as ReservationStatus;
+      };
+
+      const parseMaybeJson = (value: any) => {
+        if (!value) return [];
+        if (Array.isArray(value)) return value;
+        if (typeof value === "string") {
+          try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (e) {
+            return [];
+          }
+        }
+        return [];
+      };
+
+      const parseContacto = (value: any) => {
+        if (!value) return { nombre: "", telefono: "" };
+        if (typeof value === "string") {
+          try {
+            return JSON.parse(value);
+          } catch (e) {
+            return { nombre: "", telefono: String(value) };
+          }
+        }
+        return {
+          nombre: value.nombre || "",
+          telefono: value.telefono || value.telefonoEmergencia || "",
+        };
+      };
+
       try {
         setLoading(true);
+        console.log("[ReservationList] fetching /api/admin/reservas...");
         const response = await fetch("/api/admin/reservas");
 
+        console.log(
+          "[ReservationList] admin response status:",
+          response.status
+        );
+
         if (!response.ok) {
-          throw new Error("Error al cargar reservas");
+          console.error(
+            "[ReservationList] /api/admin/reservas respondió con status:",
+            response.status
+          );
+          // Intentar fallback a endpoint de usuario para diagnosticar
+          try {
+            console.log(
+              "[ReservationList] intentando fallback a /api/reservas..."
+            );
+            const userResp = await fetch("/api/reservas");
+            console.log(
+              "[ReservationList] user response status:",
+              userResp.status
+            );
+            if (userResp.ok) {
+              const userData = await userResp.json();
+              // mapear igual que el admin
+              const rawFallback = userData.reservas || userData || [];
+              console.log(
+                "[ReservationList] fallback obtuvo records:",
+                rawFallback.length || 0
+              );
+              const transformedFallback: Reservation[] = (
+                rawFallback || []
+              ).map((r: any) => {
+                const adultos = Number(r.adultos || 0);
+                const ninos = Number(r["niños"] ?? r.ninos ?? 0);
+                return {
+                  id: String(r.id),
+                  tourId: String(r.tourId || (r.Tour && r.Tour.id) || ""),
+                  tourNombre: (r.Tour && r.Tour.nombre) || r.tourNombre || "",
+                  tourImagen:
+                    (r.Tour && r.Tour.imagenUrl) || r.tourImagen || undefined,
+                  tourUbicacion:
+                    (r.Tour && r.Tour.ubicacion) || r.tourUbicacion || "",
+                  fechaSeleccionada: normalizeDateString(
+                    r.fecha || r.fechaSeleccionada
+                  ),
+                  fechaCreacion:
+                    r.createdAt instanceof Date
+                      ? r.createdAt.toISOString()
+                      : String(r.createdAt || new Date().toISOString()),
+                  status: mapEstadoToStatus(r.estado),
+                  nombreReservante: r.nombre || r.nombreReservante || "",
+                  correoReservante: r.correo || r.correoReservante || "",
+                  telefonoReservante: r.telefono || r.telefonoReservante || "",
+                  adultos,
+                  niños: ninos,
+                  totalPersonas: adultos + ninos,
+                  participantes: parseMaybeJson(r.participantes),
+                  contactoEmergencia: parseContacto(r.contactoEmergencia),
+                  precioTotal:
+                    (r.Tour && Number(r.Tour.precio)) ||
+                    (r.precioTotal ? Number(r.precioTotal) : undefined),
+                  notas: r.notas || r.observaciones || undefined,
+                } as Reservation;
+              });
+              setReservations(transformedFallback);
+              return;
+            }
+          } catch (fbErr) {
+            console.error("[ReservationList] fallback error:", fbErr);
+          }
+
+          throw new Error("Error al cargar reservas desde admin");
         }
 
         const data = await response.json();
-        setReservations(data.reservas || []);
+
+        const raw = data.reservas || [];
+
+        const transformed: Reservation[] = raw.map((r: any) => {
+          const adultos = Number(r.adultos || 0);
+          const ninos = Number(r["niños"] ?? r.ninos ?? 0);
+
+          return {
+            id: String(r.id),
+            tourId: String(r.tourId || (r.Tour && r.Tour.id) || ""),
+            tourNombre: (r.Tour && r.Tour.nombre) || r.tourNombre || "",
+            tourImagen:
+              (r.Tour && r.Tour.imagenUrl) || r.tourImagen || undefined,
+            tourUbicacion:
+              (r.Tour && r.Tour.ubicacion) || r.tourUbicacion || "",
+            fechaSeleccionada: normalizeDateString(
+              r.fecha || r.fechaSeleccionada
+            ),
+            fechaCreacion:
+              r.createdAt instanceof Date
+                ? r.createdAt.toISOString()
+                : String(r.createdAt || new Date().toISOString()),
+            status: mapEstadoToStatus(r.estado),
+            nombreReservante: r.nombre || r.nombreReservante || "",
+            correoReservante: r.correo || r.correoReservante || "",
+            telefonoReservante: r.telefono || r.telefonoReservante || "",
+            adultos,
+            niños: ninos,
+            totalPersonas: adultos + ninos,
+            participantes: parseMaybeJson(r.participantes),
+            contactoEmergencia: parseContacto(r.contactoEmergencia),
+            precioTotal:
+              (r.Tour && Number(r.Tour.precio)) ||
+              (r.precioTotal ? Number(r.precioTotal) : undefined),
+            notas: r.notas || r.observaciones || undefined,
+          } as Reservation;
+        });
+
+        setReservations(transformed);
       } catch (error) {
         console.error("Error al cargar reservas:", error);
-        // En caso de error, mantener array vacío
         setReservations([]);
       } finally {
         setLoading(false);
@@ -632,11 +852,13 @@ export default function ReservationList() {
   // Filtrar reservas
   const filteredReservations = reservations.filter((reservation) => {
     const matchesSearch =
-      reservation.nombreReservante
+      (reservation.nombreReservante || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      reservation.tourNombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reservation.correoReservante
+      (reservation.tourNombre || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (reservation.correoReservante || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
 
@@ -656,28 +878,106 @@ export default function ReservationList() {
     reservationId: string,
     newStatus: ReservationStatus
   ) => {
+    // Map local status keys to admin 'estado' labels
+    const statusToEstado = (s: ReservationStatus) => {
+      switch (s) {
+        case "pendiente":
+          return "Pendiente";
+        case "confirmada":
+          return "Confirmada";
+        case "cancelada":
+          return "Cancelada";
+        case "completada":
+          return "Completada";
+        case "en_proceso":
+          return "En Proceso";
+        default:
+          return "Pendiente";
+      }
+    };
+
     try {
-      const response = await fetch(`/api/admin/reservas/${reservationId}`, {
-        method: "PATCH",
+      const response = await fetch(`/api/admin/reservas`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({
+          id: reservationId,
+          estado: statusToEstado(newStatus),
+        }),
       });
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        // Actualizar el estado local con la reserva transformada
+      if (response.ok && data.reserva) {
+        // transformar la reserva devuelta por el servidor y actualizar el estado local
+        const updated = data.reserva;
+        const adultos = Number(updated.adultos || 0);
+        const ninos = Number(updated["niños"] ?? updated.ninos ?? 0);
+
+        const transformed: Reservation = {
+          id: String(updated.id),
+          tourId: String(
+            updated.tourId || (updated.Tour && updated.Tour.id) || ""
+          ),
+          tourNombre:
+            (updated.Tour && updated.Tour.nombre) || updated.tourNombre || "",
+          tourImagen:
+            (updated.Tour && updated.Tour.imagenUrl) ||
+            updated.tourImagen ||
+            undefined,
+          tourUbicacion:
+            (updated.Tour && updated.Tour.ubicacion) ||
+            updated.tourUbicacion ||
+            "",
+          fechaSeleccionada: normalizeDateString(
+            updated.fecha || updated.fechaSeleccionada
+          ),
+          fechaCreacion:
+            updated.createdAt instanceof Date
+              ? updated.createdAt.toISOString()
+              : String(updated.createdAt || new Date().toISOString()),
+          status: ((): ReservationStatus => {
+            const lower = String(updated.estado || "").toLowerCase();
+            if (lower.includes("pend")) return "pendiente";
+            if (lower.includes("confirm")) return "confirmada";
+            if (lower.includes("cancel")) return "cancelada";
+            if (lower.includes("complet")) return "completada";
+            return "en_proceso";
+          })(),
+          nombreReservante: updated.nombre || updated.nombreReservante || "",
+          correoReservante: updated.correo || updated.correoReservante || "",
+          telefonoReservante:
+            updated.telefono || updated.telefonoReservante || "",
+          adultos,
+          niños: ninos,
+          totalPersonas: adultos + ninos,
+          participantes: Array.isArray(updated.participantes)
+            ? updated.participantes
+            : [],
+          contactoEmergencia: updated.contactoEmergencia || {
+            nombre: "",
+            telefono: "",
+          },
+          precioTotal:
+            (updated.Tour && Number(updated.Tour.precio)) ||
+            (updated.precioTotal ? Number(updated.precioTotal) : undefined),
+          notas: updated.notas || updated.observaciones || undefined,
+        };
+
         setReservations((prev) =>
-          prev.map((res) =>
-            res.id === reservationId ? { ...res, status: newStatus } : res
-          )
+          prev.map((res) => (res.id === reservationId ? transformed : res))
         );
         console.log("Estado actualizado correctamente");
       } else {
-        console.error("Error al actualizar el estado:", data.error);
-        alert(`Error: ${data.error}`);
+        console.error(
+          "Error al actualizar el estado:",
+          data.error || data.message || data
+        );
+        alert(
+          `Error: ${data.error || data.message || "No se pudo actualizar"}`
+        );
       }
     } catch (error) {
       console.error("Error updating status:", error);
@@ -796,7 +1096,7 @@ export default function ReservationList() {
         reservation.niños,
         reservation.totalPersonas,
         reservation.precioTotal
-          ? `$${reservation.precioTotal.toLocaleString()}`
+          ? `${reservation.precioTotal.toLocaleString()}`
           : "",
         reservation.contactoEmergencia.nombre,
         reservation.contactoEmergencia.telefono,

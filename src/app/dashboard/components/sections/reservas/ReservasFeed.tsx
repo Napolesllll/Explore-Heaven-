@@ -7,7 +7,7 @@ import { FaCalendarCheck, FaSadCry, FaRegClock } from "react-icons/fa";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
-// Tipo para la reserva
+// Tipo para la reserva - Unificado con ReservationList
 interface Reserva {
   id: number;
   nombre: string;
@@ -63,8 +63,19 @@ export default function ReservasFeed() {
       const data: { reservas?: Reserva[] } = await res.json();
       console.log("RESERVAS DEL USUARIO:", data);
 
-      // Ahora el API devuelve { reservas: [...] }
-      setReservas(data.reservas || []);
+      // Validar y filtrar datos con valores por defecto seguros
+      const reservasSeguras = (data.reservas || []).map((reserva) => ({
+        ...reserva,
+        nombre: reserva.nombre || "",
+        correo: reserva.correo || "",
+        telefono: reserva.telefono || "",
+        estado: reserva.estado || "Pendiente",
+        Tour: reserva.Tour || undefined,
+        participantes: reserva.participantes || [],
+        contactoEmergencia: reserva.contactoEmergencia || null,
+      }));
+
+      setReservas(reservasSeguras);
     } catch (err: unknown) {
       console.error("Error fetching reservas:", err);
       const message = err instanceof Error ? err.message : String(err);
@@ -79,9 +90,9 @@ export default function ReservasFeed() {
     fetchReservas();
   }, []);
 
-  // Función para filtrar reservas por estado
+  // Función para filtrar reservas por estado con validación segura
   const reservasActivas = reservas.filter(
-    (reserva) => reserva.estado !== "Cancelada"
+    (reserva) => reserva.estado !== "Cancelada" && reserva.estado !== null
   );
 
   const reservasCanceladas = reservas.filter(

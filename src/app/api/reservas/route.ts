@@ -1,4 +1,4 @@
-// app/api/reservas/route.ts - VERSIÓN SEGURA CON RLS
+// app/api/reservas/route.ts - VERSIÓN SEGURA CON RLS CORREGIDA
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedPrisma, withPrismaCleanup } from '../../../lib/prisma-rls';
 
@@ -7,6 +7,72 @@ interface PrismaError {
   code: string;
   message: string;
 }
+
+// Función para transformar reserva de Prisma a formato consistente para usuarios
+const transformReservaForUser = (reserva: any) => {
+  // Manejar participantes (puede ser string JSON o array)
+  let participantes = [];
+  if (reserva.participantes) {
+    if (typeof reserva.participantes === 'string') {
+      try {
+        participantes = JSON.parse(reserva.participantes);
+      } catch (e) {
+        console.warn('Error parsing participantes:', e);
+        participantes = [];
+      }
+    } else if (Array.isArray(reserva.participantes)) {
+      participantes = reserva.participantes;
+    }
+  }
+
+  // Manejar contacto de emergencia
+  let contactoEmergencia = { nombre: '', telefono: '' };
+  if (reserva.contactoEmergencia) {
+    if (typeof reserva.contactoEmergencia === 'string') {
+      try {
+        contactoEmergencia = JSON.parse(reserva.contactoEmergencia);
+      } catch (e) {
+        console.warn('Error parsing contactoEmergencia:', e);
+      }
+    } else if (typeof reserva.contactoEmergencia === 'object') {
+      contactoEmergencia = reserva.contactoEmergencia;
+    }
+  }
+
+  // Formatear fecha como string
+  const fechaFormateada = reserva.fecha instanceof Date
+    ? reserva.fecha.toISOString().split('T')[0]
+    : String(reserva.fecha || '');
+
+  return {
+    id: reserva.id, // Mantener como number para compatibilidad con ReservasFeed
+    nombre: reserva.nombre || '',
+    correo: reserva.correo || '',
+    telefono: reserva.telefono || '',
+    fecha: fechaFormateada,
+    hora: reserva.hora || 'Por definir',
+    tourId: String(reserva.tourId || ''),
+    userId: String(reserva.userId || ''),
+    adultos: Number(reserva.adultos || 0),
+    niños: Number(reserva.niños || 0),
+    participantes: Array.isArray(participantes) ? participantes : [],
+    contactoEmergencia,
+    estado: reserva.estado || 'Pendiente',
+    Tour: reserva.Tour ? {
+      id: String(reserva.Tour.id),
+      nombre: reserva.Tour.nombre || 'Tour sin nombre',
+      imagenUrl: reserva.Tour.imagenUrl || '',
+      precio: Number(reserva.Tour.precio || 0),
+      ubicacion: reserva.Tour.ubicacion || 'Ubicación no especificada'
+    } : undefined,
+    createdAt: reserva.createdAt instanceof Date
+      ? reserva.createdAt.toISOString()
+      : String(reserva.createdAt || new Date().toISOString()),
+    updatedAt: reserva.updatedAt instanceof Date
+      ? reserva.updatedAt.toISOString()
+      : String(reserva.updatedAt || new Date().toISOString())
+  };
+};
 
 // POST - Crear nueva reserva (CON RLS)
 export const POST = withPrismaCleanup(async (request: NextRequest) => {
@@ -130,8 +196,8 @@ export const POST = withPrismaCleanup(async (request: NextRequest) => {
         hora: 'Por definir', // Usar valor fijo ya que hora no existe en fechaData
         adultos: Number(adultos),
         niños: Number(niños) || 0,
-        participantes: participantes,
-        contactoEmergencia: contactoEmergencia,
+        participantes: JSON.stringify(participantes || []),
+        contactoEmergencia: JSON.stringify(contactoEmergencia || { nombre: '', telefono: '' }),
         tourId,
         userId: user.id, // RLS verificará que esto coincide con el usuario actual
         estado: 'Pendiente',
@@ -171,8 +237,11 @@ export const POST = withPrismaCleanup(async (request: NextRequest) => {
       mensaje += `. Quedan ${reservasRestantes} cupo${reservasRestantes !== 1 ? 's' : ''} disponibles para esta fecha.`;
     }
 
+    // Transformar respuesta al formato esperado por ReservasFeed
+    const reservaTransformada = transformReservaForUser(reserva);
+
     return NextResponse.json({
-      ...reserva,
+      ...reservaTransformada,
       mensaje,
       disponibilidadRestante: reservasRestantes
     }, { status: 201 });
@@ -250,6 +319,9 @@ export const GET = withPrismaCleanup(async () => {
 
     console.log(`✅ RLS filtró automáticamente ${reservas.length} reservas para el usuario`);
 
+    // Transformar reservas al formato esperado por ReservasFeed
+    const reservasTransformadas = reservas.map(transformReservaForUser);
+
     // Stats solo para este usuario (RLS aplicado automáticamente)
     const reservasCount = await prisma.reserva.count();
     const toursCount = await prisma.tour.count(); // Tours son públicos
@@ -261,7 +333,8 @@ export const GET = withPrismaCleanup(async () => {
     };
 
     return NextResponse.json({
-      reservas,
+      success: true,
+      reservas: reservasTransformadas,
       stats: userStats,
       security: {
         rls_enabled: true,
@@ -275,13 +348,19 @@ export const GET = withPrismaCleanup(async () => {
 
     if (error instanceof Error && error.message === 'Usuario no autenticado') {
       return NextResponse.json(
-        { error: 'Debes iniciar sesión para ver tus reservas' },
+        {
+          success: false,
+          error: 'Debes iniciar sesión para ver tus reservas'
+        },
         { status: 401 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Error al obtener reservas' },
+      {
+        success: false,
+        error: 'Error al obtener reservas'
+      },
       { status: 500 }
     );
   }

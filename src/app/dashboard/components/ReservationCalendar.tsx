@@ -15,8 +15,15 @@ import {
 import { useReservations } from "./hooks/useReservations";
 import { Reservation } from "../../../types/reservations";
 
-// Funciones para manejar fechas sin problemas de timezone
+// Funciones para manejar fechas sin problemas de timezone - CORREGIDAS
 const createDateWithoutTimezone = (dateString: string): Date => {
+  // Manejar diferentes formatos de fecha
+  if (dateString.includes("T")) {
+    // Si ya tiene formato ISO, extraer solo la parte de la fecha
+    const datePart = dateString.split("T")[0];
+    return new Date(datePart + "T00:00:00");
+  }
+  // Si es solo una fecha YYYY-MM-DD
   return new Date(dateString + "T00:00:00");
 };
 
@@ -26,12 +33,50 @@ const formatDateShort = (dateString: string): string => {
 };
 
 const isSameDate = (dateString: string, compareDate: Date): boolean => {
-  const date = createDateWithoutTimezone(dateString);
-  return (
-    date.getDate() === compareDate.getDate() &&
-    date.getMonth() === compareDate.getMonth() &&
-    date.getFullYear() === compareDate.getFullYear()
-  );
+  try {
+    const date = createDateWithoutTimezone(dateString);
+    return (
+      date.getDate() === compareDate.getDate() &&
+      date.getMonth() === compareDate.getMonth() &&
+      date.getFullYear() === compareDate.getFullYear()
+    );
+  } catch (error) {
+    console.error("Error comparing dates:", error, { dateString, compareDate });
+    return false;
+  }
+};
+
+// Función para normalizar las reservas y mapear campos
+const normalizeReservation = (reservation: any): Reservation => {
+  return {
+    id: reservation.id,
+    tourId: reservation.tourId || reservation.Tour?.id || "",
+    // Mapear campos que pueden tener nombres diferentes
+    fechaSeleccionada:
+      reservation.fechaSeleccionada || reservation.fecha || reservation.date,
+    fechaCreacion: reservation.fechaCreacion || reservation.createdAt,
+    nombreReservante: reservation.nombreReservante || reservation.nombre,
+    correoReservante:
+      reservation.correoReservante || reservation.correo || reservation.email,
+    telefonoReservante:
+      reservation.telefonoReservante || reservation.telefono || "",
+    adultos: reservation.adultos || 1,
+    niños: reservation.niños || 0,
+    totalPersonas:
+      reservation.totalPersonas || reservation.adultos + reservation.niños || 1,
+    tourNombre:
+      reservation.tourNombre || reservation.Tour?.nombre || "Tour sin nombre",
+    tourUbicacion:
+      reservation.tourUbicacion ||
+      reservation.Tour?.ubicacion ||
+      "Ubicación no especificada",
+    status: reservation.status || reservation.estado || "Pendiente",
+    precioTotal:
+      reservation.precioTotal ||
+      reservation.Tour?.precio * (reservation.totalPersonas || 1),
+    participantes: reservation.participantes || [],
+    contactoEmergencia: reservation.contactoEmergencia || null,
+  };
 };
 
 // Componente para mostrar las reservas de un día específico
@@ -218,7 +263,19 @@ export default function ReservationCalendar() {
   const [showModal, setShowModal] = useState(false);
   const [viewMode, setViewMode] = useState<"month" | "week">("month");
 
-  const { reservations, loading, error, fetchReservations } = useReservations();
+  const {
+    reservations: rawReservations,
+    loading,
+    error,
+    fetchReservations,
+  } = useReservations();
+
+  // Normalizar las reservas para asegurar compatibilidad
+  const reservations = rawReservations.map(normalizeReservation);
+
+  // DEBUG: Agregar logs para verificar los datos
+  console.log("Raw reservations:", rawReservations);
+  console.log("Normalized reservations:", reservations);
 
   // Obtener el primer día del mes
   const firstDayOfMonth = new Date(
@@ -262,9 +319,17 @@ export default function ReservationCalendar() {
       currentDate.getMonth(),
       day
     );
-    return reservations.filter((reservation) => {
-      return isSameDate(reservation.fechaSeleccionada, date);
+    const dayReservations = reservations.filter((reservation) => {
+      const matches = isSameDate(reservation.fechaSeleccionada, date);
+      // DEBUG: Log para verificar comparaciones
+      if (matches) {
+        console.log(`Match found for day ${day}:`, reservation);
+      }
+      return matches;
     });
+
+    console.log(`Reservations for day ${day}:`, dayReservations);
+    return dayReservations;
   };
 
   // Verificar si un día tiene reservas
@@ -293,11 +358,16 @@ export default function ReservationCalendar() {
 
   // Filtrar reservas del mes actual
   const reservationsThisMonth = reservations.filter((r) => {
-    const date = createDateWithoutTimezone(r.fechaSeleccionada);
-    return (
-      date.getMonth() === currentDate.getMonth() &&
-      date.getFullYear() === currentDate.getFullYear()
-    );
+    try {
+      const date = createDateWithoutTimezone(r.fechaSeleccionada);
+      return (
+        date.getMonth() === currentDate.getMonth() &&
+        date.getFullYear() === currentDate.getFullYear()
+      );
+    } catch (error) {
+      console.error("Error filtering reservations for month:", error, r);
+      return false;
+    }
   });
 
   const monthNames = [
@@ -472,11 +542,18 @@ export default function ReservationCalendar() {
                   {
                     [
                       ...new Set(
-                        reservationsThisMonth.map((r) =>
-                          createDateWithoutTimezone(
-                            r.fechaSeleccionada
-                          ).getDate()
-                        )
+                        reservationsThisMonth
+                          .map((r) => {
+                            try {
+                              return createDateWithoutTimezone(
+                                r.fechaSeleccionada
+                              ).getDate();
+                            } catch (error) {
+                              console.error("Error getting date:", error, r);
+                              return null;
+                            }
+                          })
+                          .filter(Boolean)
                       ),
                     ].length
                   }
