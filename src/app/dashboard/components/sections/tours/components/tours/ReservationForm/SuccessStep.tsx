@@ -19,10 +19,45 @@ export default function SuccessStep({
   setShowWhatsApp,
   setCurrentStep,
 }: SuccessStepProps) {
+  // Helper function to parse DD/MM/YYYY format
+  const parseFormattedDate = (dateString: string): Date | null => {
+    if (!dateString) return null;
+
+    const parts = dateString.split("/");
+    if (parts.length !== 3) return null;
+
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JS Date
+    const year = parseInt(parts[2], 10);
+
+    // Validate the parts
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+
+    const date = new Date(year, month, day);
+
+    // Check if the date is valid
+    if (
+      date.getDate() !== day ||
+      date.getMonth() !== month ||
+      date.getFullYear() !== year
+    ) {
+      return null;
+    }
+
+    return date;
+  };
+
   const generateWhatsAppMessage = () => {
-    const fechaFormatted = formData.fecha
-      ? format(new Date(formData.fecha), "PPP", { locale: es })
-      : "Por definir";
+    let fechaFormatted = "Por definir";
+
+    if (formData.fecha) {
+      const parsedDate = parseFormattedDate(formData.fecha);
+      if (parsedDate) {
+        fechaFormatted = format(parsedDate, "PPP", { locale: es });
+      } else {
+        fechaFormatted = formData.fecha; // Fallback to original string
+      }
+    }
 
     let message = `¡Hola! Me interesa hacer una reserva para el tour: *${tour.nombre}*\n\n`;
     message += `📋 *Información del contacto:*\n`;
@@ -68,6 +103,18 @@ export default function SuccessStep({
     window.open(whatsappUrl, "_blank");
   };
 
+  // Format date for display in the summary
+  const getFormattedDateForDisplay = (): string => {
+    if (!formData.fecha) return "Por definir";
+
+    const parsedDate = parseFormattedDate(formData.fecha);
+    if (parsedDate) {
+      return format(parsedDate, "PPP", { locale: es });
+    }
+
+    return formData.fecha; // Fallback to original string
+  };
+
   return (
     <div className="space-y-6 pt-6">
       <div className="text-center">
@@ -103,9 +150,7 @@ export default function SuccessStep({
           </p>
           <p>
             <span className="text-cyan-400">Fecha:</span>{" "}
-            {formData.fecha
-              ? format(new Date(formData.fecha), "PPP", { locale: es })
-              : "Por definir"}
+            {getFormattedDateForDisplay()}
           </p>
           <p>
             <span className="text-cyan-400">Participantes:</span>{" "}

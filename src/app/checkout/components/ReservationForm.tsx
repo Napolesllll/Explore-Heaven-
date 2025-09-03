@@ -264,6 +264,28 @@ export default function ReservationForm({
     window.open(whatsappUrl, "_blank");
   };
 
+  // Generar texto formateado para los participantes
+  const formatParticipants = () => {
+    let participantsText = "";
+
+    if (formData.adultos && formData.adultos.length > 0) {
+      participantsText += "ADULTOS:\n";
+      formData.adultos.forEach((adulto, i) => {
+        participantsText += `${i + 1}. ${adulto.nombre} (${adulto.tipoDocumento}: ${adulto.numeroDocumento})\n`;
+      });
+      participantsText += "\n";
+    }
+
+    if (formData.ninos && formData.ninos.length > 0) {
+      participantsText += "NIÑOS:\n";
+      formData.ninos.forEach((nino, i) => {
+        participantsText += `${i + 1}. ${nino.nombre} (${nino.tipoDocumento}: ${nino.numeroDocumento})\n`;
+      });
+    }
+
+    return participantsText;
+  };
+
   return (
     <motion.div
       initial={{ scale: 0.8, opacity: 0 }}
@@ -331,7 +353,62 @@ export default function ReservationForm({
               className="space-y-5 text-left"
               noValidate
             >
-              <input type="hidden" name="tour" value={tour.nombre} />
+              {/* Campos hidden para EmailJS - nombres que coinciden con el template */}
+              <input type="hidden" name="tour" defaultValue={tour.nombre} />
+              <input
+                type="hidden"
+                name="nombre"
+                defaultValue={formData.nombre}
+              />
+              <input
+                type="hidden"
+                name="correo"
+                defaultValue={formData.correo}
+              />
+              <input
+                type="hidden"
+                name="telefono"
+                defaultValue={formData.telefono}
+              />
+              <input
+                type="hidden"
+                name="fecha"
+                defaultValue={
+                  formData.fecha
+                    ? format(formData.fecha, "PPP", { locale: es })
+                    : "Por definir"
+                }
+              />
+              <input
+                type="hidden"
+                name="cantidad_adultos"
+                defaultValue={formData.cantidadAdultos}
+              />
+              <input
+                type="hidden"
+                name="cantidad_ninos"
+                defaultValue={formData.cantidadNinos}
+              />
+              <input
+                type="hidden"
+                name="total_participantes"
+                defaultValue={formData.cantidadAdultos + formData.cantidadNinos}
+              />
+              <input
+                type="hidden"
+                name="detalles_participantes"
+                defaultValue={formatParticipants()}
+              />
+              <input
+                type="hidden"
+                name="contacto_emergencia_nombre"
+                defaultValue={formData.contactoEmergencia?.nombre || ""}
+              />
+              <input
+                type="hidden"
+                name="contacto_emergencia_telefono"
+                defaultValue={formData.contactoEmergencia?.telefono || ""}
+              />
 
               {renderStepContent()}
 

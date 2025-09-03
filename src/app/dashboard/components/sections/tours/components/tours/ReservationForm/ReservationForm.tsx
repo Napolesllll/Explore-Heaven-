@@ -53,7 +53,9 @@ export default function ReservationForm({
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
-    setFormData((prev) => ({ ...prev, fecha: date.toISOString() }));
+    // Store date in ISO format to avoid parsing issues
+    const isoDate = date.toISOString();
+    setFormData((prev) => ({ ...prev, fecha: isoDate }));
   };
 
   const validateCurrentStep = () => {
@@ -233,6 +235,21 @@ export default function ReservationForm({
     }
   };
 
+  // Helper to format date for EmailJS (as readable string)
+  const getFormattedDateForEmail = (): string => {
+    if (!formData.fecha) return "";
+
+    try {
+      const date = new Date(formData.fecha);
+      if (isNaN(date.getTime())) return "";
+
+      // Format as DD/MM/YYYY for email
+      return `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}/${date.getFullYear()}`;
+    } catch {
+      return "";
+    }
+  };
+
   return (
     <motion.div
       initial={{ scale: 0.8, opacity: 0 }}
@@ -300,7 +317,50 @@ export default function ReservationForm({
               className="space-y-5 text-left"
               noValidate
             >
-              <input type="hidden" name="tour" value={tour.nombre} />
+              {/* Campos ocultos para EmailJS */}
+              <input type="hidden" name="tour" value={tour.nombre || ""} />
+              <input
+                type="hidden"
+                name="nombre"
+                value={formData.nombre || ""}
+              />
+              <input
+                type="hidden"
+                name="correo"
+                value={formData.correo || ""}
+              />
+              <input
+                type="hidden"
+                name="telefono"
+                value={formData.telefono || ""}
+              />
+              <input
+                type="hidden"
+                name="fecha"
+                value={getFormattedDateForEmail()}
+              />
+
+              {/* Campos adicionales */}
+              <input
+                type="hidden"
+                name="cantidadAdultos"
+                value={formData.cantidadAdultos || 0}
+              />
+              <input
+                type="hidden"
+                name="cantidadNinos"
+                value={formData.cantidadNinos || 0}
+              />
+              <input
+                type="hidden"
+                name="contactoEmergencia"
+                value={formData.contactoEmergencia?.nombre || ""}
+              />
+              <input
+                type="hidden"
+                name="telefonoEmergencia"
+                value={formData.contactoEmergencia?.telefono || ""}
+              />
 
               {renderStepContent()}
 

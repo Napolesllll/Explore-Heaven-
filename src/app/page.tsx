@@ -20,10 +20,9 @@ import { features } from "../data/features";
 
 // Textos estáticos en español (reemplazando el sistema i18n)
 const translations = {
-  heroTitle: "Descubre Medellín con Seguridad",
-  heroSubtitle:
-    "Tours seguros y experiencias únicas en la Ciudad de la Eterna Primavera",
-  heroCta: "Explorar Tours",
+  heroTitle: "Tu viaje seguro en Medellín",
+  heroSubtitle: "Comienza con Explore Heaven",
+  heroCta: "Comienza tu Aventura",
   whyMedellin: "¿Por qué Medellín?",
   safeTourismParadise: "El Paraíso del Turismo Seguro",
   recognizedByUnesco: "Reconocido por la UNESCO",
