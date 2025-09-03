@@ -41,11 +41,11 @@ export default function EditProfileForm() {
       });
 
       if (res.ok) {
-        let updatedData: any = {};
+        let updatedData: { user?: { name?: string; email?: string } } = {};
         try {
           // Intentar parsear JSON normalmente
           updatedData = await res.json();
-        } catch (err) {
+        } catch {
           // Si el body está vacío o no es JSON, leer como texto para depuración
           const text = await res.text();
           console.warn("⚠️ Respuesta vacía o no-JSON desde /api/perfil:", text);
@@ -83,7 +83,7 @@ export default function EditProfileForm() {
         try {
           const errorData = await res.json();
           errorMsg = errorData.error || errorMsg;
-        } catch (err) {
+        } catch {
           const text = await res.text();
           console.warn(
             "⚠️ Respuesta de error no JSON desde /api/perfil:",
@@ -99,8 +99,8 @@ export default function EditProfileForm() {
           setError("");
         }, 5000);
       }
-    } catch (err) {
-      console.error("Error updating profile:", err);
+    } catch (error) {
+      console.error("Error updating profile:", error);
       setError("Error de conexión con el servidor");
 
       // Limpiar mensaje de error después de 5 segundos

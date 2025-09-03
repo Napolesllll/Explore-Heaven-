@@ -290,30 +290,33 @@ export const authOptions: NextAuthOptions = {
         async jwt({ token, user, trigger, session }) {
             try {
                 if (user) {
-                    // Asegurar que todas las propiedades requeridas estén presentes
-                    token.id = user.id;
-                    token.role = user.role || "USER";
-                    token.emailVerified = user.emailVerified || new Date();
-                    // Solo asignar image si existe y es string
-                    if (user.image && typeof user.image === 'string') {
-                        token.image = user.image;
-                    }
+                    // Evitar any repetidos mediante un tipo local
+                    type UserLike = {
+                        id?: string;
+                        role?: string;
+                        emailVerified?: Date;
+                        image?: string | null;
+                    };
+                    const u = user as UserLike;
+                    if (u.id) token.id = u.id;
+                    token.role = u.role || "USER";
+                    token.emailVerified = u.emailVerified || new Date();
+                    if (u.image && typeof u.image === 'string') token.image = u.image;
                 }
 
                 // Actualizar token si la sesión cambia (para propagar campos editados)
                 if (trigger === "update" && session?.user) {
-                    // Copiar rol
-                    token.role = (session.user as any).role || token.role;
-                    // Copiar nombre y correo si vienen en la sesión actualizada
-                    if ((session.user as any).name) {
-                        token.name = (session.user as any).name;
-                    }
-                    if ((session.user as any).email) {
-                        token.email = (session.user as any).email;
-                    }
-                    // Copiar imagen si viene
-                    if ((session.user as any).image && typeof (session.user as any).image === 'string') {
-                        token.image = (session.user as any).image;
+                    const sUser = session.user as Partial<{
+                        role?: string;
+                        name?: string;
+                        email?: string;
+                        image?: string;
+                    }> | undefined;
+                    if (sUser) {
+                        token.role = sUser.role || token.role;
+                        if (sUser.name) token.name = sUser.name;
+                        if (sUser.email) token.email = sUser.email;
+                        if (sUser.image && typeof sUser.image === 'string') token.image = sUser.image;
                     }
                 }
 

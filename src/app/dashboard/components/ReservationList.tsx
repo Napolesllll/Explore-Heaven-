@@ -817,8 +817,8 @@ export default function ReservationList() {
               setReservations(transformedFallback);
               return;
             }
-          } catch (fbErr) {
-            console.error("[ReservationList] fallback error:", fbErr);
+          } catch {
+            console.error("[ReservationList] fallback error");
           }
 
           throw new Error("Error al cargar reservas desde admin");
@@ -1095,7 +1095,7 @@ export default function ReservationList() {
         try {
           const json = await response.json().catch(() => null);
           console.log("DELETE response body:", json);
-        } catch (_) {
+        } catch {
           /* noop */
         }
 

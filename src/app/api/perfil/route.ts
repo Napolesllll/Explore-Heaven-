@@ -20,10 +20,10 @@ export const PUT = withPrismaCleanup(async (request: NextRequest) => {
     const rawBody = await request.text();
     console.log('🔎 Raw request body:', rawBody);
 
-    let parsedBody: any = {};
+    let parsedBody: { name?: string; email?: string } = {};
     if (rawBody && rawBody.trim() !== '') {
       try {
-        parsedBody = JSON.parse(rawBody);
+        parsedBody = JSON.parse(rawBody) as { name?: string; email?: string };
       } catch (err) {
         console.error('❌ JSON inválido en el body:', err);
         return NextResponse.json({ error: 'JSON inválido en el body' }, { status: 400 });
