@@ -32,6 +32,18 @@ Object.entries(requiredEnvVars).forEach(([key, value]) => {
     }
 });
 
+// Proveer valores por defecto seguros para desarrollo local si faltan
+if (!process.env.NEXTAUTH_URL) {
+    process.env.NEXTAUTH_URL = "http://localhost:3000";
+    console.warn("NEXTAUTH_URL no está definida. Usando http://localhost:3000 para desarrollo.");
+}
+
+if (!process.env.NEXTAUTH_SECRET) {
+    // Usar un secreto fijo solo en desarrollo para evitar fallos del cliente; en producción debe venir de ENV
+    process.env.NEXTAUTH_SECRET = "dev-secret-change-me";
+    console.warn("NEXTAUTH_SECRET no está definida. Usando secreto por defecto para desarrollo (no usar en producción).");
+}
+
 // Definir el tipo de usuario de sesión extendido
 interface ExtendedSessionUser {
     id: string;
@@ -288,9 +300,21 @@ export const authOptions: NextAuthOptions = {
                     }
                 }
 
-                // Actualizar token si la sesión cambia (para actualizar rol)
+                // Actualizar token si la sesión cambia (para propagar campos editados)
                 if (trigger === "update" && session?.user) {
-                    token.role = session.user.role || token.role;
+                    // Copiar rol
+                    token.role = (session.user as any).role || token.role;
+                    // Copiar nombre y correo si vienen en la sesión actualizada
+                    if ((session.user as any).name) {
+                        token.name = (session.user as any).name;
+                    }
+                    if ((session.user as any).email) {
+                        token.email = (session.user as any).email;
+                    }
+                    // Copiar imagen si viene
+                    if ((session.user as any).image && typeof (session.user as any).image === 'string') {
+                        token.image = (session.user as any).image;
+                    }
                 }
 
                 return token;

@@ -106,6 +106,7 @@ model Reserva {
   tourId             String
   guiaId             Int?
   userId             String
+  stripeSessionId    String?  @unique
   adultos            Int
   niños             Int
   participantes      Json?

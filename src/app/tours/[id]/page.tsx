@@ -291,6 +291,12 @@ export default function TourDetailPage({ params }: TourDetailPageProps) {
     setShowImageModal(true);
   };
 
+  // Seguridad: asegurar que imagenUrl sea una cadena válida antes de pasársela a next/image
+  const mainImageSrc =
+    typeof tour.imagenUrl === "string" && tour.imagenUrl
+      ? tour.imagenUrl
+      : "/tour-placeholder.jpg";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0c0f1d] via-[#151b35] to-[#0c0f1d]">
       <div className="max-w-6xl mx-auto px-4 py-12 text-white relative z-10">
@@ -303,7 +309,7 @@ export default function TourDetailPage({ params }: TourDetailPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
           <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl border border-indigo-500/30 group transition-all duration-500">
             <Image
-              src={tour.imagenUrl}
+              src={mainImageSrc}
               alt={tour.nombre}
               fill
               priority

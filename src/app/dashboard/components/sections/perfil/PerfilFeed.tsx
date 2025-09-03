@@ -5,7 +5,7 @@ import Image from "next/image";
 import EditProfileForm from "./EditProfileForm";
 import ChangePasswordForm from "./ChangePasswordForm";
 import { motion } from "framer-motion";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   FaUserAstronaut,
   FaCrown,
@@ -39,9 +39,13 @@ interface PerfilFeedProps {
 export default function PerfilFeed({ user: propUser }: PerfilFeedProps) {
   const { data: session, status, update } = useSession();
 
-  // Combinamos el usuario de props con el de sesión, asegurándonos de que tengan el tipo correcto
-  const user: ExtendedUser | undefined =
-    propUser || (session?.user as ExtendedUser);
+  // Estado local para el usuario que se actualiza inmediatamente
+  const [currentUser, setCurrentUser] = useState<ExtendedUser | undefined>(
+    propUser || (session?.user as ExtendedUser)
+  );
+
+  // Combina el usuario de props con el de sesión
+  const user: ExtendedUser | undefined = currentUser;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,26 +55,46 @@ export default function PerfilFeed({ user: propUser }: PerfilFeedProps) {
     error: "",
   });
 
-  // Función para subir imagen a Cloudinary
-  const uploadToCloudinary = async (file: File): Promise<string> => {
+  // Efecto para sincronizar cambios de sesión con el estado local
+  useEffect(() => {
+    if (session?.user) {
+      setCurrentUser(session.user as ExtendedUser);
+    }
+  }, [session]);
+
+  // Escuchar eventos de actualización de perfil
+  useEffect(() => {
+    const handleProfileUpdate = (event: Event) => {
+      const custom = event as CustomEvent<{ user?: ExtendedUser }>;
+      if (custom?.detail?.user) {
+        setCurrentUser(custom.detail.user);
+      }
+    };
+
+    window.addEventListener("profileUpdated", handleProfileUpdate);
+
+    return () => {
+      window.removeEventListener("profileUpdated", handleProfileUpdate);
+    };
+  }, []);
+
+  // Función para subir imagen a través del API
+  const uploadToAPI = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "heavenn");
 
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
+    const response = await fetch("/api/uploads/image", {
+      method: "POST",
+      body: formData,
+    });
 
     if (!response.ok) {
-      throw new Error("Error al subir imagen a Cloudinary");
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Error al subir imagen");
     }
 
     const data = await response.json();
-    return data.secure_url;
+    return data.url;
   };
 
   // Función para actualizar foto de perfil
@@ -84,7 +108,8 @@ export default function PerfilFeed({ user: propUser }: PerfilFeedProps) {
     });
 
     if (!response.ok) {
-      throw new Error("Error al actualizar foto de perfil");
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Error al actualizar foto de perfil");
     }
 
     return response.json();
@@ -124,21 +149,41 @@ export default function PerfilFeed({ user: propUser }: PerfilFeedProps) {
     });
 
     try {
-      // Subir a Cloudinary
-      const imageUrl = await uploadToCloudinary(file);
+      console.log("Iniciando upload de imagen...");
+
+      // Subir a través del API
+      const imageUrl = await uploadToAPI(file);
+      console.log("Imagen subida, URL:", imageUrl);
 
       // Actualizar en base de datos
       await updateProfilePhoto(imageUrl);
+      console.log("Foto de perfil actualizada en BD");
 
-      // Actualizar sesión con la nueva imagen
-      if (update) {
-        await update({
-          user: {
-            ...user,
-            image: imageUrl,
-          },
-        });
-      }
+      // SINCRONIZACIÓN AUTOMÁTICA: Actualizar sesión inmediatamente
+      const updatedSessionData = {
+        ...session,
+        user: {
+          ...session?.user,
+          image: imageUrl,
+        },
+      };
+
+      // Actualizar el estado local inmediatamente para feedback visual instantáneo
+      setCurrentUser((prev) => ({
+        ...prev,
+        image: imageUrl,
+      }));
+
+      // Actualizar la sesión
+      const updatedSession = await update(updatedSessionData);
+      console.log("Sesión actualizada:", updatedSession);
+
+      // Disparar evento para notificar otros componentes
+      window.dispatchEvent(
+        new CustomEvent("profilePhotoUpdated", {
+          detail: { imageUrl },
+        })
+      );
 
       setUploadState({
         isUploading: false,
@@ -150,12 +195,17 @@ export default function PerfilFeed({ user: propUser }: PerfilFeedProps) {
       setTimeout(() => {
         setUploadState((prev) => ({ ...prev, success: false }));
       }, 3000);
+
+      // No recargamos la página: confiamos en update() y en el evento `profilePhotoUpdated`.
     } catch (error) {
       console.error("Error al cambiar foto de perfil:", error);
       setUploadState({
         isUploading: false,
         success: false,
-        error: "Error al cambiar la foto de perfil",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Error al cambiar la foto de perfil",
       });
 
       // Limpiar mensaje de error después de 5 segundos
@@ -171,7 +221,9 @@ export default function PerfilFeed({ user: propUser }: PerfilFeedProps) {
   };
 
   const triggerFileInput = () => {
-    fileInputRef.current?.click();
+    if (!uploadState.isUploading) {
+      fileInputRef.current?.click();
+    }
   };
 
   // Función helper para obtener el rol del usuario
@@ -320,6 +372,7 @@ export default function PerfilFeed({ user: propUser }: PerfilFeedProps) {
                     ease: "easeInOut",
                   }}
                   onClick={triggerFileInput}
+                  key={user.image} // Forzar re-render cuando cambie la imagen
                 >
                   <Image
                     src={user.image || "/default-avatar.png"}
@@ -328,6 +381,7 @@ export default function PerfilFeed({ user: propUser }: PerfilFeedProps) {
                     height={128}
                     className="w-full h-full object-cover transition-all duration-300 group-hover:brightness-75"
                     priority
+                    unoptimized // Evita caché de imagen para mostrar cambios inmediatos
                   />
 
                   {/* Overlay de cambio de foto */}

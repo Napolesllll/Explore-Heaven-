@@ -1079,27 +1079,49 @@ export default function ReservationList() {
   const confirmDelete = async () => {
     if (!deleteModal.reservation) return;
 
+    // Capturar datos antes de operaciones asíncronas para evitar condiciones de carrera
+    const targetId = deleteModal.reservation.id;
+    const targetName =
+      deleteModal.reservation.nombreReservante || "(sin nombre)";
+
     try {
-      const response = await fetch(
-        `/api/admin/reservas/${deleteModal.reservation.id}`,
-        {
-          method: "DELETE",
+      const response = await fetch(`/api/admin/reservas/${targetId}`, {
+        method: "DELETE",
+      });
+
+      // Si la respuesta es OK, asumimos que la API eliminó la reserva
+      if (response.ok) {
+        // Intentar leer body JSON opcionalmente para registro
+        try {
+          const json = await response.json().catch(() => null);
+          console.log("DELETE response body:", json);
+        } catch (_) {
+          /* noop */
         }
-      );
 
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // Eliminar de la lista local
-        setReservations((prev) =>
-          prev.filter((res) => res.id !== deleteModal.reservation!.id)
-        );
+        setReservations((prev) => prev.filter((res) => res.id !== targetId));
         setDeleteModal({ isOpen: false, reservation: null });
-        console.log("Reserva eliminada correctamente");
-      } else {
-        console.error("Error al eliminar la reserva:", data.error);
-        alert(`Error: ${data.error}`);
+        console.log(
+          `Reserva ${targetId} (${targetName}) eliminada correctamente`
+        );
+        return;
       }
+
+      // Si no es OK, intentar extraer mensaje de error
+      let errorMsg = "Error al eliminar la reserva";
+      try {
+        const errBody = await response.json();
+        errorMsg =
+          errBody?.error ||
+          errBody?.message ||
+          JSON.stringify(errBody) ||
+          errorMsg;
+      } catch (parseErr) {
+        console.warn("No se pudo parsear body de error DELETE:", parseErr);
+      }
+
+      console.error("Error al eliminar la reserva:", errorMsg);
+      alert(`Error: ${errorMsg}`);
     } catch (error) {
       console.error("Error deleting reservation:", error);
       alert("Error de conexión al eliminar la reserva");

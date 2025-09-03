@@ -23,13 +23,26 @@ export function ImageModal({
           <FaTimes className="text-3xl" />
         </button>
         <div className="relative w-full h-[80vh] rounded-2xl overflow-hidden">
-          <Image
-            src={imageUrl}
-            alt="Imagen ampliada de la galería del tour"
-            fill
-            className="object-contain"
-            sizes="90vw"
-          />
+          {
+            // Proteger contra src no válido
+            typeof imageUrl === "string" && imageUrl ? (
+              <Image
+                src={imageUrl}
+                alt="Imagen ampliada de la galería del tour"
+                fill
+                className="object-contain"
+                sizes="90vw"
+              />
+            ) : (
+              <Image
+                src="/tour-placeholder.jpg"
+                alt="Imagen no disponible"
+                fill
+                className="object-contain"
+                sizes="90vw"
+              />
+            )
+          }
         </div>
       </div>
     </div>

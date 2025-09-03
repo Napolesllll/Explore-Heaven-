@@ -72,7 +72,7 @@ export function ReviewSection({
               )}
 
               <div className="flex items-center mb-3">
-                {review.user.image ? (
+                {typeof review.user.image === "string" && review.user.image ? (
                   <Image
                     src={review.user.image}
                     alt={`Avatar de ${review.user.name}`}

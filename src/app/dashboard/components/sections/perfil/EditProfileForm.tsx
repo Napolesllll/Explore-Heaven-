@@ -29,23 +29,48 @@ export default function EditProfileForm() {
     setError("");
 
     try {
+      const payload = { name, email };
+      console.log("📤 Enviando payload a /api/perfil:", payload);
+
       const res = await fetch("/api/perfil", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email }),
+        body: JSON.stringify(payload),
+        // Asegurar que las cookies de sesión se envían en entornos que lo requieran
+        credentials: "same-origin",
       });
 
       if (res.ok) {
-        const updatedData = await res.json();
+        let updatedData: any = {};
+        try {
+          // Intentar parsear JSON normalmente
+          updatedData = await res.json();
+        } catch (err) {
+          // Si el body está vacío o no es JSON, leer como texto para depuración
+          const text = await res.text();
+          console.warn("⚠️ Respuesta vacía o no-JSON desde /api/perfil:", text);
+        }
 
-        // Actualizar la sesión con los nuevos datos
-        await update({
+        // SINCRONIZACIÓN AUTOMÁTICA: Actualizar la sesión inmediatamente
+        const updatedSession = await update({
+          ...session,
           user: {
             ...session?.user,
             name: updatedData.user?.name || name,
             email: updatedData.user?.email || email,
           },
         });
+
+        console.log("Sesión actualizada:", updatedSession);
+
+        // Disparar evento personalizado para notificar otros componentes
+        window.dispatchEvent(
+          new CustomEvent("profileUpdated", {
+            detail: { user: updatedData.user },
+          })
+        );
+
+        // No forzar reload: confiamos en update() y en el evento `profileUpdated`
 
         setSuccess(true);
 
@@ -54,8 +79,20 @@ export default function EditProfileForm() {
           setSuccess(false);
         }, 3000);
       } else {
-        const errorData = await res.json();
-        setError(errorData.message || "Error al actualizar perfil");
+        let errorMsg = "Error al actualizar perfil";
+        try {
+          const errorData = await res.json();
+          errorMsg = errorData.error || errorMsg;
+        } catch (err) {
+          const text = await res.text();
+          console.warn(
+            "⚠️ Respuesta de error no JSON desde /api/perfil:",
+            text
+          );
+          if (text) errorMsg = text;
+        }
+
+        setError(errorMsg);
 
         // Limpiar mensaje de error después de 5 segundos
         setTimeout(() => {

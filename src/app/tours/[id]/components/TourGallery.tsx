@@ -29,25 +29,29 @@ export function TourGallery({ tour, onImageClick }: TourGalleryProps) {
       </h3>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {galleryImages.map((img, idx) => (
-          <div
-            key={idx}
-            className="relative h-40 rounded-xl overflow-hidden border border-indigo-500/30 transition-transform hover:scale-105 cursor-pointer"
-            onClick={() => onImageClick(img)}
-            role="button"
-            tabIndex={0}
-            aria-label={`Ver imagen ${idx + 1} en tamaño completo`}
-          >
-            <Image
-              src={img}
-              alt={`Imagen ${idx + 1} de ${tour.nombre}`}
-              fill
-              sizes="(max-width: 768px) 50vw, 25vw"
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          </div>
-        ))}
+        {galleryImages.map((img, idx) => {
+          const safeSrc =
+            typeof img === "string" && img ? img : "/tour-placeholder.jpg";
+          return (
+            <div
+              key={idx}
+              className="relative h-40 rounded-xl overflow-hidden border border-indigo-500/30 transition-transform hover:scale-105 cursor-pointer"
+              onClick={() => onImageClick(img)}
+              role="button"
+              tabIndex={0}
+              aria-label={`Ver imagen ${idx + 1} en tamaño completo`}
+            >
+              <Image
+                src={safeSrc}
+                alt={`Imagen ${idx + 1} de ${tour.nombre}`}
+                fill
+                sizes="(max-width: 768px) 50vw, 25vw"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
