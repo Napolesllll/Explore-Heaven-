@@ -351,20 +351,18 @@ export const authOptions: NextAuthOptions = {
         },
 
         async redirect({ url, baseUrl }) {
-            // Prevenir bucles de redirección - solución clave
-            if (url.includes('/auth/signin?callbackUrl=')) {
-                return `${baseUrl}/dashboard/admin`;
-            }
-
-            // Para login de admin, redirigir directamente al dashboard
-            if (url.includes('callbackUrl') && url.includes('admin')) {
-                return `${baseUrl}/dashboard/admin`;
-            }
-
+            // Si es una ruta relativa, conservarla
             if (url.startsWith("/")) return `${baseUrl}${url}`;
+
+            // Si se recibe un callbackUrl absoluto y pertenece a nuestro dominio, permitirlo
             try {
-                if (new URL(url).origin === baseUrl) return url;
-            } catch { }
+                const parsed = new URL(url);
+                if (parsed.origin === baseUrl) return url;
+            } catch (e) {
+                // Si no es una URL válida, caerá al baseUrl
+            }
+
+            // Valor por defecto: volver al baseUrl
             return baseUrl;
         },
     },
