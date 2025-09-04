@@ -18,8 +18,10 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 export async function setDatabaseUser(userId: string): Promise<void> {
     try {
         console.log('🔧 Configurando usuario en BD:', userId);
+        // Usar executeRawUnsafe con sintaxis más segura
         await prisma.$executeRawUnsafe(
-            `SELECT set_current_user_id('${userId}');`
+            `SELECT set_current_user_id($1);`,
+            userId
         );
     } catch (error) {
         console.error('💥 Error configurando usuario en BD:', error);
@@ -43,7 +45,7 @@ export async function clearDatabaseUser(): Promise<void> {
  * Obtiene un cliente Prisma configurado con el usuario autenticado
  */
 export async function getAuthenticatedPrisma() {
-    console.log('🔐 getAuthenticatedPrisma() llamado');
+    console.log('🔍 getAuthenticatedPrisma() llamado');
 
     // Importar authOptions dinámicamente para evitar dependencia circular
     // (auth.config.ts importa prisma-rls, así que la importación estática causa
