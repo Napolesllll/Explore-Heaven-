@@ -176,7 +176,7 @@ export default function AdminPanel() {
   };
 
   const handleLogout = () => {
-    signOut({ callbackUrl: "/dashboard/admin" });
+    signOut({ callbackUrl: "" });
   };
 
   const renderContent = () => {
