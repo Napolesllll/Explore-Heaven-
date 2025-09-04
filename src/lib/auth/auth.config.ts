@@ -358,12 +358,14 @@ export const authOptions: NextAuthOptions = {
             try {
                 const parsed = new URL(url);
                 if (parsed.origin === baseUrl) return url;
-            } catch (e) {
-                // Si no es una URL válida, caerá al baseUrl
+            } catch {
+
             }
+            // Si no es una URL válida, caerá al baseUrl
+            return baseUrl;
+
 
             // Valor por defecto: volver al baseUrl
-            return baseUrl;
         },
     },
     events: {
