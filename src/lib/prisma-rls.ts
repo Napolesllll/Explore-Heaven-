@@ -48,8 +48,6 @@ export async function getAuthenticatedPrisma() {
     console.log('🔍 getAuthenticatedPrisma() llamado');
 
     // Importar authOptions dinámicamente para evitar dependencia circular
-    // (auth.config.ts importa prisma-rls, así que la importación estática causa
-    // que `prisma` sea accedido antes de su inicialización).
     const { authOptions } = await import('../lib/auth/auth.config');
     const session = await getServerSession(authOptions);
 
@@ -60,14 +58,29 @@ export async function getAuthenticatedPrisma() {
 
     console.log('✅ Sesión encontrada:', session.user.email, session.user.role);
 
-    const user = await prisma.user.findUnique({
-        where: { email: session.user.email },
-        select: { id: true, email: true, role: true, name: true }
-    });
+    let user;
 
-    if (!user) {
-        console.log('❌ Usuario no encontrado en BD');
-        throw new Error('Usuario no encontrado');
+    // Verificar si es un usuario administrador simulado
+    if (session.user.id === "admin-system" && session.user.role === "ADMIN") {
+        // Crear objeto de usuario simulado para el administrador
+        user = {
+            id: "admin-system",
+            email: session.user.email,
+            role: "ADMIN" as const,
+            name: session.user.name || "Administrator"
+        };
+        console.log('🔑 Usuario administrador simulado configurado');
+    } else {
+        // Buscar usuario regular en la base de datos
+        user = await prisma.user.findUnique({
+            where: { email: session.user.email },
+            select: { id: true, email: true, role: true, name: true }
+        });
+
+        if (!user) {
+            console.log('❌ Usuario no encontrado en BD');
+            throw new Error('Usuario no encontrado');
+        }
     }
 
     const userIdForRLS = user.role === 'ADMIN' ? 'ADMIN_USER' : user.id;
