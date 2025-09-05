@@ -217,7 +217,7 @@ export default function CustomCalendar({
               title={
                 !isAvailable
                   ? reason || "No disponible"
-                  : `${spotsLeft} cupos disponibles`
+                  : `${spotsLeft} reservas en esta fecha disponibles`
               }
               className={`p-2 text-sm rounded-lg transition-all duration-200 relative min-h-[40px] flex flex-col items-center justify-center
                 ${

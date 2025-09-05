@@ -2,7 +2,10 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import Providers from "./providers";
 import type { Metadata } from "next";
+
+// Vercel
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Se evita la carga de Google Fonts en tiempo de compilación para prevenir
 // errores de red durante el build en entornos sin conexión.
@@ -38,6 +41,7 @@ export default function RootLayout({
           <Toaster position="top-right" reverseOrder={false} />
           {children}
           <Analytics />
+          <SpeedInsights />
         </Providers>
       </body>
     </html>
