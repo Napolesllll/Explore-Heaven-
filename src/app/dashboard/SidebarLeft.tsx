@@ -28,7 +28,7 @@ interface SidebarLeftProps {
 
 // Componente de partícula optimizada con Intersection Observer
 const OptimizedParticle = memo(
-  ({ index, isVisible }: { index: number; isVisible: boolean }) => {
+  ({ isVisible }: { index: number; isVisible: boolean }) => {
     const particleConfig = useMemo(
       () => ({
         top: `${Math.random() * 100}%`,

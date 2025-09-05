@@ -56,26 +56,7 @@ SectionLoader.displayName = "SectionLoader";
 
 // Error boundary optimizado para secciones
 const SectionErrorBoundary = memo(
-  ({
-    children,
-    fallback,
-  }: {
-    children: React.ReactNode;
-    fallback?: React.ReactNode;
-  }) => {
-    const defaultFallback = (
-      <div className="flex items-center justify-center h-64 bg-gradient-to-br from-red-900/20 via-black/50 to-gray-800/50 rounded-lg border border-red-500/30">
-        <div className="text-center space-y-2">
-          <div className="text-red-400 text-lg font-semibold">
-            Error al cargar sección
-          </div>
-          <div className="text-gray-400 text-sm">
-            Intenta refrescar la página
-          </div>
-        </div>
-      </div>
-    );
-
+  ({ children }: { children: React.ReactNode; fallback?: React.ReactNode }) => {
     return <Suspense fallback={<SectionLoader />}>{children}</Suspense>;
   }
 );

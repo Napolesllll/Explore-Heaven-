@@ -261,7 +261,7 @@ OptimizedImage.displayName = "OptimizedImage";
 export default OptimizedImage;
 
 // Hook auxiliar para lazy loading de imágenes múltiples
-export const useImagePreloader = (urls: string[]) => {
+export const useImagePreloader = () => {
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
 

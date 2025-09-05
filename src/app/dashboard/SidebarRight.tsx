@@ -41,7 +41,8 @@ const getDeviceCapabilities = (): DeviceCapabilities => {
     "(prefers-reduced-motion: reduce)"
   ).matches;
   const lowMemory =
-    (navigator as any).deviceMemory && (navigator as any).deviceMemory < 4;
+    (navigator as { deviceMemory?: number }).deviceMemory !== undefined &&
+    (navigator as { deviceMemory?: number }).deviceMemory! < 4;
 
   return {
     reduceAnimations: prefersReducedMotion || isMobile,
@@ -148,13 +149,13 @@ const OptimizedModal = memo(
     onClose: () => void;
     enableAnimations?: boolean;
   }) => {
-    if (!guide) return null;
-
     const getFotoUrl = useCallback(
       (foto?: string) =>
         foto && foto.startsWith("http") ? foto : "/images/default-avatar.png",
       []
     );
+
+    if (!guide) return null;
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
