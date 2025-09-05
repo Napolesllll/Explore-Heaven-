@@ -43,3 +43,5 @@ export async function GET() {
         );
     }
 }
+
+// 4. CREAR: src/app/debug-full/page.tsx
