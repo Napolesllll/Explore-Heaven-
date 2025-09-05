@@ -1,30 +1,66 @@
-import { useState, useEffect } from "react";
+// src/hooks/useTour.ts
+import { useEffect, useRef, useState } from "react";
 import { Tour } from "../types/tours";
 
-export function useTour(id: string) {
+export function useTour(id?: string | null) {
     const [tour, setTour] = useState<Tour | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(false);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+    const acRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
-        const fetchTour = async () => {
+        // cancelar petición anterior
+        acRef.current?.abort();
+        acRef.current = null;
+
+        // No hacemos nada si no hay id válido
+        if (!id) {
+            setTour(null);
+            setError(null);
+            setLoading(false);
+            return;
+        }
+
+        const ac = new AbortController();
+        acRef.current = ac;
+
+        setLoading(true);
+        setError(null);
+
+        (async () => {
             try {
-                const response = await fetch(`/api/tours/${id}`);
-                if (!response.ok) throw new Error("Tour not found");
+                const res = await fetch(`/api/tours/${encodeURIComponent(id)}`, {
+                    signal: ac.signal,
+                });
 
-                const data = await response.json();
-                if (!data) throw new Error("Invalid tour data");
+                if (!res.ok) {
+                    const txt = await res.text().catch(() => "");
+                    throw new Error(txt || `HTTP ${res.status} ${res.statusText}`);
+                }
 
-                setTour(data);
-            } catch (error) {
-                console.error("Error fetching tour:", error);
-                setError(true);
+                const data = (await res.json()) as unknown;
+                // opcional: validar la forma del dato aquí
+
+                if (!ac.signal.aborted) {
+                    setTour(data as Tour);
+                }
+            } catch (err: unknown) {
+                if ((err as { name?: string }).name === "AbortError") {
+                    // petición cancelada, no tratar como error
+                    return;
+                }
+                console.error("useTour error:", err);
+                setError(err instanceof Error ? err.message : String(err));
+                setTour(null);
             } finally {
-                setLoading(false);
+                if (!ac.signal.aborted) setLoading(false);
             }
-        };
+        })();
 
-        fetchTour();
+        return () => {
+            ac.abort();
+            acRef.current = null;
+        };
     }, [id]);
 
     return { tour, loading, error };

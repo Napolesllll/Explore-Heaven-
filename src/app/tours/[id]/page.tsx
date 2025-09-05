@@ -1,8 +1,8 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
@@ -20,7 +20,6 @@ import { useTour } from "./hooks/useTour";
 import { parseGallery } from "./utils/parseGallery";
 import { Review, AvailableDate } from "./types/tours";
 import { FaMapMarkerAlt, FaMoneyBillWave, FaSpinner } from "react-icons/fa";
-import React from "react";
 
 // Tipo correcto para Next.js 15 - params es ahora una Promise
 interface TourDetailPageProps {
@@ -43,13 +42,16 @@ export default function TourDetailPage({ params }: TourDetailPageProps) {
   useEffect(() => {
     const resolveParams = async () => {
       const resolvedParams = await params;
+      // opcional: log para debugging
+      // console.log("params resolved:", resolvedParams);
       setTourId(resolvedParams.id);
     };
 
     resolveParams();
   }, [params]);
 
-  const { tour, loading, error } = useTour(tourId || "");
+  // Usar el hook mejorado; pasar tourId tal cual (no ""), el hook no hará fetch hasta tener un id válido
+  const { tour, loading, error } = useTour(tourId);
   const { data: session, status } = useSession();
   const [showReserveModal, setShowReserveModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -75,6 +77,8 @@ export default function TourDetailPage({ params }: TourDetailPageProps) {
               data.reduce((acc, review) => acc + review.rating, 0) /
               data.length;
             setAverageRating(parseFloat(avg.toFixed(1)));
+          } else {
+            setAverageRating(0);
           }
         }
       } catch (err: unknown) {
@@ -86,14 +90,14 @@ export default function TourDetailPage({ params }: TourDetailPageProps) {
   }, [tour]);
 
   const handleReviewSubmit = (newReview: Review) => {
-    setReviews((prev) => [newReview, ...prev]);
-    const newTotalRating = [...reviews, newReview].reduce(
-      (acc, review) => acc + review.rating,
-      0
-    );
-    setAverageRating(
-      parseFloat((newTotalRating / (reviews.length + 1)).toFixed(1))
-    );
+    setReviews((prev) => {
+      const newArr = [newReview, ...prev];
+      const avg =
+        newArr.reduce((acc, r) => acc + r.rating, 0) / (newArr.length || 1);
+      setAverageRating(parseFloat(avg.toFixed(1)));
+      return newArr;
+    });
+
     toast.success("¡Reseña enviada con éxito!");
   };
 
@@ -109,16 +113,17 @@ export default function TourDetailPage({ params }: TourDetailPageProps) {
       });
       if (!response.ok) throw new Error("Error al eliminar reseña");
 
-      setReviews((prev) => prev.filter((review) => review.id !== reviewId));
-      toast.success("Reseña eliminada correctamente");
+      setReviews((prev) => {
+        const remaining = prev.filter((r) => r.id !== reviewId);
+        const newAvg =
+          remaining.length > 0
+            ? remaining.reduce((acc, r) => acc + r.rating, 0) / remaining.length
+            : 0;
+        setAverageRating(parseFloat(newAvg.toFixed(1)));
+        return remaining;
+      });
 
-      const remainingReviews = reviews.filter((r) => r.id !== reviewId);
-      const newAvg =
-        remainingReviews.length > 0
-          ? remainingReviews.reduce((acc, r) => acc + r.rating, 0) /
-            remainingReviews.length
-          : 0;
-      setAverageRating(parseFloat(newAvg.toFixed(1)));
+      toast.success("Reseña eliminada correctamente");
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error("Error desconocido");
       console.error("Error eliminando reseña:", error);
@@ -284,7 +289,24 @@ export default function TourDetailPage({ params }: TourDetailPageProps) {
     );
   }
 
-  if (error || !tour) return notFound();
+  // En componentes cliente NO usar notFound() directamente — mostrar un fallback UI
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0c0f1d] via-[#151b35] to-[#0c0f1d]">
+        <div className="text-center p-6">
+          <h1 className="text-2xl text-white mb-2">
+            No se pudo cargar el tour
+          </h1>
+          <p className="text-sm text-gray-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!tour) {
+    // Si no hay tour (pero tampoco error), mostramos null — normalmente esto no ocurrirá
+    return null;
+  }
 
   const openImageModal = (img: string) => {
     setSelectedImage(img);

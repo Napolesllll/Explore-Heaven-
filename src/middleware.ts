@@ -7,15 +7,15 @@ export default withAuth(
     const token = req.nextauth.token;
 
     // 🔍 DEBUG: Log detallado para producción
-    console.log('🛡️ [MIDDLEWARE]', {
-      pathname,
-      hasToken: !!token,
-      userId: token?.id,
-      userEmail: token?.email,
-      userRole: token?.role,
-      isAdmin: token?.role === "ADMIN",
-      isAdminSystem: token?.id === "admin-system"
-    });
+    /* console.log('🛡️ [MIDDLEWARE]', {
+       pathname,
+       hasToken: !!token,
+       userId: token?.id,
+       userEmail: token?.email,
+       userRole: token?.role,
+       isAdmin: token?.role === "ADMIN",
+       isAdminSystem: token?.id === "admin-system"
+     });*/
 
     // Rutas que requieren autenticación de ADMIN
     if (pathname.startsWith("/dashboard/admin") || pathname.startsWith("/admin")) {
