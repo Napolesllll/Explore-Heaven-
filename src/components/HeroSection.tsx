@@ -29,6 +29,52 @@ export default function HeroSection({
     }),
   };
 
+  // Renderiza el texto agrupando por palabras para evitar quiebres dentro de una palabra.
+  // Cada palabra es `inline-block whitespace-nowrap` y los caracteres dentro se animan individualmente.
+  const renderAnimatedText = (text: string, startOffset = 0) => {
+    const words = text.split(" ");
+    const nodes: React.ReactNode[] = [];
+    let offset = startOffset;
+
+    words.forEach((word, wIndex) => {
+      const charNodes = word.split("").map((ch, i) => {
+        const key = `ch-${wIndex}-${i}-${ch}`;
+        const customIndex = offset + i;
+        return (
+          <motion.span
+            key={key}
+            custom={customIndex}
+            variants={characterAnimation}
+            initial="hidden"
+            animate="visible"
+            className="inline-block"
+          >
+            {ch}
+          </motion.span>
+        );
+      });
+
+      // palabra completa (sin quiebres internos)
+      nodes.push(
+        <span
+          key={`word-${wIndex}-${words.length}`}
+          className="inline-block whitespace-nowrap"
+        >
+          {charNodes}
+        </span>
+      );
+
+      // agrega un espacio normal entre palabras (permite quiebre aquí)
+      if (wIndex < words.length - 1) {
+        nodes.push(" ");
+      }
+
+      offset += word.length + 1; // +1 para el espacio
+    });
+
+    return nodes;
+  };
+
   return (
     <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-black">
       {/* Fondo animado */}
@@ -38,17 +84,31 @@ export default function HeroSection({
         animate={{ opacity: 0.7 }}
         transition={{ duration: 1.5 }}
       >
-        {/* Contenedor para la imagen */}
+        {/* Contenedor para la imagen (mobile: /images/portada.jpg, desktop: /images/banner-6.jpg) */}
         <div className="absolute inset-0">
-          <Image
-            /*  src="/images/Banner-03.svg"*/
-            src="/images/banner-6.jpg"
-            alt="Explore Heaven Logo"
-            fill
-            className="object-contain object-center "
-            quality={100}
-            priority
-          />
+          {/* Imagen para dispositivos móviles (visible en <sm) */}
+          <div className="block sm:hidden absolute inset-0">
+            <Image
+              src="/images/portada.jpg"
+              alt="Explore Heaven Mobile"
+              fill
+              className="object-cover object-center"
+              quality={100}
+              priority
+            />
+          </div>
+
+          {/* Imagen para pantallas >= sm */}
+          <div className="hidden sm:block absolute inset-0">
+            <Image
+              src="/images/banner-6.jpg"
+              alt="Explore Heaven Logo"
+              fill
+              className="object-cover object-center"
+              quality={100}
+              priority
+            />
+          </div>
         </div>
 
         {/* Gradiente */}
@@ -63,37 +123,15 @@ export default function HeroSection({
 
       {/* Contenido principal */}
       <div className="z-10 text-center space-y-8 px-4">
-        <h1 className="text-5xl font-bold text-yellow-400 drop-shadow-2xl max-w-3xl mx-auto">
+        <h1 className="text-5xl sm:text-6xl font-bold text-yellow-400 drop-shadow-2xl max-w-3xl mx-auto leading-tight">
           {/* Título principal */}
           <div className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 to-yellow-500 font-sans mb-4">
-            {title.split("").map((char, index) => (
-              <motion.span
-                key={`title-${index}`}
-                custom={index}
-                variants={characterAnimation}
-                initial="hidden"
-                animate="visible"
-                className="inline-block"
-              >
-                {char === " " ? "\u00A0" : char}
-              </motion.span>
-            ))}
+            {renderAnimatedText(title, 0)}
           </div>
 
           {/* Subtítulo */}
-          <div className="text-3xl text-yellow-200 font-sans">
-            {subtitle.split("").map((char, index) => (
-              <motion.span
-                key={`subtitle-${index}`}
-                custom={index + title.length}
-                variants={characterAnimation}
-                initial="hidden"
-                animate="visible"
-                className="inline-block"
-              >
-                {char === " " ? "\u00A0" : char}
-              </motion.span>
-            ))}
+          <div className="text-3xl sm:text-4xl text-yellow-200 font-sans">
+            {renderAnimatedText(subtitle, title.length)}
           </div>
         </h1>
 
