@@ -20,7 +20,6 @@ export default withAuth(
     // Rutas que requieren autenticación de ADMIN
     if (pathname.startsWith("/dashboard/admin") || pathname.startsWith("/admin")) {
       if (!token) {
-        console.log('🛡️ [MIDDLEWARE] No token, redirecting to admin login');
         return NextResponse.redirect(new URL("/admin/login", req.url));
       }
 
@@ -36,13 +35,11 @@ export default withAuth(
         return NextResponse.redirect(new URL("/admin/login", req.url));
       }
 
-      console.log('🛡️ [MIDDLEWARE] ✅ Admin access granted');
     }
 
     // Rutas que requieren rol GUIA
     if (pathname.startsWith("/dashboard/guia") || pathname.startsWith("/guia")) {
       if (!token || token.role !== "GUIA") {
-        console.log('🛡️ [MIDDLEWARE] Invalid guide access');
         return NextResponse.redirect(new URL("/auth/signin", req.url));
       }
     }
@@ -50,7 +47,6 @@ export default withAuth(
     // Rutas que requieren MODERATOR o ADMIN
     if (pathname.startsWith("/dashboard/moderator") || pathname.startsWith("/moderator")) {
       if (!token || (token.role !== "MODERATOR" && token.role !== "ADMIN" && token.id !== "admin-system")) {
-        console.log('🛡️ [MIDDLEWARE] Invalid moderator access');
         return NextResponse.redirect(new URL("/auth/signin", req.url));
       }
     }
