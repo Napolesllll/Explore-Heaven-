@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { notFound } from "next/navigation";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
@@ -42,8 +41,6 @@ export default function TourDetailPage({ params }: TourDetailPageProps) {
   useEffect(() => {
     const resolveParams = async () => {
       const resolvedParams = await params;
-      // opcional: log para debugging
-      // console.log("params resolved:", resolvedParams);
       setTourId(resolvedParams.id);
     };
 
@@ -374,7 +371,13 @@ export default function TourDetailPage({ params }: TourDetailPageProps) {
               <button
                 onClick={handleReserveClick}
                 disabled={reservationLoading || status === "loading"}
-                className={`w-full ${reservationLoading || status === "loading" ? "bg-gray-600 cursor-not-allowed" : session ? "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700" : "bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700"} text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-indigo-600/30 flex items-center justify-center gap-3`}
+                className={`w-full ${
+                  reservationLoading || status === "loading"
+                    ? "bg-gray-600 cursor-not-allowed"
+                    : session
+                      ? "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                      : "bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700"
+                } text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-indigo-600/30 flex items-center justify-center gap-3`}
                 aria-label="Reservar este tour"
               >
                 {reservationLoading || status === "loading" ? (
