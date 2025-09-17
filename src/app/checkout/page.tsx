@@ -1,9 +1,15 @@
-// 3. OPTIMIZACIONES PARA CheckoutPage.tsx
 "use client";
 
 import Head from "next/head";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, useRef, Suspense, useCallback, useMemo } from "react";
+import {
+  useEffect,
+  useState,
+  useRef,
+  Suspense,
+  useCallback,
+  useMemo,
+} from "react";
 import { tours } from "../../data/toursData";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -74,7 +80,10 @@ function CheckoutContent() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
+
+  // Corregir el tipado del formRef - inicializarlo como HTMLFormElement
+  const formRef = useRef<HTMLFormElement>(null as unknown as HTMLFormElement);
+
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [formData, setFormData] = useState<ReservationFormData>({
     nombre: "",
@@ -97,7 +106,7 @@ function CheckoutContent() {
     if (!tourId) return null;
     const found = tours.find((t) => t.id === tourId);
     if (!found) return null;
-    
+
     return {
       id: found.id,
       nombre: found.nombre,
@@ -137,7 +146,7 @@ function CheckoutContent() {
     const n = formData.nombre.trim();
     const c = formData.correo.trim();
     const p = formData.telefono.trim();
-    
+
     if (!/^[a-zA-ZÀ-ÿ\s]{2,}$/.test(n)) {
       toast.error("Nombre inválido");
       return false;
@@ -153,39 +162,53 @@ function CheckoutContent() {
     return true;
   }, [formData]);
 
-  // Envío de email optimizado
-  const sendEmail = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!validateForm() || isSubmitting || hasSubmitted || !formRef.current || !tour) return;
-    
-    setIsSubmitting(true);
-    setHasSubmitted(true);
+  // Envío de email optimizado - corregir el tipado aquí también
+  const sendEmail = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
 
-    try {
-      const success = await sendReservationEmail(formRef);
+      // Verificar que el formRef no sea null antes de continuar
+      if (
+        !formRef.current ||
+        !validateForm() ||
+        isSubmitting ||
+        hasSubmitted ||
+        !tour
+      )
+        return;
 
-      if (success) {
-        const reserva = {
-          tourName: tour.nombre,
-          date: formData.fecha ? formData.fecha.toISOString() : "",
-          amount: tour.precio,
-          reference: Date.now().toString(),
-          email: formData.correo,
-        };
-        localStorage.setItem("last_reservation", JSON.stringify(reserva));
+      setIsSubmitting(true);
+      setHasSubmitted(true);
 
-        toast.success("Información recopilada correctamente");
-        setShowWhatsApp(true);
-      } else {
-        throw new Error("Email sending failed");
+      try {
+        // Crear un RefObject compatible para sendReservationEmail
+        const formRefForEmail = { current: formRef.current };
+        const success = await sendReservationEmail(formRefForEmail);
+
+        if (success) {
+          const reserva = {
+            tourName: tour.nombre,
+            date: formData.fecha ? formData.fecha.toISOString() : "",
+            amount: tour.precio,
+            reference: Date.now().toString(),
+            email: formData.correo,
+          };
+          localStorage.setItem("last_reservation", JSON.stringify(reserva));
+
+          toast.success("Información recopilada correctamente");
+          setShowWhatsApp(true);
+        } else {
+          throw new Error("Email sending failed");
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Error procesando información");
+        setIsSubmitting(false);
+        setHasSubmitted(false);
       }
-    } catch (error) {
-      console.error(error);
-      toast.error("Error procesando información");
-      setIsSubmitting(false);
-      setHasSubmitted(false);
-    }
-  }, [validateForm, isSubmitting, hasSubmitted, tour, formData]);
+    },
+    [validateForm, isSubmitting, hasSubmitted, tour, formData]
+  );
 
   // Handlers memoizados
   const handleModalClose = useCallback(() => setShowModal(false), []);
@@ -198,7 +221,9 @@ function CheckoutContent() {
           <div className="w-16 sm:w-20 h-16 sm:h-20 mx-auto bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
             <Calendar className="text-gray-900 w-8 sm:w-10 h-8 sm:h-10" />
           </div>
-          <p className="mt-4 sm:mt-6 text-gray-400 text-sm sm:text-base">Cargando detalles de tu tour...</p>
+          <p className="mt-4 sm:mt-6 text-gray-400 text-sm sm:text-base">
+            Cargando detalles de tu tour...
+          </p>
         </div>
       </div>
     );
@@ -214,7 +239,7 @@ function CheckoutContent() {
         />
         <meta name="robots" content="noindex,follow" />
       </Head>
-      
+
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black py-8 sm:py-12 px-4 relative overflow-hidden">
         {/* Fondo optimizado para móvil */}
         <div className="absolute inset-0 opacity-60 sm:opacity-100" aria-hidden>
@@ -325,7 +350,9 @@ export default function CheckoutPage() {
             <div className="w-16 sm:w-20 h-16 sm:h-20 mx-auto bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
               <Calendar className="text-gray-900 w-8 sm:w-10 h-8 sm:h-10" />
             </div>
-            <p className="mt-4 sm:mt-6 text-gray-400 text-sm sm:text-base">Cargando checkout...</p>
+            <p className="mt-4 sm:mt-6 text-gray-400 text-sm sm:text-base">
+              Cargando checkout...
+            </p>
           </div>
         </div>
       }

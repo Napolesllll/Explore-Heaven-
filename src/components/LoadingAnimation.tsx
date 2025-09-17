@@ -3,10 +3,10 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, memo } from "react";
-import SidebarLeft from "./SidebarLeft";
-import SidebarRight from "./SidebarRight";
-import Feed from "./Feed";
-import TopNavbar from "./TopNavbar";
+import SidebarLeft from "../app/dashboard/SidebarLeft";
+import SidebarRight from "../app/dashboard/SidebarRight";
+import Feed from "../app/dashboard/Feed";
+import TopNavbar from "../app/dashboard/TopNavbar";
 import Image from "next/image";
 
 // Tipado para el estado de carga
@@ -77,7 +77,8 @@ const LoadingAnimation = memo(() => {
 
       <style jsx global>{`
         @keyframes pulse-slow {
-          0%, 100% {
+          0%,
+          100% {
             transform: scale(1);
             opacity: 1;
           }
@@ -106,7 +107,8 @@ const LoadingAnimation = memo(() => {
         }
 
         @keyframes wave {
-          0%, 100% {
+          0%,
+          100% {
             transform: translateY(0);
           }
           50% {
@@ -191,19 +193,16 @@ const DashboardPage: React.FC = () => {
   // Ya está autenticado y terminó el loading → renderizar dashboard
   return (
     <div className="flex h-screen overflow-hidden bg-[#f0f2f5] text-gray-800">
-      <SidebarLeft 
-        user={session.user} 
-        onSelectSection={handleSectionChange} 
-      />
-      
+      <SidebarLeft user={session.user} onSelectSection={handleSectionChange} />
+
       <main className="flex-1 p-4 overflow-y-auto">
-        <TopNavbar 
-          activeSection={activeSection} 
-          onSelect={handleSectionChange} 
+        <TopNavbar
+          activeSection={activeSection}
+          onSelect={handleSectionChange}
         />
         <Feed activeSection={activeSection} />
       </main>
-      
+
       <SidebarRight />
     </div>
   );
