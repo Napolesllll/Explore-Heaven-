@@ -1,32 +1,10 @@
+// src/components/LoadingAnimation.tsx
 "use client";
 
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback, memo } from "react";
-import SidebarLeft from "../app/dashboard/SidebarLeft";
-import SidebarRight from "../app/dashboard/SidebarRight";
-import Feed from "../app/dashboard/Feed";
-import TopNavbar from "../app/dashboard/TopNavbar";
+import { memo } from "react";
 import Image from "next/image";
 
-// Tipado para el estado de carga
-type LoadingState = "idle" | "loading" | "complete";
-
-// Tipado para estados de autenticación
-type AuthStatus = "loading" | "authenticated" | "unauthenticated";
-
-// Hook personalizado para gestionar el estado de carga
-const useLoadingAnimation = () => {
-  const [loadingState, setLoadingState] = useState<LoadingState>("loading");
-
-  const completeLoading = useCallback(() => {
-    setLoadingState("complete");
-  }, []);
-
-  return { loadingState, completeLoading };
-};
-
-// Componente de loading reutilizable
+// Componente de loading simple y optimizado
 const LoadingAnimation = memo(() => {
   const loadingText = "Cargando Experiencia";
 
@@ -139,73 +117,4 @@ const LoadingAnimation = memo(() => {
 
 LoadingAnimation.displayName = "LoadingAnimation";
 
-// Hook para gestión de autenticación y redirección
-const useAuthRedirect = () => {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    if (status === "loading") {
-      return;
-    }
-
-    if (status === "unauthenticated") {
-      router.push("/auth");
-      return;
-    }
-
-    if (status === "authenticated") {
-      const timer = setTimeout(() => setIsReady(true), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [status, router]);
-
-  return { session, status: status as AuthStatus, isReady };
-};
-
-// Hook para gestión del estado de la sección activa
-const useActiveSection = (initialSection: string = "inicio") => {
-  const [activeSection, setActiveSection] = useState<string>(initialSection);
-
-  const handleSectionChange = useCallback((section: string) => {
-    setActiveSection(section);
-  }, []);
-
-  return { activeSection, handleSectionChange };
-};
-
-// Componente principal
-const DashboardPage: React.FC = () => {
-  const { session, status, isReady } = useAuthRedirect();
-  const { activeSection, handleSectionChange } = useActiveSection();
-
-  // Mostrar loader si NextAuth aún carga o si estamos en el delay de 2s
-  if (status === "loading" || !isReady) {
-    return <LoadingAnimation />;
-  }
-
-  // Verificar que tenemos sesión (TypeScript safety)
-  if (!session?.user) {
-    return null; // La redirección se maneja en useAuthRedirect
-  }
-
-  // Ya está autenticado y terminó el loading → renderizar dashboard
-  return (
-    <div className="flex h-screen overflow-hidden bg-[#f0f2f5] text-gray-800">
-      <SidebarLeft user={session.user} onSelectSection={handleSectionChange} />
-
-      <main className="flex-1 p-4 overflow-y-auto">
-        <TopNavbar
-          activeSection={activeSection}
-          onSelect={handleSectionChange}
-        />
-        <Feed activeSection={activeSection} />
-      </main>
-
-      <SidebarRight />
-    </div>
-  );
-};
-
-export default DashboardPage;
+export default LoadingAnimation;

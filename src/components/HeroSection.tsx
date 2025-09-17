@@ -1,10 +1,9 @@
-// 1. COMPONENTE OPTIMIZADO PARA MÓVIL - HeroSection.tsx
 "use client";
 
 import { motion, Variants } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 
 interface HeroSectionProps {
   title: string;
@@ -19,85 +18,96 @@ const useIsMobile = () => {
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   return isMobile;
 };
 
-export default function HeroSection({ title, subtitle, cta }: HeroSectionProps) {
+export default function HeroSection({
+  title,
+  subtitle,
+  cta,
+}: HeroSectionProps) {
   const isMobile = useIsMobile();
-  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Simplificar animaciones en móvil para mejor FCP
-  const characterAnimation: Variants = isMobile
-    ? {
-        hidden: { opacity: 0 },
-        visible: { opacity: 1, transition: { duration: 0.3 } }
-      }
-    : {
-        hidden: { opacity: 0, y: 20 },
-        visible: (i: number) => ({
-          opacity: 1,
-          y: 0,
-          transition: {
-            delay: i * 0.03, // Reducido de 0.05 a 0.03
-            type: "spring",
-            stiffness: 200, // Más rápido
-            damping: 20
-          }
-        })
-      };
+  // Memoizar animaciones para evitar recálculos
+  const characterAnimation: Variants = useMemo(() => {
+    return isMobile
+      ? {
+          hidden: { opacity: 0 },
+          visible: { opacity: 1, transition: { duration: 0.3 } },
+        }
+      : {
+          hidden: { opacity: 0, y: 20 },
+          visible: (i: number) => ({
+            opacity: 1,
+            y: 0,
+            transition: {
+              delay: i * 0.03,
+              type: "spring",
+              stiffness: 200,
+              damping: 20,
+            },
+          }),
+        };
+  }, [isMobile]);
 
-  const renderAnimatedText = useCallback((text: string, startOffset = 0) => {
-    // En móvil, renderizar texto simple sin animación por caracteres
-    if (isMobile) {
-      return (
-        <motion.span
-          variants={characterAnimation}
-          initial="hidden"
-          animate="visible"
-        >
-          {text}
-        </motion.span>
-      );
-    }
-
-    // En desktop, mantener animación por caracteres
-    const words = text.split(" ");
-    const nodes: React.ReactNode[] = [];
-    let offset = startOffset;
-
-    words.forEach((word, wIndex) => {
-      const charNodes = word.split("").map((ch, i) => {
-        const customIndex = offset + i;
+  const renderAnimatedText = useCallback(
+    (text: string, startOffset = 0) => {
+      // En móvil, renderizar texto simple sin animación por caracteres
+      if (isMobile) {
         return (
           <motion.span
-            key={`${wIndex}-${i}-${ch}`}
-            custom={customIndex}
             variants={characterAnimation}
             initial="hidden"
             animate="visible"
-            className="inline-block"
           >
-            {ch}
+            {text}
           </motion.span>
         );
+      }
+
+      // En desktop, mantener animación por caracteres
+      const words = text.split(" ");
+      const nodes: React.ReactNode[] = [];
+      let offset = startOffset;
+
+      words.forEach((word, wIndex) => {
+        const charNodes = word.split("").map((ch, i) => {
+          const customIndex = offset + i;
+          return (
+            <motion.span
+              key={`${wIndex}-${i}-${ch}`}
+              custom={customIndex}
+              variants={characterAnimation}
+              initial="hidden"
+              animate="visible"
+              className="inline-block"
+            >
+              {ch}
+            </motion.span>
+          );
+        });
+
+        nodes.push(
+          <span
+            key={`word-${wIndex}`}
+            className="inline-block whitespace-nowrap"
+          >
+            {charNodes}
+          </span>
+        );
+
+        if (wIndex < words.length - 1) nodes.push(" ");
+        offset += word.length + 1;
       });
 
-      nodes.push(
-        <span key={`word-${wIndex}`} className="inline-block whitespace-nowrap">
-          {charNodes}
-        </span>
-      );
-
-      if (wIndex < words.length - 1) nodes.push(" ");
-      offset += word.length + 1;
-    });
-
-    return nodes;
-  }, [isMobile, characterAnimation]);
+      return nodes;
+    },
+    [isMobile, characterAnimation]
+  );
 
   return (
     <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-black">
@@ -110,10 +120,9 @@ export default function HeroSection({ title, subtitle, cta }: HeroSectionProps) 
             alt="Explore Heaven Mobile"
             fill
             className="object-cover object-center"
-            quality={75} // Reducido para móvil
+            quality={75}
             priority
             sizes="100vw"
-            onLoadingComplete={() => setIsLoaded(true)}
             placeholder="blur"
             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7/2Q=="
           />
@@ -129,7 +138,6 @@ export default function HeroSection({ title, subtitle, cta }: HeroSectionProps) 
             quality={85}
             priority
             sizes="100vw"
-            onLoadingComplete={() => setIsLoaded(true)}
             placeholder="blur"
             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7/2Q=="
           />
