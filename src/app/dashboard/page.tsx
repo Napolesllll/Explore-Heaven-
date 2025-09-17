@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import SidebarLeft from "./SidebarLeft";
 import SidebarRight from "./SidebarRight";
-import Feed from "./Feed";
+import OptimizedFeed from "./Feed";
 import TopNavbar from "./TopNavbar";
 import Image from "next/image";
 import EmergencyButton from "components/EmergencyButton";
@@ -22,7 +22,9 @@ interface Particle {
 }
 
 // Hook personalizado para la animación de partículas
-const useParticleAnimation = (canvasRef: React.RefObject<HTMLCanvasElement | null>) => {
+const useParticleAnimation = (
+  canvasRef: React.RefObject<HTMLCanvasElement | null>
+) => {
   const animationFrameRef = useRef<number>(0);
   const particlesRef = useRef<Particle[]>([]);
   const isAnimatingRef = useRef<boolean>(false);
@@ -43,48 +45,56 @@ const useParticleAnimation = (canvasRef: React.RefObject<HTMLCanvasElement | nul
     }
   }, []);
 
-  const connectParticles = useCallback((ctx: CanvasRenderingContext2D, particles: Particle[]) => {
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+  const connectParticles = useCallback(
+    (ctx: CanvasRenderingContext2D, particles: Particle[]) => {
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance < 100) {
-          ctx.beginPath();
-          ctx.strokeStyle = `rgba(180, 120, 255, ${1 - distance / 100})`;
-          ctx.lineWidth = 0.5;
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.stroke();
+          if (distance < 100) {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(180, 120, 255, ${1 - distance / 100})`;
+            ctx.lineWidth = 0.5;
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+          }
         }
       }
-    }
-  }, []);
+    },
+    []
+  );
 
-  const animateParticles = useCallback((canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
-    if (!isAnimatingRef.current) return;
+  const animateParticles = useCallback(
+    (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
+      if (!isAnimatingRef.current) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    const particles = particlesRef.current;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    particles.forEach((particle) => {
-      ctx.beginPath();
-      ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-      ctx.fillStyle = particle.color;
-      ctx.fill();
+      const particles = particlesRef.current;
 
-      particle.x += particle.speedX;
-      particle.y += particle.speedY;
+      particles.forEach((particle) => {
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fillStyle = particle.color;
+        ctx.fill();
 
-      if (particle.x > canvas.width || particle.x < 0) particle.speedX *= -1;
-      if (particle.y > canvas.height || particle.y < 0) particle.speedY *= -1;
-    });
+        particle.x += particle.speedX;
+        particle.y += particle.speedY;
 
-    connectParticles(ctx, particles);
-    animationFrameRef.current = requestAnimationFrame(() => animateParticles(canvas, ctx));
-  }, [connectParticles]);
+        if (particle.x > canvas.width || particle.x < 0) particle.speedX *= -1;
+        if (particle.y > canvas.height || particle.y < 0) particle.speedY *= -1;
+      });
+
+      connectParticles(ctx, particles);
+      animationFrameRef.current = requestAnimationFrame(() =>
+        animateParticles(canvas, ctx)
+      );
+    },
+    [connectParticles]
+  );
 
   const startAnimation = useCallback(() => {
     if (!canvasRef.current || isAnimatingRef.current) return;
@@ -123,7 +133,8 @@ const useParticleAnimation = (canvasRef: React.RefObject<HTMLCanvasElement | nul
 // Componente de loading mejorado
 const LoadingAnimation = memo(() => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const { startAnimation, stopAnimation, handleResize } = useParticleAnimation(canvasRef);
+  const { startAnimation, stopAnimation, handleResize } =
+    useParticleAnimation(canvasRef);
 
   useEffect(() => {
     startAnimation();
@@ -193,7 +204,8 @@ const LoadingAnimation = memo(() => {
 
       <style jsx global>{`
         @keyframes pulse-slow {
-          0%, 100% {
+          0%,
+          100% {
             transform: scale(1);
             opacity: 1;
           }
@@ -204,7 +216,8 @@ const LoadingAnimation = memo(() => {
         }
 
         @keyframes wave {
-          0%, 100% {
+          0%,
+          100% {
             transform: translateY(0);
           }
           50% {
@@ -236,7 +249,7 @@ const useLoadingState = (status: string) => {
       const timer = setTimeout(() => {
         setShowLoading(false);
       }, 4000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [status]);
@@ -247,7 +260,7 @@ const useLoadingState = (status: string) => {
 // Hook para gestión de sesión y redirección
 const useSessionAuth = () => {
   const { data: session, status } = useSession();
-  
+
   useEffect(() => {
     if (status === "unauthenticated") {
       redirect("/auth");
@@ -279,17 +292,14 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#f0f2f5] text-gray-800">
-      <SidebarLeft 
-        user={session.user} 
-        onSelectSection={handleSectionChange} 
-      />
+      <SidebarLeft user={session.user} onSelectSection={handleSectionChange} />
 
       <main className="flex-1 p-1 overflow-y-auto">
-        <TopNavbar 
-          activeSection={activeSection} 
-          onSelect={handleSectionChange} 
+        <TopNavbar
+          activeSection={activeSection}
+          onSelect={handleSectionChange}
         />
-        <Feed activeSection={activeSection} />
+        <OptimizedFeed activeSection={activeSection} />
         <EmergencyButton />
         <GalacticFooter />
       </main>

@@ -6,12 +6,21 @@
 // - Componentes pesados ejecutándose en background
 
 // 2. DESPUÉS (código optimizado)
+// 1. FEED OPTIMIZADO PARA MÓVIL
 "use client";
 
-import { memo, lazy, Suspense, useMemo, useCallback } from "react";
+import {
+  memo,
+  lazy,
+  Suspense,
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+} from "react";
 import EmergencyButton from "components/EmergencyButton";
 
-// Lazy loading de componentes de secciones
+// Lazy loading optimizado para móvil
 const HomeFeed = lazy(() => import("./components/sections/home/HomeFeed"));
 const ToursFeed = lazy(() => import("./components/sections/tours/ToursFeed"));
 const ReservasFeed = lazy(
@@ -34,29 +43,51 @@ interface FeedProps {
   activeSection: string;
 }
 
-// Componente de loading optimizado para secciones
-const SectionLoader = memo(() => (
-  <div className="flex items-center justify-center h-64 bg-gradient-to-br from-gray-900/50 via-black/50 to-gray-800/50 rounded-lg animate-pulse">
-    <div className="flex flex-col items-center space-y-4">
-      <div className="relative w-12 h-12">
-        <div className="absolute inset-0 border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
-        <div
-          className="absolute inset-2 border-4 border-purple-500/30 border-t-purple-400 rounded-full animate-spin"
-          style={{ animationDirection: "reverse" }}
-        />
-      </div>
-      <div className="text-cyan-300 font-medium text-sm">
-        Cargando sección...
+// Hook para detectar móvil
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  return isMobile;
+};
+
+// Loader optimizado para móvil
+const SectionLoader = memo(() => {
+  const isMobile = useIsMobile();
+
+  return (
+    <div
+      className={`flex items-center justify-center ${isMobile ? "h-32" : "h-64"} bg-gradient-to-br from-gray-900/50 via-black/50 to-gray-800/50 rounded-lg animate-pulse`}
+    >
+      <div className="flex flex-col items-center space-y-3 sm:space-y-4">
+        <div className={`relative ${isMobile ? "w-8 h-8" : "w-12 h-12"}`}>
+          <div className="absolute inset-0 border-2 sm:border-4 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
+          {!isMobile && (
+            <div
+              className="absolute inset-1 sm:inset-2 border-2 sm:border-4 border-purple-500/30 border-t-purple-400 rounded-full animate-spin"
+              style={{ animationDirection: "reverse" }}
+            />
+          )}
+        </div>
+        <div className="text-cyan-300 font-medium text-xs sm:text-sm">
+          Cargando sección...
+        </div>
       </div>
     </div>
-  </div>
-));
+  );
+});
 
 SectionLoader.displayName = "SectionLoader";
 
-// Error boundary optimizado para secciones
+// Error boundary simplificado para móvil
 const SectionErrorBoundary = memo(
-  ({ children }: { children: React.ReactNode; fallback?: React.ReactNode }) => {
+  ({ children }: { children: React.ReactNode }) => {
     return <Suspense fallback={<SectionLoader />}>{children}</Suspense>;
   }
 );
@@ -64,7 +95,9 @@ const SectionErrorBoundary = memo(
 SectionErrorBoundary.displayName = "SectionErrorBoundary";
 
 const OptimizedFeed = memo<FeedProps>(({ activeSection }) => {
-  // Usuario simulado memoizado
+  const isMobile = useIsMobile();
+
+  // Usuario memoizado
   const user: User = useMemo(
     () => ({
       name: "Juan Pérez",
@@ -76,7 +109,7 @@ const OptimizedFeed = memo<FeedProps>(({ activeSection }) => {
     []
   );
 
-  // Función para renderizar sección activa con lazy loading
+  // Renderizado optimizado para móvil
   const renderActiveSection = useCallback(() => {
     switch (activeSection) {
       case "inicio":
@@ -111,8 +144,12 @@ const OptimizedFeed = memo<FeedProps>(({ activeSection }) => {
         );
       default:
         return (
-          <div className="flex items-center justify-center h-64 bg-gradient-to-br from-gray-900/50 via-black/50 to-gray-800/50 rounded-lg">
-            <div className="text-gray-400">Sección no encontrada</div>
+          <div
+            className={`flex items-center justify-center ${isMobile ? "h-32" : "h-64"} bg-gradient-to-br from-gray-900/50 via-black/50 to-gray-800/50 rounded-lg`}
+          >
+            <div className="text-gray-400 text-sm sm:text-base">
+              Sección no encontrada
+            </div>
           </div>
         );
     }
@@ -120,13 +157,10 @@ const OptimizedFeed = memo<FeedProps>(({ activeSection }) => {
 
   return (
     <div
-      className="p-6 bg-gradient-to-br from-gray-900 via-black to-gray-800 rounded-lg shadow-lg"
-      style={{ contain: "layout style paint" }} // CSS containment
+      className={`${isMobile ? "p-3" : "p-6"} bg-gradient-to-br from-gray-900 via-black to-gray-800 rounded-lg shadow-lg`}
+      style={{ contain: "layout style paint" }}
     >
-      {/* Solo renderizar la sección activa */}
       {renderActiveSection()}
-
-      {/* Emergency Button siempre visible */}
       <EmergencyButton />
     </div>
   );
