@@ -1,8 +1,9 @@
+// 3. OPTIMIZACIONES PARA CheckoutPage.tsx
 "use client";
 
 import Head from "next/head";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, useRef, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense, useCallback, useMemo } from "react";
 import { tours } from "../../data/toursData";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -14,19 +15,19 @@ import dynamic from "next/dynamic";
 import { sendReservationEmail } from "../../utils/emailjsService";
 import { Calendar, CheckCircle } from "lucide-react";
 
-// Importar ReservationForm dinámicamente con SSR deshabilitado
+// Carga diferida optimizada
 const ReservationForm = dynamic(() => import("./components/ReservationForm"), {
   ssr: false,
   loading: () => (
     <div className="bg-white p-8 rounded-2xl max-w-2xl w-full mx-4">
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+      <div className="flex justify-center items-center h-32 sm:h-64">
+        <div className="animate-spin rounded-full h-8 sm:h-12 w-8 sm:w-12 border-b-2 border-yellow-500" />
       </div>
     </div>
   ),
 });
 
-// Definición del tipo Tour para evitar any
+// Interfaces optimizadas
 interface Tour {
   id: string;
   nombre: string;
@@ -67,7 +68,6 @@ interface ReservationFormData {
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
-
   const [tour, setTour] = useState<Tour | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,32 +91,34 @@ function CheckoutContent() {
     setIsClient(true);
   }, []);
 
-  // Cargar tour seleccionado
-  useEffect(() => {
-    const tourId = searchParams.get("tourId");
-    if (!tourId) return;
+  // Cargar tour - memoizado
+  const tourId = searchParams.get("tourId");
+  const mappedTour = useMemo(() => {
+    if (!tourId) return null;
     const found = tours.find((t) => t.id === tourId);
-    if (found) {
-      // Mapear el tour desde toursData al tipo Tour del componente
-      const mappedTour: Tour = {
-        id: found.id,
-        nombre: found.nombre,
-        descripcion: found.descripcion,
-        precio: found.precio,
-        salida: found.salida,
-        regreso: found.regreso,
-        duracion: found.duracion,
-        fotos: found.fotos || [],
-        inclusiones: found.incluido || [],
-        incluido: found.incluido || [],
-        noIncluido: found.noIncluido || [],
-        outfit: found.outfit || [],
-      };
-      setTour(mappedTour);
-    }
-  }, [searchParams]);
+    if (!found) return null;
+    
+    return {
+      id: found.id,
+      nombre: found.nombre,
+      descripcion: found.descripcion,
+      precio: found.precio,
+      salida: found.salida,
+      regreso: found.regreso,
+      duracion: found.duracion,
+      fotos: found.fotos || [],
+      inclusiones: found.incluido || [],
+      incluido: found.incluido || [],
+      noIncluido: found.noIncluido || [],
+      outfit: found.outfit || [],
+    };
+  }, [tourId]);
 
-  // Cargar fechas disponibles
+  useEffect(() => {
+    setTour(mappedTour);
+  }, [mappedTour]);
+
+  // Fechas disponibles - memoizado
   useEffect(() => {
     if (!isClient) return;
 
@@ -130,39 +132,39 @@ function CheckoutContent() {
     setAvailableDates(dates);
   }, [isClient]);
 
-  function validateForm() {
+  // Validación optimizada
+  const validateForm = useCallback(() => {
     const n = formData.nombre.trim();
     const c = formData.correo.trim();
     const p = formData.telefono.trim();
-    let ok = true;
+    
     if (!/^[a-zA-ZÀ-ÿ\s]{2,}$/.test(n)) {
       toast.error("Nombre inválido");
-      ok = false;
+      return false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) {
       toast.error("Correo inválido");
-      ok = false;
+      return false;
     }
     if (!/^\d{7,15}$/.test(p)) {
       toast.error("Teléfono inválido");
-      ok = false;
+      return false;
     }
-    return ok;
-  }
+    return true;
+  }, [formData]);
 
-  async function sendEmail(e: React.FormEvent<HTMLFormElement>) {
+  // Envío de email optimizado
+  const sendEmail = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!validateForm() || isSubmitting || hasSubmitted || !formRef.current)
-      return;
+    if (!validateForm() || isSubmitting || hasSubmitted || !formRef.current || !tour) return;
+    
     setIsSubmitting(true);
     setHasSubmitted(true);
 
     try {
-      const success = await sendReservationEmail(
-        formRef as React.RefObject<HTMLFormElement>
-      );
+      const success = await sendReservationEmail(formRef);
 
-      if (success && tour) {
+      if (success) {
         const reserva = {
           tourName: tour.nombre,
           date: formData.fecha ? formData.fecha.toISOString() : "",
@@ -183,16 +185,20 @@ function CheckoutContent() {
       setIsSubmitting(false);
       setHasSubmitted(false);
     }
-  }
+  }, [validateForm, isSubmitting, hasSubmitted, tour, formData]);
+
+  // Handlers memoizados
+  const handleModalClose = useCallback(() => setShowModal(false), []);
+  const handleModalOpen = useCallback(() => setShowModal(true), []);
 
   if (!tour) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
-        <div className="text-center animate-pulse">
-          <div className="w-20 h-20 mx-auto bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
-            <Calendar className="text-gray-900 w-10 h-10" />
+        <div className="text-center">
+          <div className="w-16 sm:w-20 h-16 sm:h-20 mx-auto bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
+            <Calendar className="text-gray-900 w-8 sm:w-10 h-8 sm:h-10" />
           </div>
-          <p className="mt-6 text-gray-400">Cargando detalles de tu tour...</p>
+          <p className="mt-4 sm:mt-6 text-gray-400 text-sm sm:text-base">Cargando detalles de tu tour...</p>
         </div>
       </div>
     );
@@ -208,66 +214,65 @@ function CheckoutContent() {
         />
         <meta name="robots" content="noindex,follow" />
       </Head>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black py-12 px-4 relative overflow-hidden">
-        <div className="absolute inset-0" aria-hidden>
-          <div className="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-gray-900 to-transparent z-0"></div>
-          <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-gray-900 to-transparent z-0"></div>
-          <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-yellow-500 rounded-full filter blur-[100px] opacity-10"></div>
-          <div className="absolute top-20 right-1/4 w-60 h-60 bg-emerald-500 rounded-full filter blur-[80px] opacity-10"></div>
-          <div className="pattern-dots pattern-gray-800 pattern-bg-transparent pattern-opacity-10 pattern-size-2 absolute inset-0"></div>
+      
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black py-8 sm:py-12 px-4 relative overflow-hidden">
+        {/* Fondo optimizado para móvil */}
+        <div className="absolute inset-0 opacity-60 sm:opacity-100" aria-hidden>
+          <div className="absolute bottom-20 left-1/4 w-48 sm:w-80 h-48 sm:h-80 bg-yellow-500 rounded-full filter blur-[60px] sm:blur-[100px] opacity-10" />
+          <div className="absolute top-20 right-1/4 w-32 sm:w-60 h-32 sm:h-60 bg-emerald-500 rounded-full filter blur-[40px] sm:blur-[80px] opacity-10" />
         </div>
 
         <div className="relative z-10 max-w-6xl mx-auto">
+          {/* Header optimizado */}
           <motion.div
-            className="text-center mb-12"
+            className="text-center mb-8 sm:mb-12"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.3 }}
           >
-            <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 mb-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 mb-4">
               ¡Listo para tu aventura!
             </h1>
-            <p className="text-gray-400 max-w-xl mx-auto">
+            <p className="text-gray-400 max-w-xl mx-auto text-sm sm:text-base">
               Estás a un paso de vivir una experiencia inolvidable en Medellín
             </p>
           </motion.div>
 
+          {/* Contenido principal */}
           <motion.div
-            className="bg-gradient-to-br from-gray-800/60 to-gray-900/80 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-10 space-y-8 relative border border-yellow-500/20"
+            className="bg-gradient-to-br from-gray-800/60 to-gray-900/80 backdrop-blur-lg rounded-3xl shadow-2xl p-4 sm:p-6 md:p-10 space-y-6 sm:space-y-8 relative border border-yellow-500/20"
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 100, delay: 0.2 }}
+            transition={{ type: "spring", stiffness: 100, delay: 0.1 }}
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-10 items-stretch">
               {tour.fotos.length > 0 && <TourImages fotos={tour.fotos} />}
               <TourDetails tour={tour} />
             </div>
 
-            <div className="w-full">
-              <InclusionDetails tour={tour} />
-            </div>
+            <InclusionDetails tour={tour} />
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 justify-center pt-10">
+            {/* CTAs optimizados para móvil */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 justify-center pt-6 sm:pt-10">
               <motion.button
                 type="button"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowModal(true)}
-                className="relative inline-flex items-center justify-center bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 px-8 py-4 rounded-xl font-bold overflow-hidden group"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleModalOpen}
+                className="w-full sm:w-auto relative inline-flex items-center justify-center bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold overflow-hidden group"
               >
                 <span className="relative z-10 flex items-center gap-2">
-                  <CheckCircle className="w-6 h-6" />
+                  <CheckCircle className="w-5 sm:w-6 h-5 sm:h-6" />
                   Confirmar Reserva
                 </span>
-                <span className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-yellow-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
               </motion.button>
 
-              <Link href="/" passHref>
+              <Link href="/" prefetch={true}>
                 <motion.button
                   type="button"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="border border-yellow-500/50 text-yellow-400 px-8 py-4 rounded-xl hover:bg-gray-800/50 transition-all font-medium flex items-center gap-2"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full sm:w-auto border border-yellow-500/50 text-yellow-400 px-6 sm:px-8 py-3 sm:py-4 rounded-xl hover:bg-gray-800/50 transition-all font-medium flex items-center justify-center gap-2"
                 >
                   Volver al inicio
                 </motion.button>
@@ -276,22 +281,23 @@ function CheckoutContent() {
           </motion.div>
         </div>
 
+        {/* Modal optimizado */}
         <AnimatePresence>
           {showModal && isClient && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-2 sm:p-4"
+              className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-2 sm:p-4"
               onClick={(e) => {
                 if (e.target === e.currentTarget) {
-                  setShowModal(false);
+                  handleModalClose();
                 }
               }}
             >
               <ReservationForm
                 tour={tour}
-                formRef={formRef as React.RefObject<HTMLFormElement>}
+                formRef={formRef}
                 sendEmail={sendEmail}
                 isSubmitting={isSubmitting}
                 hasSubmitted={hasSubmitted}
@@ -315,11 +321,11 @@ export default function CheckoutPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
-          <div className="text-center animate-pulse">
-            <div className="w-20 h-20 mx-auto bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
-              <Calendar className="text-gray-900 w-10 h-10" />
+          <div className="text-center">
+            <div className="w-16 sm:w-20 h-16 sm:h-20 mx-auto bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center">
+              <Calendar className="text-gray-900 w-8 sm:w-10 h-8 sm:h-10" />
             </div>
-            <p className="mt-6 text-gray-400">Cargando checkout...</p>
+            <p className="mt-4 sm:mt-6 text-gray-400 text-sm sm:text-base">Cargando checkout...</p>
           </div>
         </div>
       }

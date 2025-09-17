@@ -1,17 +1,17 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation"; // 🔥 useRouter eliminado
-import { useState, useEffect, useRef } from "react";
-import SidebarLeft from "../../app/dashboard/SidebarLeft";
-import SidebarRight from "../../app/dashboard/SidebarRight";
-import Feed from "../../app/dashboard/Feed";
-import TopNavbar from "../../app/dashboard/TopNavbar";
+import { redirect } from "next/navigation";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
+import SidebarLeft from "./SidebarLeft";
+import SidebarRight from "./SidebarRight";
+import Feed from "./Feed";
+import TopNavbar from "./TopNavbar";
 import Image from "next/image";
 import EmergencyButton from "components/EmergencyButton";
 import GalacticFooter from "./GalacticFooter";
 
-// 🔧 Tipo fuerte para partículas
+// Tipado fuerte para partículas
 interface Particle {
   x: number;
   y: number;
@@ -21,25 +21,18 @@ interface Particle {
   color: string;
 }
 
-// Componente de loading mejorado
-const LoadingAnimation = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+// Hook personalizado para la animación de partículas
+const useParticleAnimation = (canvasRef: React.RefObject<HTMLCanvasElement | null>) => {
+  const animationFrameRef = useRef<number>(0);
+  const particlesRef = useRef<Particle[]>([]);
+  const isAnimatingRef = useRef<boolean>(false);
 
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const particles: Particle[] = []; // ✅ sin any
+  const initializeParticles = useCallback((canvas: HTMLCanvasElement) => {
     const particleCount = 150;
+    particlesRef.current = [];
 
     for (let i = 0; i < particleCount; i++) {
-      particles.push({
+      particlesRef.current.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
         size: Math.random() * 3 + 1,
@@ -48,88 +41,140 @@ const LoadingAnimation = () => {
         color: `hsl(${Math.random() * 360}, 70%, 60%)`,
       });
     }
+  }, []);
 
-    const connect = () => {
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
+  const connectParticles = useCallback((ctx: CanvasRenderingContext2D, particles: Particle[]) => {
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < 100) {
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(180, 120, 255, ${1 - distance / 100})`;
-            ctx.lineWidth = 0.5;
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.stroke();
-          }
+        if (distance < 100) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(180, 120, 255, ${1 - distance / 100})`;
+          ctx.lineWidth = 0.5;
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
         }
       }
-    };
+    }
+  }, []);
 
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const animateParticles = useCallback((canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
+    if (!isAnimatingRef.current) return;
 
-      particles.forEach((particle) => {
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fillStyle = particle.color;
-        ctx.fill();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const particles = particlesRef.current;
 
-        particle.x += particle.speedX;
-        particle.y += particle.speedY;
+    particles.forEach((particle) => {
+      ctx.beginPath();
+      ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+      ctx.fillStyle = particle.color;
+      ctx.fill();
 
-        if (particle.x > canvas.width || particle.x < 0) particle.speedX *= -1;
-        if (particle.y > canvas.height || particle.y < 0) particle.speedY *= -1;
-      });
+      particle.x += particle.speedX;
+      particle.y += particle.speedY;
 
-      connect();
-      requestAnimationFrame(animate);
-    };
+      if (particle.x > canvas.width || particle.x < 0) particle.speedX *= -1;
+      if (particle.y > canvas.height || particle.y < 0) particle.speedY *= -1;
+    });
 
-    animate();
+    connectParticles(ctx, particles);
+    animationFrameRef.current = requestAnimationFrame(() => animateParticles(canvas, ctx));
+  }, [connectParticles]);
 
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
+  const startAnimation = useCallback(() => {
+    if (!canvasRef.current || isAnimatingRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    isAnimatingRef.current = true;
+    initializeParticles(canvas);
+    animateParticles(canvas, ctx);
+  }, [canvasRef, initializeParticles, animateParticles]);
+
+  const stopAnimation = useCallback(() => {
+    isAnimatingRef.current = false;
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = 0;
+    }
+  }, []);
+
+  const handleResize = useCallback(() => {
+    if (canvasRef.current && isAnimatingRef.current) {
+      canvasRef.current.width = window.innerWidth;
+      canvasRef.current.height = window.innerHeight;
+      initializeParticles(canvasRef.current);
+    }
+  }, [canvasRef, initializeParticles]);
+
+  return { startAnimation, stopAnimation, handleResize };
+};
+
+// Componente de loading mejorado
+const LoadingAnimation = memo(() => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const { startAnimation, stopAnimation, handleResize } = useParticleAnimation(canvasRef);
+
+  useEffect(() => {
+    startAnimation();
 
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+
+    return () => {
+      stopAnimation();
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [startAnimation, stopAnimation, handleResize]);
+
+  const loadingText = "Cargando Experiencia ";
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-gray-900 to-black z-[9999] overflow-hidden">
       <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
 
+      {/* Efectos de blur de fondo */}
       <div className="absolute w-[200px] h-[200px] rounded-full bg-purple-600 blur-[100px] opacity-30 animate-pulse" />
       <div
         className="absolute w-[300px] h-[300px] rounded-full bg-blue-600 blur-[100px] opacity-20 animate-pulse"
         style={{ animationDelay: "1s" }}
       />
 
+      {/* Contenido principal */}
       <div className="relative z-10 flex flex-col items-center justify-center">
         <div className="relative mb-12 animate-pulse-slow">
           <div className="absolute -inset-6 rounded-full bg-yellow-500 blur-xl opacity-30 animate-ping" />
           <div className="absolute -inset-4 rounded-full bg-yellow-400 blur-lg opacity-20" />
 
-          <div className="relative rounded-10  p-6 bg-gradient-to-br from-gray-900 to-gray-800 border border-yellow-500/30 shadow-[0_0_40px_rgba(234,179,8,0.5)]">
+          <div className="relative rounded-lg p-6 bg-gradient-to-br from-gray-900 to-gray-800 border border-yellow-500/30 shadow-[0_0_40px_rgba(234,179,8,0.5)]">
             <Image
               src="/images/SVG-01.svg"
               alt="Loading"
               width={250}
               height={250}
               className="drop-shadow-[0_0_20px_rgba(234,179,8,0.7)]"
+              priority
+              quality={85}
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx4f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R7/2Q=="
             />
           </div>
         </div>
 
         <div className="mt-16 text-center">
           <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400 flex justify-center">
-            {"Cargando Experiencia ".split("").map((char, index) => (
+            {loadingText.split("").map((char, index) => (
               <span
-                key={index}
+                key={`${char}-${index}`}
                 className="animate-wave"
                 style={{
                   animationDelay: `${index * 0.05}s`,
@@ -148,8 +193,7 @@ const LoadingAnimation = () => {
 
       <style jsx global>{`
         @keyframes pulse-slow {
-          0%,
-          100% {
+          0%, 100% {
             transform: scale(1);
             opacity: 1;
           }
@@ -160,8 +204,7 @@ const LoadingAnimation = () => {
         }
 
         @keyframes wave {
-          0%,
-          100% {
+          0%, 100% {
             transform: translateY(0);
           }
           50% {
@@ -180,35 +223,73 @@ const LoadingAnimation = () => {
       `}</style>
     </div>
   );
-};
+});
 
-export default function DashboardPage() {
-  const { data: session, status } = useSession();
-  const [activeSection, setActiveSection] = useState("inicio");
+LoadingAnimation.displayName = "LoadingAnimation";
+
+// Hook para gestión del loading
+const useLoadingState = (status: string) => {
   const [showLoading, setShowLoading] = useState(true);
 
-  // Simular un tiempo mínimo de carga
   useEffect(() => {
     if (status === "authenticated") {
       const timer = setTimeout(() => {
         setShowLoading(false);
       }, 4000);
+      
       return () => clearTimeout(timer);
     }
   }, [status]);
 
-  if (status === "loading" || showLoading) return <LoadingAnimation />;
-  if (!session) return redirect("/auth");
+  return showLoading;
+};
+
+// Hook para gestión de sesión y redirección
+const useSessionAuth = () => {
+  const { data: session, status } = useSession();
+  
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      redirect("/auth");
+    }
+  }, [status]);
+
+  return { session, status };
+};
+
+// Componente principal
+const DashboardPage: React.FC = () => {
+  const { session, status } = useSessionAuth();
+  const [activeSection, setActiveSection] = useState<string>("inicio");
+  const showLoading = useLoadingState(status);
+
+  // Manejar cambio de sección
+  const handleSectionChange = useCallback((section: string) => {
+    setActiveSection(section);
+  }, []);
+
+  // Estados de carga y autenticación
+  if (status === "loading" || showLoading) {
+    return <LoadingAnimation />;
+  }
+
+  if (!session?.user) {
+    return null; // redirect ya se maneja en useSessionAuth
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#f0f2f5] text-gray-800">
-      <SidebarLeft user={session.user} onSelectSection={setActiveSection} />
+      <SidebarLeft 
+        user={session.user} 
+        onSelectSection={handleSectionChange} 
+      />
 
       <main className="flex-1 p-1 overflow-y-auto">
-        <TopNavbar activeSection={activeSection} onSelect={setActiveSection} />
-
+        <TopNavbar 
+          activeSection={activeSection} 
+          onSelect={handleSectionChange} 
+        />
         <Feed activeSection={activeSection} />
-
         <EmergencyButton />
         <GalacticFooter />
       </main>
@@ -216,4 +297,6 @@ export default function DashboardPage() {
       <SidebarRight />
     </div>
   );
-}
+};
+
+export default DashboardPage;
