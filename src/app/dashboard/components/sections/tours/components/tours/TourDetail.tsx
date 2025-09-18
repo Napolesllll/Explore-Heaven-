@@ -1,19 +1,43 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Tour } from "../../../../../../../data/toursData";
 import { FaRocket, FaCheckCircle } from "react-icons/fa";
 import emailjs from "@emailjs/browser";
 import toast from "react-hot-toast";
-import ReservationModal from "./ReservationModal";
 import { ReservationFormData } from "./ReservationForm/types";
 import Image from "next/image";
+
+// Lazy load del modal pesado
+const ReservationModal = lazy(() => import("./ReservationModal"));
 
 type Props = {
   tour: Tour;
   onBack?: () => void;
 };
+
+// Mover configuración de animaciones fuera del componente
+const ANIMATION_CONFIG = {
+  container: {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 },
+    },
+  },
+  item: {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  },
+};
+
+// Componente de loading para el modal
+const ModalLoadingSpinner = () => (
+  <div className="fixed inset-0 bg-black bg-opacity-95 z-[9999] flex items-center justify-center">
+    <div className="w-8 h-8 border-t-2 border-cyan-400 rounded-full animate-spin" />
+  </div>
+);
 
 export default function TourDetail({ tour }: Props) {
   const [formData, setFormData] = useState<ReservationFormData>({
@@ -27,6 +51,7 @@ export default function TourDetail({ tour }: Props) {
     ninos: [],
     contactoEmergencia: { nombre: "", telefono: "" },
   });
+
   const [activeImage, setActiveImage] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,7 +61,15 @@ export default function TourDetail({ tour }: Props) {
 
   const formRef = useRef<HTMLFormElement>(null!);
 
-  // Generar fechas disponibles localmente
+  // Memoizar características del tour
+  const tourAsRecord = tour as unknown as Record<string, unknown>;
+  const caracteristicas = useMemo(() => {
+    return Array.isArray(tourAsRecord.caracteristicas)
+      ? (tourAsRecord.caracteristicas as unknown[])
+      : [];
+  }, [tourAsRecord.caracteristicas]);
+
+  // Generar fechas disponibles una sola vez
   useEffect(() => {
     const generateAvailableDates = () => {
       const dates: Date[] = [];
@@ -56,51 +89,50 @@ export default function TourDetail({ tour }: Props) {
     generateAvailableDates();
   }, []);
 
-  function validateForm() {
-    const n = formData.nombre.trim();
-    const c = formData.correo.trim();
-    const p = formData.telefono.trim();
-    let ok = true;
+  // Memoizar función de validación
+  const validateForm = useMemo(() => {
+    return () => {
+      const n = formData.nombre.trim();
+      const c = formData.correo.trim();
+      const p = formData.telefono.trim();
+      let ok = true;
 
-    if (!/^[a-zA-ZÀ-ÿ\s]{2,}$/.test(n)) {
-      toast.error("Nombre inválido");
-      ok = false;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) {
-      toast.error("Correo inválido");
-      ok = false;
-    }
-
-    // Validación actualizada para teléfono con código de país
-    if (p) {
-      // Regex para formato: +código números (ej: +57 1234567890)
-      const phoneRegex = /^\+\d{1,4}\s\d{7,15}$/;
-
-      if (!phoneRegex.test(p)) {
-        toast.error("Formato de teléfono inválido");
+      if (!/^[a-zA-ZÀ-ÿ\s]{2,}$/.test(n)) {
+        toast.error("Nombre inválido");
         ok = false;
-      } else {
-        // Extraer solo los números del teléfono (sin código de país)
-        const phoneNumbers = p.split(" ")[1];
-        if (
-          !phoneNumbers ||
-          phoneNumbers.length < 7 ||
-          phoneNumbers.length > 15
-        ) {
-          toast.error("Número de teléfono debe tener entre 7 y 15 dígitos");
-          ok = false;
-        }
       }
-    } else {
-      toast.error("Teléfono es requerido");
-      ok = false;
-    }
 
-    return ok;
-  }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) {
+        toast.error("Correo inválido");
+        ok = false;
+      }
 
-  async function sendEmail(e: React.FormEvent<HTMLFormElement>) {
+      if (p) {
+        const phoneRegex = /^\+\d{1,4}\s\d{7,15}$/;
+        if (!phoneRegex.test(p)) {
+          toast.error("Formato de teléfono inválido");
+          ok = false;
+        } else {
+          const phoneNumbers = p.split(" ")[1];
+          if (
+            !phoneNumbers ||
+            phoneNumbers.length < 7 ||
+            phoneNumbers.length > 15
+          ) {
+            toast.error("Número de teléfono debe tener entre 7 y 15 dígitos");
+            ok = false;
+          }
+        }
+      } else {
+        toast.error("Teléfono es requerido");
+        ok = false;
+      }
+
+      return ok;
+    };
+  }, [formData.nombre, formData.correo, formData.telefono]);
+
+  const sendEmail = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateForm() || isSubmitting || hasSubmitted) return;
     setIsSubmitting(true);
@@ -137,32 +169,13 @@ export default function TourDetail({ tour }: Props) {
       setIsSubmitting(false);
       setHasSubmitted(false);
     }
-  }
-
-  // Animaciones
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 },
-    },
   };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-  };
-
-  const tourAsRecord = tour as unknown as Record<string, unknown>;
-  const caracteristicas: unknown[] = Array.isArray(tourAsRecord.caracteristicas)
-    ? (tourAsRecord.caracteristicas as unknown[])
-    : [];
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Background Particles */}
+      {/* Background Particles - Reducido de 25 a 15 para mejor performance */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {[...Array(25)].map((_, i) => (
+        {[...Array(15)].map((_, i) => (
           <motion.div
             key={i}
             className="absolute rounded-full bg-gradient-to-r from-cyan-400/8 to-purple-500/8 backdrop-blur-sm"
@@ -194,7 +207,7 @@ export default function TourDetail({ tour }: Props) {
           className="mb-8 lg:mb-12"
           initial={{ opacity: 0, y: -40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="space-y-4">
@@ -224,9 +237,9 @@ export default function TourDetail({ tour }: Props) {
         {/* Hero Image Section */}
         <motion.section
           className="mb-10 lg:mb-16"
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, ease: "easeOut" }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
         >
           <div className="relative h-72 sm:h-96 lg:h-[500px] rounded-2xl lg:rounded-3xl overflow-hidden border border-cyan-400/20 shadow-2xl shadow-cyan-500/10">
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent z-10" />
@@ -236,18 +249,20 @@ export default function TourDetail({ tour }: Props) {
                 src={tour.fotos[activeImage]}
                 alt={`Vista principal del tour ${tour.nombre}`}
                 fill
-                className="object-cover transition-transform duration-700 hover:scale-105"
-                priority
+                className="object-cover transition-transform duration-500 hover:scale-105"
+                priority={activeImage === 0}
+                loading={activeImage === 0 ? "eager" : "lazy"}
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
               />
             )}
 
-            {/* Image Navigation */}
+            {/* Image Navigation - Solo mostrar si hay múltiples imágenes */}
             {tour.fotos && tour.fotos.length > 1 && (
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
                 <div className="flex gap-2 p-2 bg-slate-900/60 backdrop-blur-md rounded-xl border border-slate-700/50">
                   {tour.fotos.map((foto, index) => (
                     <button
-                      key={index}
+                      key={`thumb-${index}`}
                       onClick={() => setActiveImage(index)}
                       className={`relative w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
                         index === activeImage
@@ -260,6 +275,8 @@ export default function TourDetail({ tour }: Props) {
                         alt={`Vista ${index + 1} del tour`}
                         fill
                         className="object-cover"
+                        sizes="64px"
+                        loading="lazy"
                       />
                     </button>
                   ))}
@@ -274,12 +291,15 @@ export default function TourDetail({ tour }: Props) {
           {/* Tour Information */}
           <motion.div
             className="lg:col-span-2 space-y-8 lg:space-y-12"
-            variants={container}
+            variants={ANIMATION_CONFIG.container}
             initial="hidden"
             animate="show"
           >
             {/* Description */}
-            <motion.section variants={item} className="space-y-4">
+            <motion.section
+              variants={ANIMATION_CONFIG.item}
+              className="space-y-4"
+            >
               <h2 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 Descripción de la experiencia
               </h2>
@@ -291,14 +311,17 @@ export default function TourDetail({ tour }: Props) {
             </motion.section>
 
             {/* Includes */}
-            <motion.section variants={item} className="space-y-6">
+            <motion.section
+              variants={ANIMATION_CONFIG.item}
+              className="space-y-6"
+            >
               <h2 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 Lo que incluye tu aventura
               </h2>
               <div className="grid gap-3 sm:gap-4">
                 {tour.incluido.map((item, index) => (
                   <div
-                    key={index}
+                    key={`include-${index}`}
                     className="flex items-start gap-3 p-3 lg:p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl backdrop-blur-sm hover:bg-slate-800/70 transition-colors duration-300"
                   >
                     <FaCheckCircle className="text-cyan-400 mt-1 flex-shrink-0" />
@@ -312,14 +335,17 @@ export default function TourDetail({ tour }: Props) {
 
             {/* Features */}
             {caracteristicas.length > 0 && (
-              <motion.section variants={item} className="space-y-6">
+              <motion.section
+                variants={ANIMATION_CONFIG.item}
+                className="space-y-6"
+              >
                 <h2 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                   Características destacadas
                 </h2>
                 <div className="flex flex-wrap gap-3">
                   {caracteristicas.map((caracteristica, i) => (
                     <span
-                      key={i}
+                      key={`feature-${i}`}
                       className="px-4 py-2 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-400/30 text-cyan-300 rounded-full text-sm font-medium backdrop-blur-sm hover:from-cyan-500/20 hover:to-purple-500/20 transition-colors duration-300"
                     >
                       {String(caracteristica)}
@@ -335,11 +361,10 @@ export default function TourDetail({ tour }: Props) {
             className="lg:col-span-1"
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
           >
             <div className="sticky top-8">
               <div className="relative p-6 lg:p-8 bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-cyan-400/20 rounded-2xl shadow-2xl shadow-cyan-500/10 backdrop-blur-sm">
-                {/* Card Glow Effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 rounded-2xl" />
 
                 <div className="relative z-10 space-y-6">
@@ -358,7 +383,6 @@ export default function TourDetail({ tour }: Props) {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    {/* Button Glow */}
                     <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/50 to-purple-500/50 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
                     <span className="relative z-10 flex items-center justify-center gap-2">
@@ -381,21 +405,25 @@ export default function TourDetail({ tour }: Props) {
         </div>
       </div>
 
-      {/* Modal */}
-      <ReservationModal
-        tour={tour}
-        formRef={formRef}
-        sendEmail={sendEmail}
-        isSubmitting={isSubmitting}
-        hasSubmitted={hasSubmitted}
-        showModal={showModal}
-        setShowModal={setShowModal}
-        availableDates={availableDates}
-        formData={formData}
-        setFormData={setFormData}
-        showWhatsApp={showWhatsApp}
-        setShowWhatsApp={setShowWhatsApp}
-      />
+      {/* Modal con Lazy Loading */}
+      <Suspense fallback={<ModalLoadingSpinner />}>
+        {showModal && (
+          <ReservationModal
+            tour={tour}
+            formRef={formRef}
+            sendEmail={sendEmail}
+            isSubmitting={isSubmitting}
+            hasSubmitted={hasSubmitted}
+            showModal={showModal}
+            setShowModal={setShowModal}
+            availableDates={availableDates}
+            formData={formData}
+            setFormData={setFormData}
+            showWhatsApp={showWhatsApp}
+            setShowWhatsApp={setShowWhatsApp}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

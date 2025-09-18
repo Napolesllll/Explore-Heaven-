@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import DateCalendar from "../DateCalendar";
 import { ReservationFormData } from "./types";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 
 interface Step1BasicInfoProps {
   formData: ReservationFormData;
@@ -18,7 +18,39 @@ interface Step1BasicInfoProps {
   stepErrors: Record<string, string>;
 }
 
-export default function Step1BasicInfo({
+// Mover la configuración de países fuera del componente para evitar recreación
+const COUNTRIES = [
+  {
+    code: "+1",
+    name: "Estados Unidos",
+    flag: "🇺🇸",
+    minLength: 10,
+    maxLength: 10,
+  },
+  { code: "+1", name: "Canadá", flag: "🇨🇦", minLength: 10, maxLength: 10 },
+  { code: "+52", name: "México", flag: "🇲🇽", minLength: 10, maxLength: 10 },
+  { code: "+57", name: "Colombia", flag: "🇨🇴", minLength: 10, maxLength: 10 },
+  { code: "+58", name: "Venezuela", flag: "🇻🇪", minLength: 10, maxLength: 10 },
+  { code: "+51", name: "Perú", flag: "🇵🇪", minLength: 9, maxLength: 9 },
+  { code: "+593", name: "Ecuador", flag: "🇪🇨", minLength: 9, maxLength: 9 },
+  { code: "+507", name: "Panamá", flag: "🇵🇦", minLength: 8, maxLength: 8 },
+  { code: "+506", name: "Costa Rica", flag: "🇨🇷", minLength: 8, maxLength: 8 },
+  { code: "+503", name: "El Salvador", flag: "🇸🇻", minLength: 8, maxLength: 8 },
+  { code: "+502", name: "Guatemala", flag: "🇬🇹", minLength: 8, maxLength: 8 },
+  { code: "+504", name: "Honduras", flag: "🇭🇳", minLength: 8, maxLength: 8 },
+  { code: "+505", name: "Nicaragua", flag: "🇳🇮", minLength: 8, maxLength: 8 },
+  { code: "+34", name: "España", flag: "🇪🇸", minLength: 9, maxLength: 9 },
+  { code: "+54", name: "Argentina", flag: "🇦🇷", minLength: 10, maxLength: 10 },
+  { code: "+56", name: "Chile", flag: "🇨🇱", minLength: 9, maxLength: 9 },
+  { code: "+598", name: "Uruguay", flag: "🇺🇾", minLength: 8, maxLength: 8 },
+  { code: "+595", name: "Paraguay", flag: "🇵🇾", minLength: 9, maxLength: 9 },
+  { code: "+591", name: "Bolivia", flag: "🇧🇴", minLength: 8, maxLength: 8 },
+  { code: "+55", name: "Brasil", flag: "🇧🇷", minLength: 10, maxLength: 11 },
+];
+
+const DEFAULT_COUNTRY_INDEX = 3; // Colombia
+
+const Step1BasicInfo = memo(function Step1BasicInfo({
   formData,
   handleInputChange,
   selectedDate,
@@ -26,60 +58,31 @@ export default function Step1BasicInfo({
   availableDates,
   stepErrors,
 }: Step1BasicInfoProps) {
-  const [selectedCountry, setSelectedCountry] = useState("+57"); // Colombia por defecto
+  const [selectedCountry, setSelectedCountry] = useState("+57");
 
-  const countries = [
-    {
-      code: "+1",
-      name: "Estados Unidos",
-      flag: "🇺🇸",
-      minLength: 10,
-      maxLength: 10,
-    },
-    { code: "+1", name: "Canadá", flag: "🇨🇦", minLength: 10, maxLength: 10 },
-    { code: "+52", name: "México", flag: "🇲🇽", minLength: 10, maxLength: 10 },
-    { code: "+57", name: "Colombia", flag: "🇨🇴", minLength: 10, maxLength: 10 },
-    {
-      code: "+58",
-      name: "Venezuela",
-      flag: "🇻🇪",
-      minLength: 10,
-      maxLength: 10,
-    },
-    { code: "+51", name: "Perú", flag: "🇵🇪", minLength: 9, maxLength: 9 },
-    { code: "+593", name: "Ecuador", flag: "🇪🇨", minLength: 9, maxLength: 9 },
-    { code: "+507", name: "Panamá", flag: "🇵🇦", minLength: 8, maxLength: 8 },
-    {
-      code: "+506",
-      name: "Costa Rica",
-      flag: "🇨🇷",
-      minLength: 8,
-      maxLength: 8,
-    },
-    {
-      code: "+503",
-      name: "El Salvador",
-      flag: "🇸🇻",
-      minLength: 8,
-      maxLength: 8,
-    },
-    { code: "+502", name: "Guatemala", flag: "🇬🇹", minLength: 8, maxLength: 8 },
-    { code: "+504", name: "Honduras", flag: "🇭🇳", minLength: 8, maxLength: 8 },
-    { code: "+505", name: "Nicaragua", flag: "🇳🇮", minLength: 8, maxLength: 8 },
-    { code: "+34", name: "España", flag: "🇪🇸", minLength: 9, maxLength: 9 },
-    {
-      code: "+54",
-      name: "Argentina",
-      flag: "🇦🇷",
-      minLength: 10,
-      maxLength: 10,
-    },
-    { code: "+56", name: "Chile", flag: "🇨🇱", minLength: 9, maxLength: 9 },
-    { code: "+598", name: "Uruguay", flag: "🇺🇾", minLength: 8, maxLength: 8 },
-    { code: "+595", name: "Paraguay", flag: "🇵🇾", minLength: 9, maxLength: 9 },
-    { code: "+591", name: "Bolivia", flag: "🇧🇴", minLength: 8, maxLength: 8 },
-    { code: "+55", name: "Brasil", flag: "🇧🇷", minLength: 10, maxLength: 11 },
-  ];
+  // Memoizar el país actual para evitar búsquedas repetitivas
+  const getCurrentCountry = useMemo(() => {
+    return (
+      COUNTRIES.find((country) => country.code === selectedCountry) ||
+      COUNTRIES[DEFAULT_COUNTRY_INDEX]
+    );
+  }, [selectedCountry]);
+
+  // Memoizar función de validación
+  const validatePhoneNumber = useMemo(() => {
+    return (phoneNumber: string) => {
+      const cleanNumber = phoneNumber.replace(/\D/g, "");
+      const currentCountry = getCurrentCountry;
+
+      if (cleanNumber.length < currentCountry.minLength) {
+        return `El número debe tener al menos ${currentCountry.minLength} dígitos`;
+      }
+      if (cleanNumber.length > currentCountry.maxLength) {
+        return `El número debe tener máximo ${currentCountry.maxLength} dígitos`;
+      }
+      return null;
+    };
+  }, [getCurrentCountry]);
 
   // Sincronizar el código de país cuando cambie el teléfono externamente
   useEffect(() => {
@@ -95,35 +98,13 @@ export default function Step1BasicInfo({
     }
   }, [formData.telefono, selectedCountry]);
 
-  const getCurrentCountry = () => {
-    return (
-      countries.find((country) => country.code === selectedCountry) ||
-      countries[3] // Default Colombia (index 3)
-    );
-  };
-
-  const validatePhoneNumber = (phoneNumber: string) => {
-    const currentCountry = getCurrentCountry();
-    const cleanNumber = phoneNumber.replace(/\D/g, ""); // Solo números
-
-    if (cleanNumber.length < currentCountry.minLength) {
-      return `El número debe tener al menos ${currentCountry.minLength} dígitos`;
-    }
-    if (cleanNumber.length > currentCountry.maxLength) {
-      return `El número debe tener máximo ${currentCountry.maxLength} dígitos`;
-    }
-    return null;
-  };
-
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const phoneNumber = e.target.value.replace(/\D/g, ""); // Solo números
-    const currentCountry = getCurrentCountry();
+    const phoneNumber = e.target.value.replace(/\D/g, "");
+    const currentCountry = getCurrentCountry;
 
-    // Limitar la longitud según el país
     const limitedPhone = phoneNumber.slice(0, currentCountry.maxLength);
     const fullPhone = limitedPhone ? `${selectedCountry} ${limitedPhone}` : "";
 
-    // Crear un evento sintético para el teléfono completo
     const syntheticEvent = {
       ...e,
       target: {
@@ -140,34 +121,23 @@ export default function Step1BasicInfo({
     const newCountryCode = e.target.value;
     setSelectedCountry(newCountryCode);
 
-    // Actualizar el teléfono con el nuevo código de país
     const currentPhone = getPhoneWithoutCode(formData.telefono || "");
-    if (currentPhone) {
-      const newFullPhone = `${newCountryCode} ${currentPhone}`;
-      const syntheticEvent = {
-        target: {
-          name: "telefono",
-          value: newFullPhone,
-        },
-      } as React.ChangeEvent<HTMLInputElement>;
+    const newFullPhone = currentPhone
+      ? `${newCountryCode} ${currentPhone}`
+      : "";
 
-      handleInputChange(syntheticEvent);
-    } else {
-      // Si no hay número, solo actualizar para futuras entradas
-      const syntheticEvent = {
-        target: {
-          name: "telefono",
-          value: "",
-        },
-      } as React.ChangeEvent<HTMLInputElement>;
+    const syntheticEvent = {
+      target: {
+        name: "telefono",
+        value: newFullPhone,
+      },
+    } as React.ChangeEvent<HTMLInputElement>;
 
-      handleInputChange(syntheticEvent);
-    }
+    handleInputChange(syntheticEvent);
   };
 
   const getPhoneWithoutCode = (fullPhone: string) => {
     if (!fullPhone) return "";
-    // Buscar el patrón +código espacio número
     const phoneRegex = /^\+\d{1,4}\s(.+)$/;
     const match = fullPhone.match(phoneRegex);
     return match ? match[1] : "";
@@ -214,14 +184,13 @@ export default function Step1BasicInfo({
             Teléfono *
           </label>
           <div className="flex gap-2">
-            {/* Selector de país */}
             <div className="relative">
               <select
                 value={selectedCountry}
                 onChange={handleCountryChange}
                 className="bg-gray-800 border border-cyan-500/30 rounded-xl px-3 py-3 text-cyan-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm appearance-none min-w-[100px] pr-8"
               >
-                {countries.map((country, index) => (
+                {COUNTRIES.map((country, index) => (
                   <option
                     key={`${country.code}-${index}`}
                     value={country.code}
@@ -248,7 +217,6 @@ export default function Step1BasicInfo({
               </div>
             </div>
 
-            {/* Input de teléfono */}
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <FaPhone className="w-5 h-5 text-cyan-500" />
@@ -257,26 +225,24 @@ export default function Step1BasicInfo({
                 type="tel"
                 value={getPhoneWithoutCode(formData.telefono || "")}
                 onChange={handlePhoneChange}
-                placeholder={`Ej: ${getCurrentCountry().minLength === getCurrentCountry().maxLength ? getCurrentCountry().minLength : `${getCurrentCountry().minLength}-${getCurrentCountry().maxLength}`} dígitos`}
+                placeholder={`Ej: ${getCurrentCountry.minLength === getCurrentCountry.maxLength ? getCurrentCountry.minLength : `${getCurrentCountry.minLength}-${getCurrentCountry.maxLength}`} dígitos`}
                 className="w-full bg-gray-800 border border-cyan-500/30 rounded-xl px-4 py-3 pl-10 text-cyan-100 placeholder-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm sm:text-base"
-                maxLength={getCurrentCountry().maxLength}
+                maxLength={getCurrentCountry.maxLength}
               />
             </div>
           </div>
 
-          {/* Información del país seleccionado */}
           <div className="text-xs text-cyan-400 mt-1 flex items-center gap-2">
-            <span>{getCurrentCountry().flag}</span>
-            <span>{getCurrentCountry().name}</span>
+            <span>{getCurrentCountry.flag}</span>
+            <span>{getCurrentCountry.name}</span>
             <span>•</span>
             <span>
-              {getCurrentCountry().minLength === getCurrentCountry().maxLength
-                ? `${getCurrentCountry().minLength} dígitos`
-                : `${getCurrentCountry().minLength}-${getCurrentCountry().maxLength} dígitos`}
+              {getCurrentCountry.minLength === getCurrentCountry.maxLength
+                ? `${getCurrentCountry.minLength} dígitos`
+                : `${getCurrentCountry.minLength}-${getCurrentCountry.maxLength} dígitos`}
             </span>
           </div>
 
-          {/* Validación específica para teléfono */}
           {formData.telefono &&
             (() => {
               const phoneOnly = getPhoneWithoutCode(formData.telefono);
@@ -351,4 +317,6 @@ export default function Step1BasicInfo({
       </div>
     </div>
   );
-}
+});
+
+export default Step1BasicInfo;

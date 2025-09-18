@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Tour } from "../../../../../../../data/toursData";
 import ReservationForm from "./ReservationForm/ReservationForm";
 import { ReservationFormData } from "./ReservationForm/types";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 
 interface ReservationModalProps {
   tour: Tour;
@@ -35,72 +35,83 @@ export default function ReservationModal({
   showWhatsApp,
   setShowWhatsApp,
 }: ReservationModalProps) {
-  // Handle modal scroll and positioning
-  useEffect(() => {
-    if (showModal) {
-      // Prevent body scroll and ensure modal starts at top
+  // Optimizar manejo de estilos del modal
+  const handleModalStyles = useCallback((show: boolean) => {
+    if (show) {
+      // Prevent body scroll
       document.body.style.overflow = "hidden";
       document.documentElement.style.overflow = "hidden";
 
-      // Force scroll to top when modal opens
+      // Force scroll to top
       window.scrollTo(0, 0);
 
-      // Hide only specific navigation elements but keep footer
-      const styleElement = document.createElement("style");
-      styleElement.id = "modal-overlay-styles";
-      styleElement.innerHTML = `
-        /* Hide specific navigation elements only */
-        nav[class*="fixed"]:not([data-modal]),
-        header[class*="fixed"]:not([data-modal]) {
-          visibility: hidden !important;
-          opacity: 0 !important;
-          pointer-events: none !important;
-        }
-        
-        /* Ensure modal elements are always visible and on top */
-        [data-modal], [data-modal-content] {
-          visibility: visible !important;
-          opacity: 1 !important;
-          pointer-events: auto !important;
-          position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
-          z-index: 9999 !important;
-        }
-      `;
-      document.head.appendChild(styleElement);
+      // Create styles more efficiently
+      const existingStyle = document.getElementById("modal-overlay-styles");
+      if (!existingStyle) {
+        const styleElement = document.createElement("style");
+        styleElement.id = "modal-overlay-styles";
+        styleElement.textContent = `
+          nav[class*="fixed"]:not([data-modal]),
+          header[class*="fixed"]:not([data-modal]) {
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+          }
+          
+          [data-modal], [data-modal-content] {
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: 9999 !important;
+          }
+        `;
+        document.head.appendChild(styleElement);
+      }
     } else {
-      // Restore body scroll
+      // Restore styles
       document.body.style.overflow = "unset";
       document.documentElement.style.overflow = "unset";
 
-      // Remove styles
       const styleElement = document.getElementById("modal-overlay-styles");
       if (styleElement) {
         styleElement.remove();
       }
     }
+  }, []);
+
+  // Handle modal scroll and positioning
+  useEffect(() => {
+    handleModalStyles(showModal);
 
     // Cleanup on unmount
     return () => {
-      document.body.style.overflow = "unset";
-      document.documentElement.style.overflow = "unset";
-      const styleElement = document.getElementById("modal-overlay-styles");
-      if (styleElement) {
-        styleElement.remove();
-      }
+      handleModalStyles(false);
     };
-  }, [showModal]);
+  }, [showModal, handleModalStyles]);
+
+  // Memoizar el click handler del backdrop
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.target === e.currentTarget) {
+        setShowModal(false);
+      }
+    },
+    [setShowModal]
+  );
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {showModal && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }} // Reducir duración de animación
           className="fixed inset-0 bg-black bg-opacity-95 z-[9999]"
           style={{
             zIndex: 9999,
@@ -111,11 +122,7 @@ export default function ReservationModal({
             height: "100vh",
           }}
           data-modal="true"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowModal(false);
-            }
-          }}
+          onClick={handleBackdropClick}
         >
           <div
             className="w-full h-full"

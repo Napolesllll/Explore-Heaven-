@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, memo } from "react";
 import {
   format,
   startOfMonth,
@@ -19,41 +19,49 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface DateCalendarProps {
   selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
-  availableDates?: Date[]; // Hecho opcional
-  restrictToAvailableDates?: boolean; // Nueva prop para controlar la restricción
+  availableDates?: Date[];
+  restrictToAvailableDates?: boolean;
 }
 
-export default function DateCalendar({
+const DateCalendar = memo(function DateCalendar({
   selectedDate,
   onDateSelect,
   availableDates = [],
-  restrictToAvailableDates = false, // Por defecto no restringe a availableDates
+  restrictToAvailableDates = false,
 }: DateCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const today = startOfToday();
 
-  const firstDayCurrentMonth = startOfMonth(currentMonth);
-  const lastDayCurrentMonth = endOfMonth(currentMonth);
+  // Memoizar cálculos pesados
+  const { allDays, firstDayCurrentMonth } = useMemo(() => {
+    const firstDay = startOfMonth(currentMonth);
+    const lastDay = endOfMonth(currentMonth);
 
-  const startDate = new Date(firstDayCurrentMonth);
-  startDate.setDate(startDate.getDate() - firstDayCurrentMonth.getDay());
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
 
-  const endDate = new Date(lastDayCurrentMonth);
-  endDate.setDate(endDate.getDate() + (6 - lastDayCurrentMonth.getDay()));
+    const endDate = new Date(lastDay);
+    endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
 
-  const allDays = eachDayOfInterval({ start: startDate, end: endDate });
+    return {
+      allDays: eachDayOfInterval({ start: startDate, end: endDate }),
+      firstDayCurrentMonth: firstDay,
+    };
+  }, [currentMonth]);
 
-  const isDateAvailable = (date: Date) => {
-    // Si restrictToAvailableDates es false, todas las fechas futuras están disponibles
+  // Memoizar función de disponibilidad
+  const isDateAvailable = useMemo(() => {
     if (!restrictToAvailableDates) {
-      return true;
+      return () => true;
     }
 
-    // Si restrictToAvailableDates es true, verificar si está en availableDates
-    return availableDates.some((availableDate) =>
-      isSameDay(date, availableDate)
+    // Crear Set para búsqueda O(1)
+    const availableDatesSet = new Set(
+      availableDates.map((date) => date.toDateString())
     );
-  };
+
+    return (date: Date) => availableDatesSet.has(date.toDateString());
+  }, [availableDates, restrictToAvailableDates]);
 
   const goToPreviousMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1));
@@ -63,6 +71,9 @@ export default function DateCalendar({
     setCurrentMonth(addMonths(currentMonth, 1));
   };
 
+  // Constantes para evitar recreación
+  const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
   return (
     <div className="bg-gray-800 border border-cyan-500/30 rounded-xl p-4">
       {/* Header con mes y botones */}
@@ -71,16 +82,18 @@ export default function DateCalendar({
           type="button"
           onClick={goToPreviousMonth}
           className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+          aria-label="Mes anterior"
         >
           <ChevronLeft className="w-5 h-5 text-cyan-400" />
         </button>
         <h3 className="text-lg font-semibold text-cyan-100">
-          {format(currentMonth, "MMMM yyyy", { locale: es })}
+          {format(firstDayCurrentMonth, "MMMM yyyy", { locale: es })}
         </h3>
         <button
           type="button"
           onClick={goToNextMonth}
           className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+          aria-label="Mes siguiente"
         >
           <ChevronRight className="w-5 h-5 text-cyan-400" />
         </button>
@@ -88,7 +101,7 @@ export default function DateCalendar({
 
       {/* Días de la semana */}
       <div className="grid grid-cols-7 gap-1 mb-2">
-        {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map((day) => (
+        {dayNames.map((day) => (
           <div
             key={day}
             className="text-center text-sm font-medium text-cyan-400 py-2"
@@ -101,21 +114,16 @@ export default function DateCalendar({
       {/* Días del mes */}
       <div className="grid grid-cols-7 gap-1">
         {allDays.map((day) => {
-          const isCurrentMonth = isSameMonth(day, currentMonth);
+          const isCurrentMonth = isSameMonth(day, firstDayCurrentMonth);
           const isToday = isSameDay(day, today);
           const isSelected = selectedDate && isSameDay(day, selectedDate);
           const isAvailable = isDateAvailable(day);
           const isPastDate = !isAfter(day, today) && !isSameDay(day, today);
-
-          // Una fecha está habilitada si:
-          // 1. Está en el mes actual
-          // 2. No es una fecha pasada
-          // 3. Está disponible según la lógica de isDateAvailable
           const isEnabled = isCurrentMonth && !isPastDate && isAvailable;
 
           return (
             <button
-              key={day.toString()}
+              key={day.getTime()} // Usar timestamp como key más eficiente
               type="button"
               onClick={() => isEnabled && onDateSelect(day)}
               disabled={!isEnabled}
@@ -133,13 +141,13 @@ export default function DateCalendar({
                 ${isToday && !isSelected ? "ring-2 ring-cyan-400" : ""}
               `}
             >
-              {format(day, "d")}
+              {day.getDate()}
               {/* Mostrar indicador solo si restrictToAvailableDates es true y la fecha está disponible */}
               {restrictToAvailableDates &&
                 isAvailable &&
                 isCurrentMonth &&
                 !isPastDate && (
-                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-cyan-400 rounded-full"></div>
+                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-cyan-400 rounded-full" />
                 )}
             </button>
           );
@@ -147,4 +155,6 @@ export default function DateCalendar({
       </div>
     </div>
   );
-}
+});
+
+export default DateCalendar;
