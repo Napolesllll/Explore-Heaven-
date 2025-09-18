@@ -43,8 +43,8 @@ const useDeviceCapabilities = () => {
       "(prefers-reduced-motion: reduce)"
     ).matches;
     const lowMemory =
-      (navigator as any).deviceMemory !== undefined &&
-      (navigator as any).deviceMemory < 4;
+      (navigator as { deviceMemory?: number }).deviceMemory !== undefined &&
+      (navigator as { deviceMemory?: number }).deviceMemory! < 4;
 
     setCapabilities({ isMobile, reduceMotion, lowMemory });
 
@@ -62,17 +62,9 @@ const useDeviceCapabilities = () => {
   return capabilities;
 };
 
-// Partícula optimizada
+// Partícula optimizada - eliminar index no usado
 const OptimizedParticle = memo(
-  ({
-    index,
-    isVisible,
-    isMobile,
-  }: {
-    index: number;
-    isVisible: boolean;
-    isMobile: boolean;
-  }) => {
+  ({ isVisible, isMobile }: { isVisible: boolean; isMobile: boolean }) => {
     const particleConfig = useMemo(
       () => ({
         top: `${Math.random() * 100}%`,
@@ -267,7 +259,6 @@ const OptimizedSidebarLeft = memo<SidebarLeftProps>(
             [...Array(particleCount)].map((_, i) => (
               <OptimizedParticle
                 key={i}
-                index={i}
                 isVisible={isVisible}
                 isMobile={capabilities.isMobile}
               />

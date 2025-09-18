@@ -109,7 +109,7 @@ const OptimizedFeed = memo<FeedProps>(({ activeSection }) => {
     []
   );
 
-  // Renderizado optimizado para móvil
+  // Renderizado optimizado para móvil - incluir isMobile en dependencias
   const renderActiveSection = useCallback(() => {
     switch (activeSection) {
       case "inicio":
@@ -153,7 +153,7 @@ const OptimizedFeed = memo<FeedProps>(({ activeSection }) => {
           </div>
         );
     }
-  }, [activeSection, user]);
+  }, [activeSection, user, isMobile]); // Incluir isMobile aquí
 
   return (
     <div
