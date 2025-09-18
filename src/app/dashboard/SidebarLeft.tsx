@@ -6,6 +6,7 @@
 // - Sin optimización de imágenes ni lazy loading
 
 // 2. DESPUÉS (código optimizado)
+// 3. SIDEBAR LEFT OPTIMIZADO PARA MÓVIL
 "use client";
 
 import { LogOut } from "lucide-react";
@@ -26,30 +27,72 @@ interface SidebarLeftProps {
   onSelectSection?: (section: string) => void;
 }
 
-// Componente de partícula optimizada con Intersection Observer
+// Hook para capacidades del dispositivo
+const useDeviceCapabilities = () => {
+  const [capabilities, setCapabilities] = useState({
+    isMobile: false,
+    reduceMotion: false,
+    lowMemory: false,
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const isMobile = window.innerWidth < 768;
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    const lowMemory =
+      (navigator as any).deviceMemory !== undefined &&
+      (navigator as any).deviceMemory < 4;
+
+    setCapabilities({ isMobile, reduceMotion, lowMemory });
+
+    const handleResize = () => {
+      setCapabilities((prev) => ({
+        ...prev,
+        isMobile: window.innerWidth < 768,
+      }));
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return capabilities;
+};
+
+// Partícula optimizada
 const OptimizedParticle = memo(
-  ({ isVisible }: { index: number; isVisible: boolean }) => {
+  ({
+    index,
+    isVisible,
+    isMobile,
+  }: {
+    index: number;
+    isVisible: boolean;
+    isMobile: boolean;
+  }) => {
     const particleConfig = useMemo(
       () => ({
         top: `${Math.random() * 100}%`,
         left: `${Math.random() * 100}%`,
-        width: `${Math.random() * 6 + 2}px`,
-        height: `${Math.random() * 6 + 2}px`,
-        duration: Math.random() * 6 + 4,
-        delay: Math.random() * 3,
+        width: `${Math.random() * (isMobile ? 3 : 6) + 2}px`,
+        height: `${Math.random() * (isMobile ? 3 : 6) + 2}px`,
+        duration: Math.random() * (isMobile ? 4 : 6) + 3,
+        delay: Math.random() * 2,
       }),
-      []
+      [isMobile]
     );
 
-    // Solo animar si está visible
-    if (!isVisible) return null;
+    if (!isVisible || isMobile) return null;
 
     return (
       <motion.div
-        className="absolute rounded-full bg-gradient-to-r from-cyan-400/10 to-purple-500/10"
+        className="absolute rounded-full bg-gradient-to-r from-cyan-400/5 to-purple-500/5"
         initial={{ opacity: 0, scale: 0 }}
         animate={{
-          opacity: [0, 0.5, 0],
+          opacity: [0, 0.3, 0],
           scale: [0, 1, 0],
         }}
         transition={{
@@ -62,7 +105,7 @@ const OptimizedParticle = memo(
           left: particleConfig.left,
           width: particleConfig.width,
           height: particleConfig.height,
-          contain: "layout style paint", // CSS containment
+          contain: "layout style paint",
         }}
       />
     );
@@ -71,7 +114,7 @@ const OptimizedParticle = memo(
 
 OptimizedParticle.displayName = "OptimizedParticle";
 
-// Componente de botón optimizado con animaciones condicionales
+// Botón optimizado
 const OptimizedButton = memo(
   ({
     onClick,
@@ -79,19 +122,21 @@ const OptimizedButton = memo(
     className,
     disabled = false,
     enableParticles = true,
+    isMobile = false,
   }: {
     onClick: () => void;
     children: React.ReactNode;
     className: string;
     disabled?: boolean;
     enableParticles?: boolean;
+    isMobile?: boolean;
   }) => {
     const [isHovered, setIsHovered] = useState(false);
 
     return (
       <button
         onClick={onClick}
-        onMouseEnter={() => setIsHovered(true)}
+        onMouseEnter={() => !isMobile && setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         disabled={disabled}
         className={`${className} relative overflow-hidden`}
@@ -99,21 +144,21 @@ const OptimizedButton = memo(
       >
         <span className="relative z-10 flex items-center">{children}</span>
 
-        {/* Partículas solo al hacer hover y si están habilitadas */}
-        {enableParticles && isHovered && (
-          <div className="absolute inset-0 opacity-100 transition-opacity duration-500">
-            {[...Array(3)].map((_, i) => (
+        {/* Efectos reducidos en móvil */}
+        {enableParticles && isHovered && !isMobile && (
+          <div className="absolute inset-0 opacity-100 transition-opacity duration-300">
+            {[...Array(2)].map((_, i) => (
               <div
                 key={i}
                 className="absolute rounded-full bg-cyan-400 animate-float"
                 style={{
                   top: `${Math.random() * 100}%`,
                   left: `${Math.random() * 100}%`,
-                  width: `${Math.random() * 4 + 2}px`,
-                  height: `${Math.random() * 4 + 2}px`,
-                  opacity: Math.random() * 0.5,
-                  animationDuration: `${Math.random() * 2 + 1}s`,
-                  animationDelay: `${Math.random() * 0.5}s`,
+                  width: `${Math.random() * 3 + 1}px`,
+                  height: `${Math.random() * 3 + 1}px`,
+                  opacity: Math.random() * 0.4,
+                  animationDuration: `${Math.random() * 1.5 + 0.8}s`,
+                  animationDelay: `${Math.random() * 0.3}s`,
                 }}
               />
             ))}
@@ -131,46 +176,34 @@ const OptimizedSidebarLeft = memo<SidebarLeftProps>(
     const { data: session } = useSession();
     const [currentUser, setCurrentUser] = useState<User>(initialUser);
     const [isVisible, setIsVisible] = useState(false);
-    const [reducedMotion, setReducedMotion] = useState(false);
+    const capabilities = useDeviceCapabilities();
 
-    // Detectar preferencias de movimiento reducido
+    // Intersection Observer solo si no es móvil
     useEffect(() => {
-      if (typeof window !== "undefined") {
-        const mediaQuery = window.matchMedia(
-          "(prefers-reduced-motion: reduce)"
-        );
-        setReducedMotion(mediaQuery.matches);
-
-        const handleChange = (e: MediaQueryListEvent) =>
-          setReducedMotion(e.matches);
-        mediaQuery.addEventListener("change", handleChange);
-        return () => mediaQuery.removeEventListener("change", handleChange);
+      if (capabilities.isMobile) {
+        setIsVisible(false);
+        return;
       }
-    }, []);
 
-    // Intersection Observer para activar animaciones solo cuando es visible
-    useEffect(() => {
       const observer = new IntersectionObserver(
-        ([entry]) => {
-          setIsVisible(entry.isIntersecting);
-        },
-        { threshold: 0.1, rootMargin: "50px" }
+        ([entry]) => setIsVisible(entry.isIntersecting),
+        { threshold: 0.1, rootMargin: "30px" }
       );
 
       const sidebar = document.querySelector('[data-sidebar="left"]');
       if (sidebar) observer.observe(sidebar);
 
       return () => observer.disconnect();
-    }, []);
+    }, [capabilities.isMobile]);
 
-    // Actualizar usuario cuando cambie la sesión - memoizado
+    // Actualizar usuario
     useEffect(() => {
       if (session?.user) {
         setCurrentUser(session.user);
       }
     }, [session]);
 
-    // Listener de actualización de perfil optimizado
+    // Listeners optimizados
     useEffect(() => {
       const handleProfileUpdate = (
         event: CustomEvent<{ name?: string; email?: string }>
@@ -199,26 +232,28 @@ const OptimizedSidebarLeft = memo<SidebarLeftProps>(
       signOut({ callbackUrl: "/" });
     }, []);
 
-    // Usuario final memoizado
     const displayUser = useMemo(
       () => currentUser || initialUser,
       [currentUser, initialUser]
     );
 
-    // Configuración de partículas basada en capacidades del dispositivo
+    // Configuración de partículas basada en capacidades
     const particleCount = useMemo(() => {
-      if (reducedMotion) return 0;
+      if (
+        capabilities.reduceMotion ||
+        capabilities.isMobile ||
+        capabilities.lowMemory
+      )
+        return 0;
+      return 4; // Muy reducido para móvil
+    }, [capabilities]);
 
-      const isMobile =
-        typeof window !== "undefined" &&
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-          navigator.userAgent
-        );
+    const enableAnimations =
+      !capabilities.reduceMotion && !capabilities.isMobile;
+    const enableParticleEffects = enableAnimations && isVisible;
 
-      return isMobile ? 5 : 8; // Reducido de 30 a máximo 8
-    }, [reducedMotion]);
-
-    const enableParticleEffects = !reducedMotion && isVisible;
+    // En móvil, no renderizar sidebar
+    if (capabilities.isMobile) return null;
 
     return (
       <aside
@@ -226,78 +261,86 @@ const OptimizedSidebarLeft = memo<SidebarLeftProps>(
         data-sidebar="left"
         style={{ contain: "layout style paint" }}
       >
-        {/* Fondo galáctico optimizado */}
+        {/* Fondo optimizado */}
         <div className="absolute inset-0 -z-10">
           {enableParticleEffects &&
             [...Array(particleCount)].map((_, i) => (
-              <OptimizedParticle key={i} index={i} isVisible={isVisible} />
+              <OptimizedParticle
+                key={i}
+                index={i}
+                isVisible={isVisible}
+                isMobile={capabilities.isMobile}
+              />
             ))}
 
-          {/* Efectos de fondo estáticos para mejor rendimiento */}
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-purple-900/10 blur-[100px]" />
-          <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-cyan-500/10 blur-[120px]" />
+          {/* Efectos estáticos para mejor rendimiento */}
+          <div className="absolute top-1/4 left-1/4 w-48 h-48 rounded-full bg-purple-900/8 blur-[80px]" />
+          <div className="absolute bottom-1/3 right-1/4 w-56 h-56 rounded-full bg-cyan-500/8 blur-[100px]" />
         </div>
 
-        <div className="absolute inset-0 border-r border-cyan-500/30 shadow-[0_0_30px_rgba(0,255,255,0.1)] pointer-events-none" />
+        <div className="absolute inset-0 border-r border-cyan-500/20 pointer-events-none" />
 
-        <div className="flex flex-col items-center mt-8">
+        <div className="flex flex-col items-center mt-6">
           <motion.div
-            className="text-center mb-8 w-full"
-            initial={!reducedMotion ? { opacity: 0, y: -20 } : {}}
-            animate={!reducedMotion ? { opacity: 1, y: 0 } : {}}
-            transition={!reducedMotion ? { duration: 0.8 } : {}}
+            className="text-center mb-6 w-full"
+            initial={enableAnimations ? { opacity: 0, y: -15 } : {}}
+            animate={enableAnimations ? { opacity: 1, y: 0 } : {}}
+            transition={enableAnimations ? { duration: 0.5 } : {}}
           >
-            <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
+            <h2 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
               Panel de Explorador
             </h2>
-            <div className="h-1 w-32 mx-auto bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full mt-2" />
+            <div className="h-0.5 w-24 mx-auto bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full mt-1" />
           </motion.div>
 
-          {/* Avatar optimizado con lazy loading */}
+          {/* Avatar optimizado */}
           <motion.div
-            className="relative mb-6"
-            initial={!reducedMotion ? { scale: 0.8, opacity: 0 } : {}}
-            animate={!reducedMotion ? { scale: 1, opacity: 1 } : {}}
-            transition={!reducedMotion ? { delay: 0.2, duration: 0.5 } : {}}
+            className="relative mb-4"
+            initial={enableAnimations ? { scale: 0.9, opacity: 0 } : {}}
+            animate={enableAnimations ? { scale: 1, opacity: 1 } : {}}
+            transition={enableAnimations ? { delay: 0.1, duration: 0.4 } : {}}
             key={displayUser?.name}
           >
-            <div className="absolute -inset-3 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 blur-md opacity-20" />
+            <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 blur-sm opacity-15" />
             <div className="relative">
               <Image
                 src={displayUser?.image || "/default-avatar.png"}
                 alt="User"
-                width={110}
-                height={110}
-                className="rounded-full object-cover border-2 border-cyan-500/50 relative z-10 shadow-lg"
-                priority={isVisible} // Cargar prioritariamente solo si es visible
+                width={90}
+                height={90}
+                className="rounded-full object-cover border-2 border-cyan-500/40 relative z-10 shadow-md"
+                priority={isVisible}
                 loading={isVisible ? "eager" : "lazy"}
-                sizes="110px"
+                sizes="90px"
+                quality={75}
               />
-              {!reducedMotion && (
-                <div className="absolute inset-0 rounded-full bg-cyan-400 blur-md opacity-0 hover:opacity-20 transition-opacity duration-500" />
+              {enableAnimations && (
+                <div className="absolute inset-0 rounded-full bg-cyan-400 blur-sm opacity-0 hover:opacity-15 transition-opacity duration-300" />
               )}
             </div>
 
-            <div className="absolute -bottom-2 -right-2 bg-[#0f172a] p-2 rounded-full border border-cyan-500/30 z-20">
-              <FaCompass className="text-cyan-400" />
+            <div className="absolute -bottom-1 -right-1 bg-[#0f172a] p-1.5 rounded-full border border-cyan-500/20 z-20">
+              <FaCompass className="text-cyan-400 text-sm" />
             </div>
           </motion.div>
 
-          {/* Información del usuario memoizada */}
+          {/* Información del usuario */}
           <motion.div
-            initial={!reducedMotion ? { opacity: 0 } : {}}
-            animate={!reducedMotion ? { opacity: 1 } : {}}
-            transition={!reducedMotion ? { delay: 0.4 } : {}}
+            initial={enableAnimations ? { opacity: 0 } : {}}
+            animate={enableAnimations ? { opacity: 1 } : {}}
+            transition={enableAnimations ? { delay: 0.2 } : {}}
             className="text-center"
             key={`${displayUser?.name}-${displayUser?.email}`}
           >
-            <p className="font-bold text-lg text-cyan-300 mb-1">
+            <p className="font-bold text-base text-cyan-300 mb-1 truncate max-w-[200px]">
               {displayUser?.name}
             </p>
-            <p className="text-sm text-cyan-300/70">{displayUser?.email}</p>
+            <p className="text-xs text-cyan-300/70 truncate max-w-[200px]">
+              {displayUser?.email}
+            </p>
 
-            <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0f172a] border border-cyan-500/30">
-              <FaMountain className="text-purple-400" />
+            <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0f172a] border border-cyan-500/20">
+              <FaMountain className="text-purple-400 text-xs" />
               <span className="text-purple-300 text-xs font-medium">
                 Explorador
               </span>
@@ -305,49 +348,51 @@ const OptimizedSidebarLeft = memo<SidebarLeftProps>(
           </motion.div>
 
           <motion.div
-            className="mt-8 w-full space-y-3"
-            initial={!reducedMotion ? { opacity: 0 } : {}}
-            animate={!reducedMotion ? { opacity: 1 } : {}}
-            transition={!reducedMotion ? { delay: 0.6 } : {}}
+            className="mt-6 w-full space-y-2"
+            initial={enableAnimations ? { opacity: 0 } : {}}
+            animate={enableAnimations ? { opacity: 1 } : {}}
+            transition={enableAnimations ? { delay: 0.3 } : {}}
           >
             <OptimizedButton
               onClick={handleProfileClick}
               enableParticles={enableParticleEffects}
-              className="w-full flex items-center justify-center bg-gradient-to-r from-cyan-700 to-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-cyan-600 hover:to-blue-500 transition-all duration-300 shadow-lg border border-cyan-500/30"
+              isMobile={capabilities.isMobile}
+              className="w-full flex items-center justify-center bg-gradient-to-r from-cyan-700 to-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:from-cyan-600 hover:to-blue-500 transition-all duration-300 shadow-md border border-cyan-500/20"
             >
-              <FaUser className="mr-3" />
+              <FaUser className="mr-2 text-sm" />
               Mi Perfil
             </OptimizedButton>
           </motion.div>
         </div>
 
         <motion.div
-          className="mb-6 relative"
-          initial={!reducedMotion ? { opacity: 0, y: 20 } : {}}
-          animate={!reducedMotion ? { opacity: 1, y: 0 } : {}}
-          transition={!reducedMotion ? { delay: 0.8 } : {}}
+          className="mb-4 relative"
+          initial={enableAnimations ? { opacity: 0, y: 15 } : {}}
+          animate={enableAnimations ? { opacity: 1, y: 0 } : {}}
+          transition={enableAnimations ? { delay: 0.4 } : {}}
         >
           <OptimizedButton
             onClick={handleSignOut}
             enableParticles={enableParticleEffects}
-            className="w-full flex items-center justify-center bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-cyan-500 hover:to-purple-500 transition-all duration-300 shadow-lg border border-cyan-500/30 group"
+            isMobile={capabilities.isMobile}
+            className="w-full flex items-center justify-center bg-gradient-to-r from-cyan-600 to-purple-600 text-white font-semibold py-2.5 px-4 rounded-lg hover:from-cyan-500 hover:to-purple-500 transition-all duration-300 shadow-md border border-cyan-500/20 group"
           >
             <LogOut
-              size={18}
-              className="mr-3 transform group-hover:translate-x-1 transition-transform"
+              size={16}
+              className="mr-2 transform group-hover:translate-x-0.5 transition-transform"
             />
             Cerrar sesión
           </OptimizedButton>
         </motion.div>
 
         <motion.div
-          className="text-center text-cyan-500/50 text-xs"
-          initial={!reducedMotion ? { opacity: 0 } : {}}
-          animate={!reducedMotion ? { opacity: 1 } : {}}
-          transition={!reducedMotion ? { delay: 1 } : {}}
+          className="text-center text-cyan-500/40 text-xs"
+          initial={enableAnimations ? { opacity: 0 } : {}}
+          animate={enableAnimations ? { opacity: 1 } : {}}
+          transition={enableAnimations ? { delay: 0.5 } : {}}
         >
           <p>Explora • Descubre • Aventúrate</p>
-          <p className="mt-1">v2.1.4 • © {new Date().getFullYear()}</p>
+          <p className="mt-0.5">v2.1.4 • © {new Date().getFullYear()}</p>
         </motion.div>
 
         <style jsx>{`
@@ -357,8 +402,8 @@ const OptimizedSidebarLeft = memo<SidebarLeftProps>(
               opacity: 0.2;
             }
             50% {
-              transform: translateY(-10px) translateX(5px);
-              opacity: 0.5;
+              transform: translateY(-8px) translateX(3px);
+              opacity: 0.4;
             }
             100% {
               transform: translateY(0) translateX(0);

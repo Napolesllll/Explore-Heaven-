@@ -292,16 +292,6 @@ export default function ReservasFeed() {
       </div>
 
       {/* Elemento decorativo flotante */}
-      <motion.div
-        className="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 shadow-2xl shadow-cyan-500/30 flex items-center justify-center cursor-pointer"
-        initial={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        title="Volver arriba"
-      ></motion.div>
     </div>
   );
 }

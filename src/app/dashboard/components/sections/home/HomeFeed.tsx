@@ -102,7 +102,7 @@ export default function HomeFeed() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <h2 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-4">
+        <h2 className="text-4xl mt-10 md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-4">
           Experiencias Destacadas
         </h2>
         <p className="text-gray-400 max-w-xl mx-auto">

@@ -8,7 +8,6 @@ import SidebarRight from "./SidebarRight";
 import OptimizedFeed from "./Feed";
 import TopNavbar from "./TopNavbar";
 import Image from "next/image";
-import EmergencyButton from "components/EmergencyButton";
 import GalacticFooter from "./GalacticFooter";
 
 // Tipado fuerte para partículas
@@ -300,7 +299,6 @@ const DashboardPage: React.FC = () => {
           onSelect={handleSectionChange}
         />
         <OptimizedFeed activeSection={activeSection} />
-        <EmergencyButton />
         <GalacticFooter />
       </main>
 
