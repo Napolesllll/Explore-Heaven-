@@ -12,7 +12,7 @@ import Image from "next/image";
 
 type Props = {
   tour: Tour;
-  onBack?: () => void; // <-- aceptar onBack opcional para compatibilidad con ToursFeed
+  onBack?: () => void;
 };
 
 export default function TourDetail({ tour }: Props) {
@@ -34,8 +34,6 @@ export default function TourDetail({ tour }: Props) {
   const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
 
-  // Para cumplir con la prop esperada por ReservationModal: RefObject<HTMLFormElement>
-  // usamos la aserción non-null aquí (null!) para evitar el error de asignación de tipos.
   const formRef = useRef<HTMLFormElement>(null!);
 
   // Generar fechas disponibles localmente
@@ -48,7 +46,6 @@ export default function TourDetail({ tour }: Props) {
         const date = new Date(today);
         date.setDate(today.getDate() + i);
 
-        // Evitar fines de semana (0 = domingo, 6 = sábado)
         if (date.getDay() !== 0 && date.getDay() !== 6) {
           dates.push(date);
         }
@@ -64,18 +61,42 @@ export default function TourDetail({ tour }: Props) {
     const c = formData.correo.trim();
     const p = formData.telefono.trim();
     let ok = true;
+
     if (!/^[a-zA-ZÀ-ÿ\s]{2,}$/.test(n)) {
       toast.error("Nombre inválido");
       ok = false;
     }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) {
       toast.error("Correo inválido");
       ok = false;
     }
-    if (!/^\d{7,15}$/.test(p)) {
-      toast.error("Teléfono inválido");
+
+    // Validación actualizada para teléfono con código de país
+    if (p) {
+      // Regex para formato: +código números (ej: +57 1234567890)
+      const phoneRegex = /^\+\d{1,4}\s\d{7,15}$/;
+
+      if (!phoneRegex.test(p)) {
+        toast.error("Formato de teléfono inválido");
+        ok = false;
+      } else {
+        // Extraer solo los números del teléfono (sin código de país)
+        const phoneNumbers = p.split(" ")[1];
+        if (
+          !phoneNumbers ||
+          phoneNumbers.length < 7 ||
+          phoneNumbers.length > 15
+        ) {
+          toast.error("Número de teléfono debe tener entre 7 y 15 dígitos");
+          ok = false;
+        }
+      }
+    } else {
+      toast.error("Teléfono es requerido");
       ok = false;
     }
+
     return ok;
   }
 
@@ -132,186 +153,232 @@ export default function TourDetail({ tour }: Props) {
     show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
 
-  // Manejo seguro de la propiedad 'caracteristicas' sin usar `any`.
-  // Convertimos primero a `unknown` y luego a `Record<string, unknown>` para evitar
-  // la advertencia de conversión directa entre tipos estructuralmente distintos.
   const tourAsRecord = tour as unknown as Record<string, unknown>;
   const caracteristicas: unknown[] = Array.isArray(tourAsRecord.caracteristicas)
     ? (tourAsRecord.caracteristicas as unknown[])
     : [];
 
   return (
-    <div className="relative min-h-screen py-12 px-4 bg-gradient-to-br from-[#0c0f1d] via-[#151b35] to-[#0c0f1d]">
-      {/* Partículas galácticas */}
-      <div className="fixed inset-0 overflow-hidden -z-10">
-        {[...Array(30)].map((_, i) => (
+    <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Background Particles */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        {[...Array(25)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full bg-gradient-to-r from-cyan-400/10 to-purple-500/10"
+            className="absolute rounded-full bg-gradient-to-r from-cyan-400/8 to-purple-500/8 backdrop-blur-sm"
             initial={{
               top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
-              width: `${Math.random() * 6 + 2}px`,
-              height: `${Math.random() * 6 + 2}px`,
+              width: `${Math.random() * 4 + 3}px`,
+              height: `${Math.random() * 4 + 3}px`,
               opacity: 0,
             }}
-            animate={{ opacity: [0, 0.5, 0], scale: [0, 1, 0] }}
+            animate={{
+              opacity: [0, 0.6, 0],
+              scale: [0.8, 1.2, 0.8],
+              rotate: [0, 180, 360],
+            }}
             transition={{
-              duration: Math.random() * 6 + 4,
+              duration: Math.random() * 8 + 6,
               repeat: Infinity,
-              delay: Math.random() * 3,
+              delay: Math.random() * 4,
+              ease: "easeInOut",
             }}
           />
         ))}
       </div>
 
-      <div className="max-w-5xl mx-auto">
-        {/* Cabecera */}
-        <motion.div
-          className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6"
-          initial={{ opacity: 0, y: -30 }}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+        {/* Header Section */}
+        <motion.header
+          className="mb-8 lg:mb-12"
+          initial={{ opacity: 0, y: -40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2">
-              {tour.nombre}
-            </h1>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 bg-gradient-to-r from-cyan-600 to-purple-600 text-white text-sm px-3 py-1 rounded-full">
-                <FaRocket className="text-cyan-300" />
-                <span>{tour.duracion}</span>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="space-y-4">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent leading-tight">
+                {tour.nombre}
+              </h1>
+
+              <div className="flex items-center gap-3">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 rounded-full backdrop-blur-sm">
+                  <FaRocket className="text-cyan-400 text-sm" />
+                  <span className="text-cyan-100 text-sm font-medium">
+                    {tour.duracion}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center lg:text-right">
+              <p className="text-slate-400 text-sm mb-1">Desde</p>
+              <div className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                {tour.precio}
               </div>
             </div>
           </div>
+        </motion.header>
 
-          <div className="flex flex-col items-end">
-            <span className="text-gray-400 text-sm">Desde</span>
-            <span className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-500">
-              {tour.precio}
-            </span>
-          </div>
-        </motion.div>
-
-        {/* Imagen principal */}
-        <motion.div
-          className="relative h-96 rounded-2xl overflow-hidden mb-10 border-2 border-cyan-500/30 shadow-xl shadow-cyan-500/10"
+        {/* Hero Image Section */}
+        <motion.section
+          className="mb-10 lg:mb-16"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 1, ease: "easeOut" }}
         >
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0c0f1d] via-transparent to-transparent z-10"></div>
-          {tour.fotos?.[activeImage] && (
-            <Image
-              src={tour.fotos[activeImage]}
-              alt={`Imagen principal del tour ${tour.nombre}`}
-              fill
-              className="object-cover"
-            />
-          )}
+          <div className="relative h-72 sm:h-96 lg:h-[500px] rounded-2xl lg:rounded-3xl overflow-hidden border border-cyan-400/20 shadow-2xl shadow-cyan-500/10">
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent z-10" />
 
-          {/* Miniaturas */}
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
-            {tour.fotos?.map((foto, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveImage(index)}
-                className={`w-16 h-16 relative rounded-lg overflow-hidden border-2 transition-all duration-300 ${
-                  index === activeImage
-                    ? "border-cyan-400 scale-110 shadow-lg shadow-cyan-500/50"
-                    : "border-gray-700 opacity-70 hover:opacity-100"
-                }`}
-              >
-                <Image
-                  src={foto}
-                  alt={`Miniatura ${index + 1}`}
-                  fill
-                  className="object-cover"
-                />
-              </button>
-            ))}
+            {tour.fotos?.[activeImage] && (
+              <Image
+                src={tour.fotos[activeImage]}
+                alt={`Vista principal del tour ${tour.nombre}`}
+                fill
+                className="object-cover transition-transform duration-700 hover:scale-105"
+                priority
+              />
+            )}
+
+            {/* Image Navigation */}
+            {tour.fotos && tour.fotos.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
+                <div className="flex gap-2 p-2 bg-slate-900/60 backdrop-blur-md rounded-xl border border-slate-700/50">
+                  {tour.fotos.map((foto, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setActiveImage(index)}
+                      className={`relative w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
+                        index === activeImage
+                          ? "border-cyan-400 scale-110 shadow-lg shadow-cyan-400/50"
+                          : "border-slate-600 opacity-70 hover:opacity-100 hover:border-slate-500"
+                      }`}
+                    >
+                      <Image
+                        src={foto}
+                        alt={`Vista ${index + 1} del tour`}
+                        fill
+                        className="object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </motion.div>
+        </motion.section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Información */}
-          <motion.div variants={container} initial="hidden" animate="show">
-            <motion.div variants={item}>
-              <h2 className="text-xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400">
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+          {/* Tour Information */}
+          <motion.div
+            className="lg:col-span-2 space-y-8 lg:space-y-12"
+            variants={container}
+            initial="hidden"
+            animate="show"
+          >
+            {/* Description */}
+            <motion.section variants={item} className="space-y-4">
+              <h2 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 Descripción de la experiencia
               </h2>
-              <p className="text-gray-300 mb-8 leading-relaxed">
-                {tour.descripcion}
-              </p>
-            </motion.div>
+              <div className="prose prose-invert max-w-none">
+                <p className="text-slate-300 leading-relaxed text-base lg:text-lg">
+                  {tour.descripcion}
+                </p>
+              </div>
+            </motion.section>
 
-            <motion.div variants={item}>
-              <h2 className="text-xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400">
+            {/* Includes */}
+            <motion.section variants={item} className="space-y-6">
+              <h2 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 Lo que incluye tu aventura
               </h2>
-              <ul className="space-y-3">
+              <div className="grid gap-3 sm:gap-4">
                 {tour.incluido.map((item, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <FaCheckCircle className="text-cyan-400 mt-1 flex-shrink-0" />
-                    <span className="text-gray-300">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-
-            <motion.div variants={item} className="mt-8">
-              <h2 className="text-xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-400">
-                Características destacadas
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {caracteristicas.map((caracteristica, i) => (
-                  <span
-                    key={i}
-                    className="px-3 py-2 bg-cyan-900/30 text-cyan-300 rounded-lg border border-cyan-500/30"
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-3 lg:p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl backdrop-blur-sm hover:bg-slate-800/70 transition-colors duration-300"
                   >
-                    {String(caracteristica)}
-                  </span>
+                    <FaCheckCircle className="text-cyan-400 mt-1 flex-shrink-0" />
+                    <span className="text-slate-300 text-sm lg:text-base">
+                      {item}
+                    </span>
+                  </div>
                 ))}
               </div>
-            </motion.div>
+            </motion.section>
+
+            {/* Features */}
+            {caracteristicas.length > 0 && (
+              <motion.section variants={item} className="space-y-6">
+                <h2 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                  Características destacadas
+                </h2>
+                <div className="flex flex-wrap gap-3">
+                  {caracteristicas.map((caracteristica, i) => (
+                    <span
+                      key={i}
+                      className="px-4 py-2 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-400/30 text-cyan-300 rounded-full text-sm font-medium backdrop-blur-sm hover:from-cyan-500/20 hover:to-purple-500/20 transition-colors duration-300"
+                    >
+                      {String(caracteristica)}
+                    </span>
+                  ))}
+                </div>
+              </motion.section>
+            )}
           </motion.div>
 
-          {/* Reserva */}
-          <motion.div
-            className="bg-gradient-to-br from-[#0f172a]/80 to-[#1e293b]/80 rounded-2xl p-6 border border-cyan-500/30 shadow-xl shadow-cyan-500/10 backdrop-blur-sm"
+          {/* Reservation Card */}
+          <motion.aside
+            className="lg:col-span-1"
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
           >
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-2xl pointer-events-none" />
-              <div className="relative z-10 space-y-4">
-                <h2 className="text-2xl font-bold text-cyan-400 text-center">
-                  Reserva tu lugar
-                </h2>
-                <p className="text-cyan-400 text-sm text-center">
-                  Completa el formulario para iniciar tu reserva
-                </p>
-              </div>
+            <div className="sticky top-8">
+              <div className="relative p-6 lg:p-8 bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-cyan-400/20 rounded-2xl shadow-2xl shadow-cyan-500/10 backdrop-blur-sm">
+                {/* Card Glow Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 rounded-2xl" />
 
-              <motion.button
-                onClick={() => setShowModal(true)}
-                className="w-full py-4 rounded-xl font-bold relative overflow-hidden group bg-gradient-to-r from-cyan-600 to-purple-600"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500/30 to-purple-500/30 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  Confirmar y continuar a la Reserva
-                </span>
-              </motion.button>
+                <div className="relative z-10 space-y-6">
+                  <div className="text-center space-y-2">
+                    <h3 className="text-2xl font-bold text-cyan-400">
+                      Reserva tu lugar
+                    </h3>
+                    <p className="text-slate-400 text-sm">
+                      Completa el formulario para iniciar tu reserva
+                    </p>
+                  </div>
+
+                  <motion.button
+                    onClick={() => setShowModal(true)}
+                    className="group relative w-full py-4 px-6 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-bold rounded-xl transition-all duration-300 overflow-hidden"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {/* Button Glow */}
+                    <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/50 to-purple-500/50 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      Confirmar y continuar a la Reserva
+                    </span>
+                  </motion.button>
+
+                  <div className="text-center">
+                    <p className="text-xs text-slate-500">
+                      Tu información está segura con nosotros
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Reservas 100% protegidas
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-          </motion.div>
+          </motion.aside>
         </div>
-      </div>
-      <div className="text-center text-sm text-gray-400 mt-4">
-        Tu información está segura con nosotros. Reservas 100% protegidas.
       </div>
 
       {/* Modal */}

@@ -19,13 +19,15 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface DateCalendarProps {
   selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
-  availableDates: Date[];
+  availableDates?: Date[]; // Hecho opcional
+  restrictToAvailableDates?: boolean; // Nueva prop para controlar la restricción
 }
 
 export default function DateCalendar({
   selectedDate,
   onDateSelect,
-  availableDates,
+  availableDates = [],
+  restrictToAvailableDates = false, // Por defecto no restringe a availableDates
 }: DateCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const today = startOfToday();
@@ -42,6 +44,12 @@ export default function DateCalendar({
   const allDays = eachDayOfInterval({ start: startDate, end: endDate });
 
   const isDateAvailable = (date: Date) => {
+    // Si restrictToAvailableDates es false, todas las fechas futuras están disponibles
+    if (!restrictToAvailableDates) {
+      return true;
+    }
+
+    // Si restrictToAvailableDates es true, verificar si está en availableDates
     return availableDates.some((availableDate) =>
       isSameDay(date, availableDate)
     );
@@ -99,22 +107,23 @@ export default function DateCalendar({
           const isAvailable = isDateAvailable(day);
           const isPastDate = !isAfter(day, today) && !isSameDay(day, today);
 
+          // Una fecha está habilitada si:
+          // 1. Está en el mes actual
+          // 2. No es una fecha pasada
+          // 3. Está disponible según la lógica de isDateAvailable
+          const isEnabled = isCurrentMonth && !isPastDate && isAvailable;
+
           return (
             <button
               key={day.toString()}
               type="button"
-              onClick={() =>
-                isAvailable &&
-                isCurrentMonth &&
-                !isPastDate &&
-                onDateSelect(day)
-              }
-              disabled={!isAvailable || !isCurrentMonth || isPastDate}
+              onClick={() => isEnabled && onDateSelect(day)}
+              disabled={!isEnabled}
               className={`relative p-2 text-sm rounded-lg transition-all duration-200
                 ${!isCurrentMonth ? "text-gray-600" : ""}
                 ${isPastDate ? "text-gray-600 cursor-not-allowed" : ""}
                 ${
-                  isAvailable && isCurrentMonth && !isPastDate
+                  isEnabled
                     ? "text-cyan-100 hover:bg-cyan-500/20 cursor-pointer"
                     : !isPastDate && isCurrentMonth
                       ? "text-gray-500 cursor-not-allowed"
@@ -125,9 +134,13 @@ export default function DateCalendar({
               `}
             >
               {format(day, "d")}
-              {isAvailable && isCurrentMonth && !isPastDate && (
-                <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-cyan-400 rounded-full"></div>
-              )}
+              {/* Mostrar indicador solo si restrictToAvailableDates es true y la fecha está disponible */}
+              {restrictToAvailableDates &&
+                isAvailable &&
+                isCurrentMonth &&
+                !isPastDate && (
+                  <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-cyan-400 rounded-full"></div>
+                )}
             </button>
           );
         })}

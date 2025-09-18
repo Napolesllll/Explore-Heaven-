@@ -12,7 +12,6 @@ import {
   FaPhone,
   FaEnvelope,
   FaClock,
-  FaHeart,
   FaStar,
 } from "react-icons/fa";
 
@@ -282,7 +281,7 @@ const GalacticFooter = memo(() => {
               <h3
                 className={`${isMobile ? "text-lg" : "text-2xl"} font-bold text-yellow-300 mb-4 flex items-center gap-2`}
               >
-                <FaHeart className="text-pink-400" /> Síguenos
+                <span className="text-pink-400"></span> Síguenos
               </h3>
               <div
                 className={`grid ${isMobile ? "grid-cols-3 gap-2" : "grid-cols-2 gap-4"}`}
@@ -347,19 +346,6 @@ const GalacticFooter = memo(() => {
                 className={`text-gray-400 mb-2 ${isMobile ? "text-sm" : "text-base"}`}
               >
                 © {currentYear} Explore Heaven. Todos los derechos reservados.
-              </p>
-              <p
-                className={`${isMobile ? "text-xs" : "text-sm"} text-gray-500`}
-              >
-                Hecho con{" "}
-                <motion.span
-                  className="text-red-400"
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                >
-                  ♥
-                </motion.span>{" "}
-                para viajeros apasionados
               </p>
             </div>
           </motion.div>
