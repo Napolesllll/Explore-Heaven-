@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, InputHTMLAttributes } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  InputHTMLAttributes,
+  useCallback,
+  memo,
+} from "react";
 import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
@@ -25,77 +32,81 @@ interface InputFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
 }
 
-function InputField({
-  id,
-  label,
-  type,
-  icon: Icon,
-  error,
-  ...props
-}: InputFieldProps) {
-  const [showPassword, setShowPassword] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
+const InputField = memo<InputFieldProps>(
+  ({ id, label, type, icon: Icon, error, ...props }) => {
+    const [showPassword, setShowPassword] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
 
-  return (
-    <div className="space-y-2 relative">
-      <div className="relative">
-        {Icon && (
-          <Icon
-            className={`h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors ${
+    const togglePassword = useCallback(() => {
+      setShowPassword((v) => !v);
+    }, []);
+
+    const handleFocus = useCallback(() => setIsFocused(true), []);
+    const handleBlur = useCallback(() => setIsFocused(false), []);
+
+    return (
+      <div className="space-y-2 relative">
+        <div className="relative">
+          {Icon && (
+            <Icon
+              className={`h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors ${
+                error
+                  ? "text-red-400"
+                  : isFocused
+                    ? "text-yellow-300"
+                    : "text-yellow-400"
+              }`}
+            />
+          )}
+          <input
+            id={id}
+            type={
+              type === "password" ? (showPassword ? "text" : "password") : type
+            }
+            className={`w-full pl-10 pr-12 py-4 bg-gray-800/60 border rounded-xl text-white focus:outline-none focus:ring-2 transition-all duration-300 backdrop-blur-sm ${
               error
-                ? "text-red-400"
-                : isFocused
-                  ? "text-yellow-300"
-                  : "text-yellow-400"
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-700 focus:ring-yellow-500 focus:border-transparent"
             }`}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            {...props}
           />
-        )}
-        <input
-          id={id}
-          type={
-            type === "password" ? (showPassword ? "text" : "password") : type
-          }
-          className={`w-full pl-10 pr-12 py-4 bg-gray-800/60 border rounded-xl text-white focus:outline-none focus:ring-2 transition-all duration-300 backdrop-blur-sm ${
-            error
-              ? "border-red-500 focus:ring-red-500"
-              : "border-gray-700 focus:ring-yellow-500 focus:border-transparent"
-          }`}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          {...props}
-        />
-        <label
-          htmlFor={id}
-          className={`absolute left-10 transition-all duration-300 transform pointer-events-none ${
-            (props.value as string) || isFocused
-              ? `-top-3 text-xs px-2 rounded-full ${
-                  error
-                    ? "text-red-400 bg-gray-900"
-                    : "text-yellow-400 bg-gray-900"
-                }`
-              : "top-1/2 -translate-y-1/2 text-gray-400"
-          }`}
-        >
-          {label}
-        </label>
-        {type === "password" && (
-          <button
-            type="button"
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-yellow-400 transition-colors"
-            onClick={() => setShowPassword((v) => !v)}
+          <label
+            htmlFor={id}
+            className={`absolute left-10 transition-all duration-300 transform pointer-events-none ${
+              (props.value as string) || isFocused
+                ? `-top-3 text-xs px-2 rounded-full ${
+                    error
+                      ? "text-red-400 bg-gray-900"
+                      : "text-yellow-400 bg-gray-900"
+                  }`
+                : "top-1/2 -translate-y-1/2 text-gray-400"
+            }`}
           >
-            {showPassword ? (
-              <EyeSlashIcon className="h-5 w-5" />
-            ) : (
-              <EyeIcon className="h-5 w-5" />
-            )}
-          </button>
-        )}
+            {label}
+          </label>
+          {type === "password" && (
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-yellow-400 transition-colors"
+              onClick={togglePassword}
+            >
+              {showPassword ? (
+                <EyeSlashIcon className="h-5 w-5" />
+              ) : (
+                <EyeIcon className="h-5 w-5" />
+              )}
+            </button>
+          )}
+        </div>
+        {error && <p className="text-red-400 text-sm mt-1 ml-1">{error}</p>}
       </div>
-      {error && <p className="text-red-400 text-sm mt-1 ml-1">{error}</p>}
-    </div>
-  );
-}
+    );
+  }
+);
+
+InputField.displayName = "InputField";
 
 // Tipado para SocialButton props
 interface SocialButtonProps {
@@ -104,11 +115,15 @@ interface SocialButtonProps {
   iconSrc: string;
 }
 
-function SocialButton({ provider, label, iconSrc }: SocialButtonProps) {
+const SocialButton = memo<SocialButtonProps>(({ provider, label, iconSrc }) => {
+  const handleSignIn = useCallback(() => {
+    signIn(provider, { callbackUrl: "/dashboard" });
+  }, [provider]);
+
   return (
     <button
       type="button"
-      onClick={() => signIn(provider, { callbackUrl: "/dashboard" })}
+      onClick={handleSignIn}
       className="flex items-center justify-center space-x-2 bg-gray-800/60 hover:bg-gray-700/90 backdrop-blur-sm text-white font-medium py-3 px-4 rounded-xl transition-all duration-300 border border-gray-700 hover:border-yellow-400/50 shadow-md hover:shadow-yellow-500/10"
     >
       <Image
@@ -117,75 +132,125 @@ function SocialButton({ provider, label, iconSrc }: SocialButtonProps) {
         width={20}
         height={20}
         className="h-5 w-5"
+        loading="lazy"
       />
       <span>{label}</span>
     </button>
   );
-}
+});
 
-// Particle background con tipado
-const ParticleBackground = () => {
+SocialButton.displayName = "SocialButton";
+
+// Particle background optimizado con requestIdleCallback
+const ParticleBackground = memo(() => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const resize = () => {
-      canvas.width = canvas.clientWidth;
-      canvas.height = canvas.clientHeight;
-    };
-    resize();
-
-    const particles: {
+  const animationRef = useRef<number | undefined>(undefined);
+  const particlesRef = useRef<
+    Array<{
       x: number;
       y: number;
       radius: number;
       speedX: number;
       speedY: number;
       color: string;
-    }[] = [];
+    }>
+  >([]);
 
-    for (let i = 0; i < 50; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        radius: Math.random() * 2 + 1,
-        speedX: (Math.random() - 0.5) * 0.5,
-        speedY: (Math.random() - 0.5) * 0.5,
-        color: `rgba(255,204,0,${Math.random() * 0.4 + 0.1})`,
-      });
-    }
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d", { alpha: true });
+    if (!ctx) return;
 
-    const animate = () => {
+    // Reducir número de partículas para mejor rendimiento
+    const PARTICLE_COUNT = 25;
+
+    const resize = () => {
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+
+      // Reinicializar partículas solo si cambia el tamaño
+      if (particlesRef.current.length === 0) {
+        particlesRef.current = Array.from({ length: PARTICLE_COUNT }, () => ({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 2 + 1,
+          speedX: (Math.random() - 0.5) * 0.3, // Reducir velocidad
+          speedY: (Math.random() - 0.5) * 0.3,
+          color: `rgba(255,204,0,${Math.random() * 0.3 + 0.1})`,
+        }));
+      }
+    };
+
+    resize();
+
+    let lastTime = 0;
+    const TARGET_FPS = 30; // Reducir FPS para mejor rendimiento
+    const FRAME_DURATION = 1000 / TARGET_FPS;
+
+    const animate = (currentTime: number) => {
+      if (currentTime - lastTime < FRAME_DURATION) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+      lastTime = currentTime;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
+
+      particlesRef.current.forEach((p) => {
         p.x += p.speedX;
         p.y += p.speedY;
-        if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.fill();
-      });
-      requestAnimationFrame(animate);
-    };
-    animate();
 
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
+        // Optimizar rebote en bordes
+        if (p.x <= 0 || p.x >= canvas.width) p.speedX *= -1;
+        if (p.y <= 0 || p.y >= canvas.height) p.speedY *= -1;
+
+        // Usar fillRect en lugar de arc para mejor rendimiento en partículas pequeñas
+        ctx.fillStyle = p.color;
+        ctx.fillRect(
+          p.x - p.radius,
+          p.y - p.radius,
+          p.radius * 2,
+          p.radius * 2
+        );
+      });
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    // Iniciar animación solo cuando el navegador esté disponible
+    if ("requestIdleCallback" in window) {
+      requestIdleCallback(() => {
+        animationRef.current = requestAnimationFrame(animate);
+      });
+    } else {
+      animationRef.current = requestAnimationFrame(animate);
+    }
+
+    const handleResize = () => {
+      requestAnimationFrame(resize);
+    };
+
+    window.addEventListener("resize", handleResize, { passive: true });
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
   }, []);
 
   return (
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full opacity-30 z-0"
+      style={{ willChange: "transform" }}
     />
   );
-};
+});
+
+ParticleBackground.displayName = "ParticleBackground";
 
 export default function AuthForm() {
   const router = useRouter();
@@ -208,30 +273,46 @@ export default function AuthForm() {
     }
   }, [status, router]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((f) => ({ ...f, [name]: value }));
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+      setFormData((prev) => ({ ...prev, [name]: value }));
 
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+      // Limpiar errores de forma optimizada
+      setErrors((prev) => {
+        if (!prev[name]) return prev;
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
 
-    if (
-      name === "confirmPassword" ||
-      (name === "password" && activeTab === "register")
-    ) {
-      const password = name === "password" ? value : formData.password;
-      const confirmPassword =
-        name === "confirmPassword" ? value : formData.confirmPassword;
-      setErrors((prev) => ({
-        ...prev,
-        confirmPassword:
-          confirmPassword && password !== confirmPassword
-            ? "Las contraseñas no coinciden"
-            : "",
-      }));
-    }
-  };
+      // Validación de contraseñas optimizada
+      if (
+        name === "confirmPassword" ||
+        (name === "password" && activeTab === "register")
+      ) {
+        const password = name === "password" ? value : formData.password;
+        const confirmPassword =
+          name === "confirmPassword" ? value : formData.confirmPassword;
 
-  const validateForm = () => {
+        if (confirmPassword && password !== confirmPassword) {
+          setErrors((prev) => ({
+            ...prev,
+            confirmPassword: "Las contraseñas no coinciden",
+          }));
+        } else {
+          setErrors((prev) => {
+            const newErrors = { ...prev };
+            delete newErrors.confirmPassword;
+            return newErrors;
+          });
+        }
+      }
+    },
+    [formData.password, formData.confirmPassword, activeTab]
+  );
+
+  const validateForm = useCallback(() => {
     const { name, email, password, confirmPassword } = formData;
     const newErrors: { [key: string]: string } = {};
 
@@ -250,79 +331,105 @@ export default function AuthForm() {
     }
 
     setErrors(newErrors);
-    Object.values(newErrors).forEach((error) => error && toast.error(error));
 
-    return Object.keys(newErrors).length === 0;
-  };
+    // Mostrar errores de forma batch
+    const errorMessages = Object.values(newErrors);
+    if (errorMessages.length > 0) {
+      errorMessages.forEach((error) => toast.error(error));
+    }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+    return errorMessages.length === 0;
+  }, [formData, activeTab]);
 
-    setLoading(true);
-    try {
-      const { name, email, password } = formData;
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!validateForm()) return;
 
-      if (activeTab === "register") {
-        const res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
-        });
+      setLoading(true);
+      try {
+        const { name, email, password } = formData;
 
-        let data: { error?: string; message?: string } = {};
-        try {
-          data = await res.json();
-        } catch {
-          data = { error: await res.text() };
-        }
+        if (activeTab === "register") {
+          const res = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password }),
+          });
 
-        if (!res.ok) {
-          toast.error(
-            res.status === 409
-              ? "Este correo ya está registrado."
-              : data.error || "Error al registrar"
+          let data: { error?: string; message?: string } = {};
+          try {
+            data = await res.json();
+          } catch {
+            data = { error: await res.text() };
+          }
+
+          if (!res.ok) {
+            toast.error(
+              res.status === 409
+                ? "Este correo ya está registrado."
+                : data.error || "Error al registrar"
+            );
+            if (res.status === 409) {
+              setTimeout(() => setActiveTab("login"), 2000);
+            }
+            return;
+          }
+
+          toast.success(
+            "¡Registro exitoso! Revisa tu correo para verificar tu cuenta."
           );
-          if (res.status === 409) setTimeout(() => setActiveTab("login"), 2000);
+          setFormData({
+            email: "",
+            password: "",
+            confirmPassword: "",
+            name: "",
+          });
+          router.push(
+            "/auth/verify-request?email=" + encodeURIComponent(email)
+          );
           return;
         }
 
-        toast.success(
-          "¡Registro exitoso! Revisa tu correo para verificar tu cuenta."
-        );
+        if (activeTab === "login") {
+          const result = await signIn("credentials", {
+            redirect: false,
+            email,
+            password,
+          });
+          if (result?.error) {
+            toast.error("Error al iniciar sesión. Verifica tus credenciales.");
+          } else if (result?.ok) {
+            window.location.href = "/dashboard";
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Error del servidor. Intenta nuevamente.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [formData, activeTab, validateForm, router]
+  );
+
+  const handleTabChange = useCallback(
+    (tab: "login" | "register") => {
+      if (tab === activeTab) return;
+      setIsAnimating(true);
+      setErrors({});
+      setTimeout(() => {
+        setActiveTab(tab);
         setFormData({ email: "", password: "", confirmPassword: "", name: "" });
-        router.push("/auth/verify-request?email=" + encodeURIComponent(email));
-        return;
-      }
+        setIsAnimating(false);
+      }, 200);
+    },
+    [activeTab]
+  );
 
-      if (activeTab === "login") {
-        const result = await signIn("credentials", {
-          redirect: false,
-          email,
-          password,
-        });
-        if (result?.error)
-          toast.error("Error al iniciar sesión. Verifica tus credenciales.");
-        else if (result?.ok) window.location.href = "/dashboard";
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Error del servidor. Intenta nuevamente.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTabChange = (tab: "login" | "register") => {
-    if (tab === activeTab) return;
-    setIsAnimating(true);
-    setErrors({});
-    setTimeout(() => {
-      setActiveTab(tab);
-      setFormData({ email: "", password: "", confirmPassword: "", name: "" });
-      setIsAnimating(false);
-    }, 200);
-  };
+  const goHome = useCallback(() => {
+    router.push("/");
+  }, [router]);
 
   return (
     <div className="w-full min-h-screen bg-gray-900 flex items-center justify-center p-4 relative overflow-hidden">
@@ -332,7 +439,9 @@ export default function AuthForm() {
           alt="Logo Explore Heaven"
           fill
           className="object-contain object-center"
-          quality={50}
+          quality={30}
+          priority={false}
+          loading="lazy"
         />
       </div>
 
@@ -340,7 +449,7 @@ export default function AuthForm() {
       <div className="absolute inset-0 bg-gradient-to-br from-gray-900/90 via-gray-900/80 to-gray-900/90 z-0" />
 
       <button
-        onClick={() => router.push("/")}
+        onClick={goHome}
         className="absolute top-6 left-6 z-50 flex items-center space-x-1 bg-gray-800/80 hover:bg-gray-700/90 backdrop-blur-sm border border-yellow-400/30 text-yellow-400 px-4 py-2.5 rounded-xl transition-all duration-300 shadow-lg hover:shadow-yellow-400/20"
       >
         <ArrowLeftIcon className="h-4 w-4" />
@@ -360,6 +469,8 @@ export default function AuthForm() {
                   width={80}
                   height={80}
                   className="object-contain"
+                  loading="eager"
+                  priority
                 />
               </div>
             </div>
