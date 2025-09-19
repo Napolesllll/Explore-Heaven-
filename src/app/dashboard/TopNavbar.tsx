@@ -132,9 +132,8 @@ NavItem.displayName = "NavItem";
 
 // Componente de partícula optimizado
 const OptimizedParticle = memo<{
-  index: number;
   reduceMotion: boolean;
-}>(({ index, reduceMotion }) => {
+}>(({ reduceMotion }) => {
   if (reduceMotion) return null;
 
   return (
@@ -170,11 +169,10 @@ OptimizedParticle.displayName = "OptimizedParticle";
 const TopNavbar = memo<TopNavbarProps>(({ activeSection, onSelect }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const { isMobile, reduceMotion } = useDeviceCapabilities();
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null); // Inicializado con null
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSelect = useCallback(
     (section: string) => {
-      // Usar requestAnimationFrame para mejorar rendimiento en la selección
       requestAnimationFrame(() => {
         onSelect(section);
       });
@@ -184,7 +182,6 @@ const TopNavbar = memo<TopNavbarProps>(({ activeSection, onSelect }) => {
 
   useEffect(() => {
     const handleScroll = () => {
-      // Debounce scroll para reducir cálculos
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
@@ -204,7 +201,6 @@ const TopNavbar = memo<TopNavbarProps>(({ activeSection, onSelect }) => {
     };
   }, []);
 
-  // Items de navegación memoizados con iconos optimizados
   const navItems = useMemo(
     () => [
       {
@@ -242,15 +238,13 @@ const TopNavbar = memo<TopNavbarProps>(({ activeSection, onSelect }) => {
     [isMobile]
   );
 
-  // Configuración de partículas ultra optimizada
   const particleCount = useMemo(() => {
     if (reduceMotion || isMobile) return 0;
-    return 3; // Reducido drásticamente para mejor rendimiento
+    return 3;
   }, [isMobile, reduceMotion]);
 
   const enableAnimations = !reduceMotion;
 
-  // Memoizar clases CSS para evitar recálculos
   const navClasses = useMemo(
     () => `
     flex items-center justify-between sm:justify-center gap-1 
@@ -269,11 +263,10 @@ const TopNavbar = memo<TopNavbarProps>(({ activeSection, onSelect }) => {
     [isMobile, isScrolled]
   );
 
-  // Partículas memoizadas
   const particles = useMemo(
     () =>
       Array.from({ length: particleCount }, (_, i) => (
-        <OptimizedParticle key={i} index={i} reduceMotion={reduceMotion} />
+        <OptimizedParticle key={i} reduceMotion={reduceMotion} />
       )),
     [particleCount, reduceMotion]
   );
@@ -307,7 +300,6 @@ const TopNavbar = memo<TopNavbarProps>(({ activeSection, onSelect }) => {
         />
       ))}
 
-      {/* Partículas de fondo ultra optimizadas */}
       {particleCount > 0 && (
         <div
           className="absolute inset-0 overflow-hidden -z-10 rounded-xl sm:rounded-2xl"
