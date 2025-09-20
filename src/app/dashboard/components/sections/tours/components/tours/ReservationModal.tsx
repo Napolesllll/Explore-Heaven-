@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Tour } from "../../../../../../../data/toursData";
 import ReservationForm from "./ReservationForm/ReservationForm";
 import { ReservationFormData } from "./ReservationForm/types";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 
 interface ReservationModalProps {
   tour: Tour;
@@ -35,27 +35,49 @@ export default function ReservationModal({
   showWhatsApp,
   setShowWhatsApp,
 }: ReservationModalProps) {
-  // Optimizar manejo de estilos del modal
-  const handleModalStyles = useCallback((show: boolean) => {
-    if (show) {
-      // Prevent body scroll
-      document.body.style.overflow = "hidden";
-      document.documentElement.style.overflow = "hidden";
+  // Detectar si es móvil para optimizaciones específicas
+  const isMobile = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 768;
+  }, []);
 
-      // Force scroll to top
-      window.scrollTo(0, 0);
+  // Optimizar estilos del modal con mejores selectores y menos CSS
+  const handleModalStyles = useCallback(
+    (show: boolean) => {
+      const body = document.body;
+      const html = document.documentElement;
 
-      // Create styles more efficiently
-      const existingStyle = document.getElementById("modal-overlay-styles");
-      if (!existingStyle) {
-        const styleElement = document.createElement("style");
-        styleElement.id = "modal-overlay-styles";
-        styleElement.textContent = `
+      if (show) {
+        // Usar classes CSS predefinidas para mejor rendimiento
+        body.style.cssText =
+          "overflow: hidden !important; position: fixed !important; width: 100% !important;";
+        html.style.cssText = "overflow: hidden !important;";
+
+        // Optimización para móvil: prevenir scroll bounce
+        if (isMobile) {
+          body.style.touchAction = "none";
+          // Usar setProperty para propiedades webkit
+          body.style.setProperty("-webkit-overflow-scrolling", "auto");
+        }
+
+        // Scroll a top solo en móvil donde es más necesario
+        if (isMobile) {
+          window.scrollTo(0, 0);
+        }
+
+        // Crear estilos de manera más eficiente
+        let existingStyle = document.getElementById("modal-overlay-styles");
+        if (!existingStyle) {
+          existingStyle = document.createElement("style");
+          existingStyle.id = "modal-overlay-styles";
+          // CSS optimizado para móvil
+          existingStyle.textContent = `
           nav[class*="fixed"]:not([data-modal]),
           header[class*="fixed"]:not([data-modal]) {
             visibility: hidden !important;
             opacity: 0 !important;
             pointer-events: none !important;
+            transform: translateZ(0) !important;
           }
           
           [data-modal], [data-modal-content] {
@@ -66,75 +88,119 @@ export default function ReservationModal({
             top: 0 !important;
             left: 0 !important;
             width: 100% !important;
-            height: 100% !important;
+            height: 100vh !important;
             z-index: 9999 !important;
+            transform: translateZ(0) !important;
+            will-change: transform !important;
+          }
+          
+          @media (max-width: 767px) {
+            [data-modal-content] {
+              overscroll-behavior: contain !important;
+              -webkit-overflow-scrolling: touch !important;
+            }
           }
         `;
-        document.head.appendChild(styleElement);
-      }
-    } else {
-      // Restore styles
-      document.body.style.overflow = "unset";
-      document.documentElement.style.overflow = "unset";
+          document.head.appendChild(existingStyle);
+        }
+      } else {
+        // Restore estilos de manera más eficiente
+        body.style.cssText = "";
+        html.style.cssText = "";
 
-      const styleElement = document.getElementById("modal-overlay-styles");
-      if (styleElement) {
-        styleElement.remove();
-      }
-    }
-  }, []);
+        if (isMobile) {
+          body.style.touchAction = "";
+          body.style.removeProperty("-webkit-overflow-scrolling");
+        }
 
-  // Handle modal scroll and positioning
+        const styleElement = document.getElementById("modal-overlay-styles");
+        if (styleElement) {
+          styleElement.remove();
+        }
+      }
+    },
+    [isMobile]
+  );
+
+  // Manejar modal con mejor cleanup
   useEffect(() => {
-    handleModalStyles(showModal);
-
-    // Cleanup on unmount
-    return () => {
+    if (showModal) {
+      // Usar setTimeout para evitar bloqueo del hilo principal
+      setTimeout(() => handleModalStyles(true), 0);
+    } else {
       handleModalStyles(false);
+    }
+
+    // Cleanup optimizado en unmount
+    return () => {
+      if (showModal) {
+        handleModalStyles(false);
+      }
     };
   }, [showModal, handleModalStyles]);
 
-  // Memoizar el click handler del backdrop
+  // Memoizar el click handler del backdrop con mejor detección
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
-      if (e.target === e.currentTarget) {
+      // Solo cerrar si se hace clic exactamente en el backdrop
+      if (e.target === e.currentTarget && !isMobile) {
         setShowModal(false);
       }
     },
-    [setShowModal]
+    [setShowModal, isMobile]
   );
 
   return (
     <AnimatePresence mode="wait">
       {showModal && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }} // Reducir duración de animación
-          className="fixed inset-0 bg-black bg-opacity-95 z-[9999]"
-          style={{
-            zIndex: 9999,
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100vh",
+          initial={isMobile ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
+          animate={isMobile ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+          exit={isMobile ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
+          transition={{
+            duration: isMobile ? 0.2 : 0.15,
+            ease: isMobile ? "easeInOut" : "easeOut",
           }}
+          className="fixed inset-0 bg-black bg-opacity-95 z-[9999] touch-manipulation"
+          style={
+            {
+              zIndex: 9999,
+              position: "fixed" as const,
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100vh",
+              contain: "layout style paint" as const,
+              willChange: "opacity, transform",
+              WebkitBackfaceVisibility: "hidden" as const,
+              backfaceVisibility: "hidden" as const,
+              transform: "translateZ(0)",
+            } as React.CSSProperties
+          }
           data-modal="true"
           onClick={handleBackdropClick}
         >
           <div
             className="w-full h-full"
             data-modal-content="true"
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100vh",
-              overflow: "hidden",
-            }}
+            style={
+              {
+                position: "fixed" as const,
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100vh",
+                overflow: "hidden" as const,
+                contain: "layout style paint" as const,
+                transform: "translateZ(0)",
+                WebkitOverflowScrolling: isMobile
+                  ? ("touch" as const)
+                  : ("auto" as const),
+                overscrollBehavior: isMobile
+                  ? ("contain" as const)
+                  : ("auto" as const),
+              } as React.CSSProperties
+            }
           >
             <ReservationForm
               tour={tour}

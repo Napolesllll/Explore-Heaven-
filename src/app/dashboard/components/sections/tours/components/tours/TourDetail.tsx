@@ -1,6 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  lazy,
+  Suspense,
+  useCallback,
+} from "react";
 import { motion } from "framer-motion";
 import { Tour } from "../../../../../../../data/toursData";
 import { FaRocket, FaCheckCircle } from "react-icons/fa";
@@ -17,27 +25,71 @@ type Props = {
   onBack?: () => void;
 };
 
-// Mover configuración de animaciones fuera del componente
-const ANIMATION_CONFIG = {
+// Configuración de animaciones optimizada para móvil
+const getAnimationConfig = (isMobile: boolean) => ({
   container: {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 },
+      transition: {
+        staggerChildren: isMobile ? 0.05 : 0.1,
+        duration: isMobile ? 0.3 : 0.5,
+      },
     },
   },
   item: {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+    hidden: { opacity: 0, y: isMobile ? 10 : 20 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: isMobile ? 0.3 : 0.5 },
+    },
   },
-};
+});
 
-// Componente de loading para el modal
+// Componente de loading para el modal optimizado
 const ModalLoadingSpinner = () => (
   <div className="fixed inset-0 bg-black bg-opacity-95 z-[9999] flex items-center justify-center">
-    <div className="w-8 h-8 border-t-2 border-cyan-400 rounded-full animate-spin" />
+    <div className="w-6 h-6 sm:w-8 sm:h-8 border-t-2 border-cyan-400 rounded-full animate-spin" />
   </div>
 );
+
+// Hook para detectar dispositivo móvil
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+
+    let timeoutId: NodeJS.Timeout;
+    const debouncedResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(checkMobile, 150);
+    };
+
+    window.addEventListener("resize", debouncedResize, { passive: true });
+    return () => {
+      window.removeEventListener("resize", debouncedResize);
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  return isMobile;
+};
+
+// Hook para características optimizado
+const useTourFeatures = (tour: Tour) => {
+  return useMemo(() => {
+    const tourAsRecord = tour as unknown as Record<string, unknown>;
+    return Array.isArray(tourAsRecord.caracteristicas)
+      ? (tourAsRecord.caracteristicas as unknown[])
+      : [];
+  }, [tour]);
+};
 
 export default function TourDetail({ tour }: Props) {
   const [formData, setFormData] = useState<ReservationFormData>({
@@ -60,122 +112,151 @@ export default function TourDetail({ tour }: Props) {
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
 
   const formRef = useRef<HTMLFormElement>(null!);
+  const isMobile = useIsMobile();
+  const caracteristicas = useTourFeatures(tour);
+  const ANIMATION_CONFIG = getAnimationConfig(isMobile);
 
-  // Memoizar características del tour
-  const tourAsRecord = tour as unknown as Record<string, unknown>;
-  const caracteristicas = useMemo(() => {
-    return Array.isArray(tourAsRecord.caracteristicas)
-      ? (tourAsRecord.caracteristicas as unknown[])
-      : [];
-  }, [tourAsRecord.caracteristicas]);
-
-  // Generar fechas disponibles una sola vez
+  // Generar fechas disponibles optimizado
   useEffect(() => {
     const generateAvailableDates = () => {
       const dates: Date[] = [];
       const today = new Date();
+      const endDate = new Date(today.getTime() + 60 * 24 * 60 * 60 * 1000); // 60 días
 
-      for (let i = 1; i <= 60; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
-
+      for (
+        let date = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+        date <= endDate;
+        date.setDate(date.getDate() + 1)
+      ) {
         if (date.getDay() !== 0 && date.getDay() !== 6) {
-          dates.push(date);
+          // No domingos ni sábados
+          dates.push(new Date(date));
         }
       }
       setAvailableDates(dates);
     };
 
-    generateAvailableDates();
+    // Usar requestIdleCallback si está disponible
+    if ("requestIdleCallback" in window) {
+      (window as any).requestIdleCallback(generateAvailableDates);
+    } else {
+      setTimeout(generateAvailableDates, 0);
+    }
   }, []);
 
-  // Memoizar función de validación
-  const validateForm = useMemo(() => {
-    return () => {
-      const n = formData.nombre.trim();
-      const c = formData.correo.trim();
-      const p = formData.telefono.trim();
-      let ok = true;
+  // Validación de formulario optimizada
+  const validateForm = useCallback(() => {
+    const { nombre, correo, telefono } = formData;
+    const n = nombre.trim();
+    const c = correo.trim();
+    const p = telefono.trim();
 
-      if (!/^[a-zA-ZÀ-ÿ\s]{2,}$/.test(n)) {
-        toast.error("Nombre inválido");
-        ok = false;
+    if (!/^[a-zA-ZÀ-ÿ\s]{2,}$/.test(n)) {
+      toast.error("Nombre inválido");
+      return false;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) {
+      toast.error("Correo inválido");
+      return false;
+    }
+
+    if (p) {
+      const phoneRegex = /^\+\d{1,4}\s\d{7,15}$/;
+      if (!phoneRegex.test(p)) {
+        toast.error("Formato de teléfono inválido");
+        return false;
       }
-
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) {
-        toast.error("Correo inválido");
-        ok = false;
+      const phoneNumbers = p.split(" ")[1];
+      if (
+        !phoneNumbers ||
+        phoneNumbers.length < 7 ||
+        phoneNumbers.length > 15
+      ) {
+        toast.error("Número de teléfono debe tener entre 7 y 15 dígitos");
+        return false;
       }
+    } else {
+      toast.error("Teléfono es requerido");
+      return false;
+    }
 
-      if (p) {
-        const phoneRegex = /^\+\d{1,4}\s\d{7,15}$/;
-        if (!phoneRegex.test(p)) {
-          toast.error("Formato de teléfono inválido");
-          ok = false;
-        } else {
-          const phoneNumbers = p.split(" ")[1];
-          if (
-            !phoneNumbers ||
-            phoneNumbers.length < 7 ||
-            phoneNumbers.length > 15
-          ) {
-            toast.error("Número de teléfono debe tener entre 7 y 15 dígitos");
-            ok = false;
-          }
-        }
-      } else {
-        toast.error("Teléfono es requerido");
-        ok = false;
-      }
-
-      return ok;
-    };
+    return true;
   }, [formData.nombre, formData.correo, formData.telefono]);
 
-  const sendEmail = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!validateForm() || isSubmitting || hasSubmitted) return;
-    setIsSubmitting(true);
-    setHasSubmitted(true);
+  const sendEmail = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!validateForm() || isSubmitting || hasSubmitted) return;
 
-    try {
-      await emailjs.sendForm(
-        "service_48b978l",
-        "template_uk4drlm",
-        formRef.current!,
-        "Bl8NYZsWuRuNA-Jbi"
-      );
+      setIsSubmitting(true);
+      setHasSubmitted(true);
 
-      const precio =
-        typeof tour.precio === "number"
-          ? tour.precio
-          : Number(tour.precio) || 0;
+      try {
+        await emailjs.sendForm(
+          "service_48b978l",
+          "template_uk4drlm",
+          formRef.current!,
+          "Bl8NYZsWuRuNA-Jbi"
+        );
 
-      const reserva = {
-        tourName: tour.nombre,
-        date: formData.fecha || "",
-        amount: precio,
-        reference: Date.now().toString(),
-        email: formData.correo,
-      };
-      localStorage.setItem("last_reservation", JSON.stringify(reserva));
+        const precio =
+          typeof tour.precio === "number"
+            ? tour.precio
+            : Number(tour.precio) || 0;
+        const reserva = {
+          tourName: tour.nombre,
+          date: formData.fecha || "",
+          amount: precio,
+          reference: Date.now().toString(),
+          email: formData.correo,
+        };
 
-      toast.success("Información recopilada correctamente");
-      setShowWhatsApp(true);
-      setIsSubmitting(false);
-    } catch (error) {
-      console.error(error);
-      toast.error("Error procesando información");
-      setIsSubmitting(false);
-      setHasSubmitted(false);
-    }
-  };
+        try {
+          localStorage.setItem("last_reservation", JSON.stringify(reserva));
+        } catch (e) {
+          // Ignorar error de localStorage en modo incógnito
+        }
+
+        toast.success("Información recopilada correctamente");
+        setShowWhatsApp(true);
+        setIsSubmitting(false);
+      } catch (error) {
+        console.error(error);
+        toast.error("Error procesando información");
+        setIsSubmitting(false);
+        setHasSubmitted(false);
+      }
+    },
+    [
+      validateForm,
+      isSubmitting,
+      hasSubmitted,
+      tour.precio,
+      tour.nombre,
+      formData.fecha,
+      formData.correo,
+    ]
+  );
+
+  // Handler optimizado para cambio de imagen
+  const handleImageChange = useCallback((index: number) => {
+    setActiveImage(index);
+  }, []);
+
+  // Handler optimizado para modal
+  const handleShowModal = useCallback(() => {
+    setShowModal(true);
+  }, []);
+
+  // Reducir partículas en móvil para mejor rendimiento
+  const particleCount = isMobile ? 8 : 15;
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Background Particles - Reducido de 25 a 15 para mejor performance */}
+      {/* Background Particles optimizadas */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {[...Array(15)].map((_, i) => (
+        {[...Array(particleCount)].map((_, i) => (
           <motion.div
             key={i}
             className="absolute rounded-full bg-gradient-to-r from-cyan-400/8 to-purple-500/8 backdrop-blur-sm"
@@ -192,33 +273,37 @@ export default function TourDetail({ tour }: Props) {
               rotate: [0, 180, 360],
             }}
             transition={{
-              duration: Math.random() * 8 + 6,
+              duration: Math.random() * (isMobile ? 6 : 8) + (isMobile ? 4 : 6),
               repeat: Infinity,
               delay: Math.random() * 4,
               ease: "easeInOut",
+            }}
+            style={{
+              contain: "layout style paint",
+              willChange: "transform, opacity",
             }}
           />
         ))}
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+      <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8 lg:py-12">
         {/* Header Section */}
         <motion.header
-          className="mb-8 lg:mb-12"
-          initial={{ opacity: 0, y: -40 }}
+          className="mb-6 sm:mb-8 lg:mb-12"
+          initial={{ opacity: 0, y: isMobile ? -20 : -40 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: isMobile ? 0.4 : 0.6, ease: "easeOut" }}
         >
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="space-y-4">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent leading-tight">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
+            <div className="space-y-3 sm:space-y-4">
+              <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent leading-tight">
                 {tour.nombre}
               </h1>
 
-              <div className="flex items-center gap-3">
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 rounded-full backdrop-blur-sm">
-                  <FaRocket className="text-cyan-400 text-sm" />
-                  <span className="text-cyan-100 text-sm font-medium">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 border border-cyan-400/30 rounded-full backdrop-blur-sm">
+                  <FaRocket className="text-cyan-400 text-xs sm:text-sm" />
+                  <span className="text-cyan-100 text-xs sm:text-sm font-medium">
                     {tour.duracion}
                   </span>
                 </div>
@@ -226,22 +311,22 @@ export default function TourDetail({ tour }: Props) {
             </div>
 
             <div className="text-center lg:text-right">
-              <p className="text-slate-400 text-sm mb-1">Desde</p>
-              <div className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              <p className="text-slate-400 text-xs sm:text-sm mb-1">Desde</p>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 {tour.precio}
               </div>
             </div>
           </div>
         </motion.header>
 
-        {/* Hero Image Section */}
+        {/* Hero Image Section optimizado para móvil */}
         <motion.section
-          className="mb-10 lg:mb-16"
+          className="mb-6 sm:mb-10 lg:mb-16"
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          transition={{ duration: isMobile ? 0.5 : 0.8, ease: "easeOut" }}
         >
-          <div className="relative h-72 sm:h-96 lg:h-[500px] rounded-2xl lg:rounded-3xl overflow-hidden border border-cyan-400/20 shadow-2xl shadow-cyan-500/10">
+          <div className="relative h-48 sm:h-72 lg:h-[500px] rounded-xl lg:rounded-3xl overflow-hidden border border-cyan-400/20 shadow-2xl shadow-cyan-500/10">
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent z-10" />
 
             {tour.fotos?.[activeImage] && (
@@ -253,22 +338,30 @@ export default function TourDetail({ tour }: Props) {
                 priority={activeImage === 0}
                 loading={activeImage === 0 ? "eager" : "lazy"}
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                style={{
+                  contain: "layout style paint",
+                  willChange: "transform",
+                }}
               />
             )}
 
-            {/* Image Navigation - Solo mostrar si hay múltiples imágenes */}
+            {/* Image Navigation optimizado para touch - Solo mostrar si hay múltiples imágenes */}
             {tour.fotos && tour.fotos.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
-                <div className="flex gap-2 p-2 bg-slate-900/60 backdrop-blur-md rounded-xl border border-slate-700/50">
+              <div className="absolute bottom-2 sm:bottom-4 left-1/2 transform -translate-x-1/2 z-20">
+                <div className="flex gap-1 sm:gap-2 p-1.5 sm:p-2 bg-slate-900/60 backdrop-blur-md rounded-xl border border-slate-700/50">
                   {tour.fotos.map((foto, index) => (
                     <button
                       key={`thumb-${index}`}
-                      onClick={() => setActiveImage(index)}
-                      className={`relative w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
+                      onClick={() => handleImageChange(index)}
+                      className={`relative w-8 h-8 sm:w-12 sm:h-12 lg:w-16 lg:h-16 rounded-lg overflow-hidden border-2 transition-all duration-300 touch-manipulation ${
                         index === activeImage
                           ? "border-cyan-400 scale-110 shadow-lg shadow-cyan-400/50"
-                          : "border-slate-600 opacity-70 hover:opacity-100 hover:border-slate-500"
+                          : "border-slate-600 opacity-70 hover:opacity-100 hover:border-slate-500 active:opacity-100 active:scale-105"
                       }`}
+                      style={{
+                        WebkitTapHighlightColor: "transparent",
+                        contain: "layout style paint",
+                      }}
                     >
                       <Image
                         src={foto}
@@ -287,10 +380,10 @@ export default function TourDetail({ tour }: Props) {
         </motion.section>
 
         {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
           {/* Tour Information */}
           <motion.div
-            className="lg:col-span-2 space-y-8 lg:space-y-12"
+            className="lg:col-span-2 space-y-6 sm:space-y-8 lg:space-y-12"
             variants={ANIMATION_CONFIG.container}
             initial="hidden"
             animate="show"
@@ -298,13 +391,13 @@ export default function TourDetail({ tour }: Props) {
             {/* Description */}
             <motion.section
               variants={ANIMATION_CONFIG.item}
-              className="space-y-4"
+              className="space-y-3 sm:space-y-4"
             >
-              <h2 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 Descripción de la experiencia
               </h2>
               <div className="prose prose-invert max-w-none">
-                <p className="text-slate-300 leading-relaxed text-base lg:text-lg">
+                <p className="text-slate-300 leading-relaxed text-sm sm:text-base lg:text-lg">
                   {tour.descripcion}
                 </p>
               </div>
@@ -313,19 +406,20 @@ export default function TourDetail({ tour }: Props) {
             {/* Includes */}
             <motion.section
               variants={ANIMATION_CONFIG.item}
-              className="space-y-6"
+              className="space-y-4 sm:space-y-6"
             >
-              <h2 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                 Lo que incluye tu aventura
               </h2>
-              <div className="grid gap-3 sm:gap-4">
+              <div className="grid gap-2 sm:gap-3">
                 {tour.incluido.map((item, index) => (
                   <div
                     key={`include-${index}`}
-                    className="flex items-start gap-3 p-3 lg:p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl backdrop-blur-sm hover:bg-slate-800/70 transition-colors duration-300"
+                    className="flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3 lg:p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl backdrop-blur-sm hover:bg-slate-800/70 transition-colors duration-300"
+                    style={{ contain: "layout style paint" }}
                   >
-                    <FaCheckCircle className="text-cyan-400 mt-1 flex-shrink-0" />
-                    <span className="text-slate-300 text-sm lg:text-base">
+                    <FaCheckCircle className="text-cyan-400 mt-0.5 sm:mt-1 flex-shrink-0 text-sm sm:text-base" />
+                    <span className="text-slate-300 text-xs sm:text-sm lg:text-base">
                       {item}
                     </span>
                   </div>
@@ -337,16 +431,17 @@ export default function TourDetail({ tour }: Props) {
             {caracteristicas.length > 0 && (
               <motion.section
                 variants={ANIMATION_CONFIG.item}
-                className="space-y-6"
+                className="space-y-4 sm:space-y-6"
               >
-                <h2 className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
                   Características destacadas
                 </h2>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2 sm:gap-3">
                   {caracteristicas.map((caracteristica, i) => (
                     <span
                       key={`feature-${i}`}
-                      className="px-4 py-2 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-400/30 text-cyan-300 rounded-full text-sm font-medium backdrop-blur-sm hover:from-cyan-500/20 hover:to-purple-500/20 transition-colors duration-300"
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-400/30 text-cyan-300 rounded-full text-xs sm:text-sm font-medium backdrop-blur-sm hover:from-cyan-500/20 hover:to-purple-500/20 transition-colors duration-300"
+                      style={{ contain: "layout style paint" }}
                     >
                       {String(caracteristica)}
                     </span>
@@ -359,33 +454,37 @@ export default function TourDetail({ tour }: Props) {
           {/* Reservation Card */}
           <motion.aside
             className="lg:col-span-1"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+            initial={{ opacity: 0, x: isMobile ? 0 : 50, y: isMobile ? 30 : 0 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: isMobile ? 0.4 : 0.6, delay: 0.2 }}
           >
-            <div className="sticky top-8">
-              <div className="relative p-6 lg:p-8 bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-cyan-400/20 rounded-2xl shadow-2xl shadow-cyan-500/10 backdrop-blur-sm">
+            <div className={isMobile ? "" : "sticky top-8"}>
+              <div className="relative p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-cyan-400/20 rounded-2xl shadow-2xl shadow-cyan-500/10 backdrop-blur-sm">
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-purple-500/5 rounded-2xl" />
 
-                <div className="relative z-10 space-y-6">
+                <div className="relative z-10 space-y-4 sm:space-y-6">
                   <div className="text-center space-y-2">
-                    <h3 className="text-2xl font-bold text-cyan-400">
+                    <h3 className="text-xl sm:text-2xl font-bold text-cyan-400">
                       Reserva tu lugar
                     </h3>
-                    <p className="text-slate-400 text-sm">
+                    <p className="text-slate-400 text-xs sm:text-sm">
                       Completa el formulario para iniciar tu reserva
                     </p>
                   </div>
 
                   <motion.button
-                    onClick={() => setShowModal(true)}
-                    className="group relative w-full py-4 px-6 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-bold rounded-xl transition-all duration-300 overflow-hidden"
-                    whileHover={{ scale: 1.02 }}
+                    onClick={handleShowModal}
+                    className="group relative w-full py-3 sm:py-4 px-4 sm:px-6 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 active:from-cyan-700 active:to-purple-700 text-white font-bold rounded-xl transition-all duration-300 overflow-hidden touch-manipulation"
+                    whileHover={isMobile ? {} : { scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
+                    style={{
+                      WebkitTapHighlightColor: "transparent",
+                      contain: "layout style paint",
+                    }}
                   >
                     <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/50 to-purple-500/50 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                    <span className="relative z-10 flex items-center justify-center gap-2">
+                    <span className="relative z-10 flex items-center justify-center gap-2 text-sm sm:text-base">
                       Confirmar y continuar a la Reserva
                     </span>
                   </motion.button>
