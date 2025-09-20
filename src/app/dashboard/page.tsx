@@ -112,7 +112,11 @@ const useParticleAnimation = (
       };
 
       if ("requestIdleCallback" in window && isMobile) {
-        (window as any).requestIdleCallback(updateParticles);
+        (
+          window as typeof window & {
+            requestIdleCallback: (callback: () => void) => void;
+          }
+        ).requestIdleCallback(updateParticles);
       } else {
         updateParticles();
       }

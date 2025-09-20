@@ -54,8 +54,10 @@ const MapComponent = ({ zones }: { zones: SafeZone[] }) => {
     const loadMap = async () => {
       try {
         // Importar dinámicamente Leaflet y react-leaflet
-        const [{ MapContainer, TileLayer, Marker, Popup }, { Icon }] =
-          await Promise.all([import("react-leaflet"), import("leaflet")]);
+        const [, { Icon }] = await Promise.all([
+          import("react-leaflet"),
+          import("leaflet"),
+        ]);
 
         // Cargar CSS dinámicamente sin import directo
         if (typeof document !== "undefined") {

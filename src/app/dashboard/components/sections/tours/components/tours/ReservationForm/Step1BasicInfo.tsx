@@ -69,6 +69,14 @@ const Step1BasicInfo = memo<Step1BasicInfoProps>(function Step1BasicInfo({
   const [selectedCountry, setSelectedCountry] = useState("+57");
   const isMobile = useIsMobile();
 
+  // Función helper optimizada
+  const getPhoneWithoutCode = useCallback((fullPhone: string) => {
+    if (!fullPhone) return "";
+    const phoneRegex = /^\+\d{1,4}\s(.+)$/;
+    const match = fullPhone.match(phoneRegex);
+    return match ? match[1] : "";
+  }, []);
+
   // Memoizar el país actual con optimización
   const getCurrentCountry = useMemo(() => {
     return (
@@ -129,7 +137,7 @@ const Step1BasicInfo = memo<Step1BasicInfoProps>(function Step1BasicInfo({
 
       handleInputChange(syntheticEvent as React.ChangeEvent<HTMLInputElement>);
     },
-    [getCurrentCountry, selectedCountry, handleInputChange]
+    [getCurrentCountry, selectedCountry, handleInputChange, getPhoneWithoutCode]
   );
 
   // Handler optimizado para cambio de país
@@ -152,16 +160,8 @@ const Step1BasicInfo = memo<Step1BasicInfoProps>(function Step1BasicInfo({
 
       handleInputChange(syntheticEvent);
     },
-    [formData.telefono, handleInputChange]
+    [formData.telefono, handleInputChange, getPhoneWithoutCode]
   );
-
-  // Función helper optimizada
-  const getPhoneWithoutCode = useCallback((fullPhone: string) => {
-    if (!fullPhone) return "";
-    const phoneRegex = /^\+\d{1,4}\s(.+)$/;
-    const match = fullPhone.match(phoneRegex);
-    return match ? match[1] : "";
-  }, []);
 
   // Memoizar el valor del teléfono sin código
   const phoneWithoutCode = useMemo(() => {

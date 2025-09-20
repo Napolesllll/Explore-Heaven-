@@ -138,7 +138,11 @@ export default function TourDetail({ tour }: Props) {
 
     // Usar requestIdleCallback si está disponible
     if ("requestIdleCallback" in window) {
-      (window as any).requestIdleCallback(generateAvailableDates);
+      (
+        window as typeof window & {
+          requestIdleCallback: (callback: () => void) => void;
+        }
+      ).requestIdleCallback(generateAvailableDates);
     } else {
       setTimeout(generateAvailableDates, 0);
     }
@@ -182,7 +186,7 @@ export default function TourDetail({ tour }: Props) {
     }
 
     return true;
-  }, [formData.nombre, formData.correo, formData.telefono]);
+  }, [formData]);
 
   const sendEmail = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -214,7 +218,7 @@ export default function TourDetail({ tour }: Props) {
 
         try {
           localStorage.setItem("last_reservation", JSON.stringify(reserva));
-        } catch (e) {
+        } catch {
           // Ignorar error de localStorage en modo incógnito
         }
 
