@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import withPWA from "next-pwa";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -36,7 +37,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'scontent.fbog11-1.fna.fbcdn.net', // 👈 Agregado este dominio
+        hostname: 'scontent.fbog11-1.fna.fbcdn.net',
       },
       {
         protocol: 'https',
@@ -58,4 +59,12 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 };
 
-export default nextConfig;
+// Solución para el problema de tipos de next-pwa
+const pwaConfig = withPWA({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
+});
+
+export default pwaConfig(nextConfig as any);

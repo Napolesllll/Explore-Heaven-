@@ -71,6 +71,12 @@ export const metadata: Metadata = {
     canonical: process.env.NEXTAUTH_URL || "http://localhost:3000",
   },
   category: "travel",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Explore Heaven",
+  },
 };
 
 export default function RootLayout({
@@ -107,6 +113,15 @@ export default function RootLayout({
         <meta name="theme-color" content="#1f2937" />
         <meta name="msapplication-TileColor" content="#1f2937" />
 
+        {/* PWA Meta Tags */}
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
+        <meta name="apple-mobile-web-app-title" content="Explore Heaven" />
+
         {/* Apple touch icon */}
         <link
           rel="apple-touch-icon"
@@ -120,7 +135,7 @@ export default function RootLayout({
           sizes="16x16"
           href="/favicon-16x16.png"
         />
-        <link rel="manifest" href="/site.webmanifest" />
+        <link rel="manifest" href="/manifest.json" />
 
         {/* Preload critical resources */}
         <link

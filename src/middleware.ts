@@ -34,7 +34,6 @@ export default withAuth(
         });
         return NextResponse.redirect(new URL("/admin/login", req.url));
       }
-
     }
 
     // Rutas que requieren rol GUIA
@@ -72,7 +71,7 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;
 
-        // Permitir acceso a rutas públicas
+        // Permitir acceso a rutas públicas y archivos PWA
         if (
           pathname.startsWith("/auth") ||
           pathname === "/" ||
@@ -80,6 +79,8 @@ export default withAuth(
           pathname.startsWith("/blog") ||
           pathname.startsWith("/api/auth") ||
           pathname.startsWith("/_next") ||
+          pathname.startsWith("/_vercel") ||
+          pathname.startsWith("/.well-known") ||
           pathname.startsWith("/favicon") ||
           pathname.includes("/images/") ||
           pathname.includes("/static/") ||
@@ -90,7 +91,13 @@ export default withAuth(
           pathname.endsWith(".svg") ||
           pathname.endsWith(".webp") ||
           pathname.endsWith(".ico") ||
-          pathname.startsWith("/debug") // ✅ Permitir rutas de debug
+          pathname.startsWith("/debug") ||
+          // ✅ ARCHIVOS PWA - PÚBLICOS
+          pathname === "/manifest.json" ||
+          pathname === "/sw.js" ||
+          pathname.startsWith("/workbox-") ||
+          pathname.startsWith("/icons/") ||
+          pathname.startsWith("/screenshots/")
         ) {
           return true;
         }
@@ -110,6 +117,18 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    '/((?!api/auth|_next/static|_next/image|favicon.ico|public/).*)',
+    /*
+     * Match all request paths except:
+     * - api/auth (NextAuth routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     * - manifest.json (PWA manifest)
+     * - sw.js, workbox files (service workers)
+     * - icons folder (PWA icons)
+     * - All image extensions
+     */
+    '/((?!api/auth|_next/static|_next/image|favicon.ico|public/|manifest.json|sw.js|workbox-|icons/|screenshots/|.*\\.(?:jpg|jpeg|png|gif|svg|webp|ico)$).*)',
   ],
 };
